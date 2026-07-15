@@ -7,7 +7,7 @@ export function BetProvider({ children }) {
   const [lotteries, setLotteries] = useState([]);
   const [draws, setDraws] = useState([]);
   const [cart, setCart] = useState([]);
-  const [selectedDraw, setSelectedDraw] = useState(null);
+  const [selectedDraws, setSelectedDraws] = useState([]);
   const [selectedLotteries, setSelectedLotteries] = useState([]);
 
   const fetchLotteries = useCallback(async () => {
@@ -32,7 +32,7 @@ export function BetProvider({ children }) {
 
   const submitBet = async () => {
     const payload = {
-      draw_id: selectedDraw,
+      draw_ids: selectedDraws,
       draw_date: new Date().toISOString().split('T')[0],
       lottery_ids: selectedLotteries,
       items: cart.filter((i) => !i.isRedoblona).map(({ id, isRedoblona, ...rest }) => rest),
@@ -46,8 +46,8 @@ export function BetProvider({ children }) {
   return (
     <BetContext.Provider
       value={{
-        lotteries, draws, cart, selectedDraw, selectedLotteries,
-        setSelectedDraw, setSelectedLotteries,
+        lotteries, draws, cart, selectedDraws, selectedLotteries,
+        setSelectedDraws, setSelectedLotteries,
         fetchLotteries, fetchDraws,
         addToCart, removeFromCart, clearCart, submitBet,
       }}

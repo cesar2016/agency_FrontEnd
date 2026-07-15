@@ -12,7 +12,7 @@ function isDrawOpen(schedule) {
 }
 
 export default function SelectLotteryDraw() {
-  const { lotteries, draws, selectedLotteries, setSelectedLotteries, selectedDraw, setSelectedDraw, fetchLotteries, fetchDraws } = useBet();
+  const { lotteries, draws, selectedLotteries, setSelectedLotteries, selectedDraws, setSelectedDraws, fetchLotteries, fetchDraws } = useBet();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
@@ -87,34 +87,28 @@ export default function SelectLotteryDraw() {
           {draws.map((d) => {
             const schedule = lotteries[0]?.schedules?.find((s) => s.draw_id === d.id);
             const open = isDrawOpen(schedule);
+            const selected = selectedDraws.includes(d.id);
             return (
               <label
                 key={d.id}
                 className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition ${
                   !open
                     ? 'bg-gray-800/50 border-gray-700 text-gray-600 cursor-not-allowed'
-                    : selectedDraw === d.id
+                    : selected
                       ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-200'
                       : 'bg-gray-700/30 border-gray-600/50 text-gray-300 hover:border-gray-500'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                    !open
-                      ? 'bg-gray-700 cursor-not-allowed'
-                      : selectedDraw === d.id ? 'bg-indigo-600' : 'bg-gray-600'
-                  }`}>
-                    <input
-                      type="checkbox"
-                      checked={selectedDraw === d.id}
-                      onChange={() => open && setSelectedDraw(d.id)}
-                      disabled={!open}
-                      className="sr-only peer"
-                    />
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      selectedDraw === d.id ? 'translate-x-[18px]' : 'translate-x-[2px]'
-                    }`} />
-                  </div>
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => open && setSelectedDraws(prev =>
+                      prev.includes(d.id) ? prev.filter(i => i !== d.id) : [...prev, d.id]
+                    )}
+                    disabled={!open}
+                    className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
+                  />
                   <span className="text-sm font-medium">{d.name}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
@@ -129,7 +123,7 @@ export default function SelectLotteryDraw() {
 
       <button
         onClick={() => navigate('/bet')}
-        disabled={selectedLotteries.length === 0 || !selectedDraw}
+        disabled={selectedLotteries.length === 0 || selectedDraws.length === 0}
         className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl transition shadow-lg shadow-indigo-500/20"
       >
         Continuar <FiArrowRight size={18} />

@@ -127,7 +127,7 @@ export default function DashboardPage() {
                 <tr key={bet.id} className="border-b border-gray-700/30 hover:bg-gray-700/20">
                   <td className="p-2 text-white font-mono text-xs">{bet.sequence}</td>
                   <td className="p-2 text-gray-300">{bet.user?.name}</td>
-                  <td className="p-2 text-gray-300">{bet.draw?.name}</td>
+                  <td className="p-2 text-gray-300">{(bet.draws || []).map((d) => d.name).join(' / ') || bet.draw?.name}</td>
                   <td className="p-2 text-right text-white">${fmt(bet.total)}</td>
                   <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-2">
@@ -178,7 +178,7 @@ export default function DashboardPage() {
             <div className="p-4 font-mono text-xs space-y-2 text-gray-200">
               <p><span className="text-gray-400">Secuencia:</span> <span className="text-white">{viewBet.sequence}</span></p>
               <p><span className="text-gray-400">Pasador:</span> <span className="text-white">{viewBet.user?.name}</span></p>
-              <p><span className="text-gray-400">Sorteo:</span> <span className="text-white">{viewBet.draw?.name}</span></p>
+                <p><span className="text-gray-400">Sorteo:</span> <span className="text-white">{(viewBet.draws || []).map((d) => d.name).join(' / ') || viewBet.draw?.name}</span></p>
               <p><span className="text-gray-400">Fecha:</span> <span className="text-white">{viewBet.draw_date}</span></p>
               <p><span className="text-gray-400">Loterias:</span> <span className="text-indigo-300">{(viewBet.lotteries || []).map((l) => l.initials).join(', ')}</span></p>
               <table className="w-full mt-2">

@@ -24,7 +24,7 @@ function fmt(n) {
 }
 
 export default function PlaceBetPage() {
-  const { selectedLotteries, selectedDraw, lotteries, draws, cart, addToCart, removeFromCart, clearCart, submitBet } = useBet();
+  const { selectedLotteries, selectedDraws, lotteries, draws, cart, addToCart, removeFromCart, clearCart, submitBet } = useBet();
   const navigate = useNavigate();
 
   const [number, setNumber] = useState('');
@@ -54,7 +54,7 @@ export default function PlaceBetPage() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
 
-  const drawName = draws.find((d) => d.id === selectedDraw)?.name || '';
+  const drawNames = draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.name).join(' / ');
   const lotteryLabels = lotteries.filter((l) => selectedLotteries.includes(l.id)).map((l) => l.initials).join(', ');
   const subtotal = cart.reduce((acc, i) => acc + i.amount, 0);
 
@@ -168,7 +168,7 @@ export default function PlaceBetPage() {
           <FiArrowLeft size={16} /> Volver
         </button>
         <div className="text-right min-w-0">
-          <p className="text-white font-medium text-sm truncate">{drawName}</p>
+          <p className="text-white font-medium text-sm truncate">{drawNames}</p>
           <p className="text-indigo-300 text-xs truncate max-w-[180px] sm:max-w-none">{lotteryLabels}</p>
         </div>
       </div>
@@ -285,7 +285,7 @@ export default function PlaceBetPage() {
         <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-x-auto">
           <div className="p-3 border-b border-gray-700/50 flex items-center justify-between">
             <h3 className="text-white font-semibold text-sm">Jugadas ({cart.length})</h3>
-            <span className="text-indigo-300 font-bold">$ {fmt(subtotal * selectedLotteries.length)}</span>
+            <span className="text-indigo-300 font-bold">$ {fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
           </div>
           <table className="w-full text-sm">
             <thead className="bg-gray-700/30">
@@ -320,7 +320,7 @@ export default function PlaceBetPage() {
               onClick={() => setShowPreview(true)}
               className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg shadow-indigo-500/20"
             >
-              <FiEye size={16} /> Vista previa de Boleta — $ {fmt(subtotal * selectedLotteries.length)}
+              <FiEye size={16} /> Vista previa de Boleta — $ {fmt(subtotal * selectedLotteries.length * selectedDraws.length)}
             </button>
           </div>
         </div>
@@ -336,7 +336,7 @@ export default function PlaceBetPage() {
             <div className="p-4 font-mono text-xs space-y-2 text-gray-200">
               <div className="text-center border-b border-dashed border-gray-600/50 pb-2">
                 <p className="text-indigo-300 font-bold">{lotteryLabels}</p>
-                <p>{drawName}</p>
+                  <p>{drawNames}</p>
               </div>
               <table className="w-full">
                 <thead>
@@ -360,20 +360,24 @@ export default function PlaceBetPage() {
                   ))}
                 </tbody>
               </table>
-              <div className="border-t border-dashed border-gray-600/50 pt-2 space-y-1">
-                <div className="flex justify-between text-gray-400 font-normal">
-                  <span>Subtotal</span>
-                  <span>${fmt(subtotal)}</span>
+                <div className="border-t border-dashed border-gray-600/50 pt-2 space-y-1">
+                  <div className="flex justify-between text-gray-400 font-normal">
+                    <span>Subtotal</span>
+                    <span>${fmt(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-400 font-normal">
+                    <span>Loterias ({selectedLotteries.length})</span>
+                    <span>× {selectedLotteries.length}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-400 font-normal">
+                    <span>Sorteos ({selectedDraws.length})</span>
+                    <span>× {selectedDraws.length}</span>
+                  </div>
+                  <div className="flex justify-between text-white font-bold pt-1 border-t border-dashed border-gray-600/50">
+                    <span>TOTAL</span>
+                    <span className="text-indigo-300">${fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-gray-400 font-normal">
-                  <span>Loterias ({selectedLotteries.length})</span>
-                  <span>× {selectedLotteries.length}</span>
-                </div>
-                <div className="flex justify-between text-white font-bold pt-1 border-t border-dashed border-gray-600/50">
-                  <span>TOTAL</span>
-                  <span className="text-indigo-300">${fmt(subtotal * selectedLotteries.length)}</span>
-                </div>
-              </div>
             </div>
             <div className="p-4 pt-0 flex gap-3">
               <button

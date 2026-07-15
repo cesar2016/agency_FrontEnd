@@ -5,14 +5,22 @@ import { FiClock, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 export default function HorariosPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [openDraw, setOpenDraw] = useState(null);
+  const [openDraws, setOpenDraws] = useState(() => new Set());
 
   useEffect(() => {
     api.get('/horarios').then((r) => {
       setData(r.data);
-      if (r.data.length > 0) setOpenDraw(r.data[0].draw_id);
     }).finally(() => setLoading(false));
   }, []);
+
+  const toggleOpen = (drawId) => {
+    setOpenDraws((prev) => {
+      const next = new Set(prev);
+      if (next.has(drawId)) next.delete(drawId);
+      else next.add(drawId);
+      return next;
+    });
+  };
 
   if (loading) {
     return <div className="flex justify-center pt-20"><FiClock className="animate-spin text-indigo-400" size={28} /></div>;
@@ -26,17 +34,17 @@ export default function HorariosPage() {
       {data.map((draw) => (
         <div key={draw.draw_id} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
           <button
-            onClick={() => setOpenDraw(openDraw === draw.draw_id ? null : draw.draw_id)}
+            onClick={() => toggleOpen(draw.draw_id)}
             className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-700/30 transition"
           >
             <div className="flex items-center gap-3">
               <span className="text-indigo-400 font-bold text-lg">{draw.draw_name}</span>
               <span className="text-xs text-gray-500 bg-gray-700/50 px-2 py-0.5 rounded-full">{draw.lotteries.length} loterías</span>
             </div>
-            {openDraw === draw.draw_id ? <FiChevronUp className="text-gray-400" /> : <FiChevronDown className="text-gray-400" />}
+            {openDraws.has(draw.draw_id) ? <FiChevronUp className="text-gray-400" /> : <FiChevronDown className="text-gray-400" />}
           </button>
 
-          {openDraw === draw.draw_id && (
+          {openDraws.has(draw.draw_id) && (
             <div className="border-t border-gray-700/30 divide-y divide-gray-700/20">
               {draw.lotteries.map((lot) => (
                 <div key={lot.lottery_id} className="flex items-center justify-between px-5 py-3 text-sm">

@@ -22,11 +22,20 @@ export default function SelectLotteryDraw() {
   const { lotteries, draws, selectedLotteries, setSelectedLotteries, selectedDraws, setSelectedDraws, fetchLotteries, fetchDraws } = useBet();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [openDraw, setOpenDraw] = useState(null);
+  const [openDraws, setOpenDraws] = useState(() => new Set());
 
   useEffect(() => {
     Promise.all([fetchLotteries(), fetchDraws()]).finally(() => setLoading(false));
   }, [fetchLotteries, fetchDraws]);
+
+  const toggleOpen = (drawId) => {
+    setOpenDraws((prev) => {
+      const next = new Set(prev);
+      if (next.has(drawId)) next.delete(drawId);
+      else next.add(drawId);
+      return next;
+    });
+  };
 
   // Agrupar loterías por sorteo (draw) usando los schedules
   const drawsGrouped = useMemo(() => {
@@ -91,7 +100,7 @@ export default function SelectLotteryDraw() {
       </div>
 
       {drawsGrouped.map(({ draw, items }) => {
-        const open = openDraw === draw.id;
+        const open = openDraws.has(draw.id);
         const drawSelected = selectedDraws.includes(draw.id);
         const allInDraw = items.length > 0 && items.every((it) => selectedLotteries.includes(it.lottery.id));
         const someInDraw = items.some((it) => selectedLotteries.includes(it.lottery.id));
@@ -99,7 +108,7 @@ export default function SelectLotteryDraw() {
           <div key={draw.id} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between p-4">
               <button
-                onClick={() => setOpenDraw(open ? null : draw.id)}
+                onClick={() => toggleOpen(draw.id)}
                 className="flex items-center gap-2 text-left"
               >
                 {open ? <FiChevronUp className="text-gray-400" /> : <FiChevronDown className="text-gray-400" />}

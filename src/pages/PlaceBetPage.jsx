@@ -124,10 +124,29 @@ export default function PlaceBetPage() {
     }
   };
 
-  const downloadTicket = async (id) => {
+  const getTicketBlob = async (id) => {
     const { data } = await api.get(`/tickets/${id}/download`, { responseType: 'blob' });
-    const url = URL.createObjectURL(data);
+    return data;
+  };
+
+  const downloadTicket = async (id) => {
+    const blob = await getTicketBlob(id);
+    const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
+  };
+
+  const shareTicket = async (id, sequence) => {
+    try {
+      const blob = await getTicketBlob(id);
+      const file = new File([blob], `boleta-${sequence}.pdf`, { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Boleta Agencia' });
+        return;
+      }
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+    }
+    downloadTicket(id);
   };
 
   const handleAmountChange = (val, setter) => {
@@ -385,10 +404,7 @@ export default function PlaceBetPage() {
             <p className="text-indigo-300 font-mono text-sm mb-4">Secuencia: {result.sequence}</p>
             <div className="flex flex-col gap-2">
               <button
-                onClick={async () => {
-                  const text = `*BOLETA AGENCIA*\n${lotteryLabels} - ${drawName}\nSecuencia: ${result.sequence}\nSubtotal: $${fmt(subtotal)} × ${selectedLotteries.length} loterías\nTotal: $${fmt(subtotal * selectedLotteries.length)}\n\n${cart.map(i => i.isRedoblona ? `${i.first_number}/${i.second_number} R${i.first_range}/${i.second_range} $${fmt(i.amount)}` : `${i.number} #${i.position} $${fmt(i.amount)}`).join('\n')}`;
-                  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                }}
+                onClick={() => shareTicket(result.id, result.sequence)}
                 className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-medium py-2.5 rounded-lg text-sm transition"
               >
                 Compartir por WhatsApp

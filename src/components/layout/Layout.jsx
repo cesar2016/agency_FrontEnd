@@ -27,9 +27,15 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
       <nav className="bg-gray-900/80 backdrop-blur-sm border-b border-indigo-500/20 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link to="/" className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            AGENCIA
+        <div className="flex items-center gap-2 md:gap-6">
+          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-gray-300 hover:text-white transition p-1 -ml-1">
+            {menuOpen ? <FiX size={22} /> : <FiMenu size={22} />}
+          </button>
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/logo.png" alt="Agencia" className="h-8 w-auto" />
+            <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              AGENCIA
+            </span>
           </Link>
           <div className="hidden md:flex gap-4">
             {links.map((l) => (
@@ -47,9 +53,6 @@ export default function Layout() {
             title="Cerrar sesion"
           >
             <FiLogOut size={16} />
-          </button>
-          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-gray-300 hover:text-white transition p-1">
-            {menuOpen ? <FiX size={22} /> : <FiMenu size={22} />}
           </button>
         </div>
       </nav>

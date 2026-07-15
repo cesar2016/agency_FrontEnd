@@ -2,6 +2,17 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { FiClock, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
+const LOTTERY_ORDER = [
+  'NAC', 'PBA', 'SF', 'CBA', 'ER', 'MZA', 'CTES', 'CH', 'CAT', 'FSA',
+  'JUJ', 'LR', 'MIS', 'NQN', 'RN', 'SAL', 'SL', 'SC', 'SGO', 'TUC',
+  'CT', 'SJ', 'URU',
+];
+
+function lotteryRank(initials) {
+  const i = LOTTERY_ORDER.indexOf(initials);
+  return i === -1 ? 999 : i;
+}
+
 export default function HorariosPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +57,9 @@ export default function HorariosPage() {
 
           {openDraws.has(draw.draw_id) && (
             <div className="border-t border-gray-700/30 divide-y divide-gray-700/20">
-              {draw.lotteries.map((lot) => (
+              {[...draw.lotteries]
+                .sort((a, b) => lotteryRank(a.initials) - lotteryRank(b.initials))
+                .map((lot) => (
                 <div key={lot.lottery_id} className="flex items-center justify-between px-5 py-3 text-sm">
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-bold text-indigo-300 w-8">{lot.initials}</span>

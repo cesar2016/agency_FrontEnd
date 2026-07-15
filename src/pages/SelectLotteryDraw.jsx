@@ -18,6 +18,17 @@ function todayLabel() {
   return `${dias[d.getDay()]} ${d.getDate()}/${meses[d.getMonth()]}/${d.getFullYear()}`;
 }
 
+const LOTTERY_ORDER = [
+  'NAC', 'PBA', 'SF', 'CBA', 'ER', 'MZA', 'CTES', 'CH', 'CAT', 'FSA',
+  'JUJ', 'LR', 'MIS', 'NQN', 'RN', 'SAL', 'SL', 'SC', 'SGO', 'TUC',
+  'CT', 'SJ', 'URU',
+];
+
+function lotteryRank(initials) {
+  const i = LOTTERY_ORDER.indexOf(initials);
+  return i === -1 ? 999 : i;
+}
+
 export default function SelectLotteryDraw() {
   const { lotteries, draws, selectedLotteries, setSelectedLotteries, selectedDraws, setSelectedDraws, fetchLotteries, fetchDraws } = useBet();
   const navigate = useNavigate();
@@ -49,7 +60,7 @@ export default function SelectLotteryDraw() {
             return sched ? { lottery: l, closingTime: sched.closing_time, drawTime: sched.draw_time } : null;
           })
           .filter(Boolean)
-          .sort((a, b) => a.lottery.initials.localeCompare(b.lottery.initials));
+          .sort((a, b) => lotteryRank(a.lottery.initials) - lotteryRank(b.lottery.initials));
         return { draw, items };
       });
   }, [lotteries, draws]);

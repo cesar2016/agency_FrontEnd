@@ -328,56 +328,53 @@ export default function PlaceBetPage() {
 
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-gray-900 border border-indigo-500/20 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+          <div className="bg-gray-900 border border-indigo-500/20 rounded-2xl w-full max-w-sm shadow-2xl overflow-y-auto max-h-[95vh]">
             <div className="p-4 bg-gray-800/80 text-center border-b border-dashed border-gray-600/50">
               <p className="text-xs text-gray-400 font-mono">{new Date().toLocaleString('es-AR')}</p>
               <p className="text-white font-bold font-mono text-xs mt-1">BOLETA</p>
             </div>
-            <div className="p-4 font-mono text-xs space-y-2 text-gray-200">
+            <div className="p-4 font-mono text-xs space-y-3 text-gray-200">
               <div className="text-center border-b border-dashed border-gray-600/50 pb-2">
                 <p className="text-indigo-300 font-bold">{lotteryLabels}</p>
-                  <p>{drawNames}</p>
               </div>
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-dashed border-gray-600/50 text-gray-400">
-                    <th className="text-left py-1">NUMERO</th>
-                    <th className="text-center py-1">POS</th>
-                    <th className="text-right py-1">IMPORTE</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cart.map((item) => (
-                    <tr key={item.id}>
-                      <td className="py-1 text-white font-bold">
-                        {item.isRedoblona ? `${item.first_number}/${item.second_number}` : item.number}
-                      </td>
-                      <td className="py-1 text-center text-gray-400">
-                        {item.isRedoblona ? `R${item.first_range}/${item.second_range}` : `#${item.position}`}
-                      </td>
-                      <td className="py-1 text-right text-white">${fmt(item.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-                <div className="border-t border-dashed border-gray-600/50 pt-2 space-y-1">
-                  <div className="flex justify-between text-gray-400 font-normal">
-                    <span>Subtotal</span>
-                    <span>${fmt(subtotal)}</span>
+              {draws.filter((d) => selectedDraws.includes(d.id)).map((draw) => {
+                const drawSubtotal = subtotal * selectedLotteries.length;
+                return (
+                  <div key={draw.id}>
+                    <p className="text-center text-white font-bold text-sm mb-1">{draw.name}</p>
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-dashed border-gray-600/50 text-gray-400">
+                          <th className="text-left py-1">NUMERO</th>
+                          <th className="text-center py-1">POS</th>
+                          <th className="text-right py-1">IMPORTE</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cart.map((item) => (
+                          <tr key={item.id}>
+                            <td className="py-1 text-white font-bold">
+                              {item.isRedoblona ? `${item.first_number}/${item.second_number}` : item.number}
+                            </td>
+                            <td className="py-1 text-center text-gray-400">
+                              {item.isRedoblona ? `R${item.first_range}/${item.second_range}` : `#${item.position}`}
+                            </td>
+                            <td className="py-1 text-right text-white">${fmt(item.amount * selectedLotteries.length)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="flex justify-between text-gray-300 pt-1 border-t border-dashed border-gray-600/50">
+                      <span>Subtotal {draw.name}</span>
+                      <span>${fmt(drawSubtotal)}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-gray-400 font-normal">
-                    <span>Loterias ({selectedLotteries.length})</span>
-                    <span>× {selectedLotteries.length}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-400 font-normal">
-                    <span>Sorteos ({selectedDraws.length})</span>
-                    <span>× {selectedDraws.length}</span>
-                  </div>
-                  <div className="flex justify-between text-white font-bold pt-1 border-t border-dashed border-gray-600/50">
-                    <span>TOTAL</span>
-                    <span className="text-indigo-300">${fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
-                  </div>
-                </div>
+                );
+              })}
+              <div className="border-t border-dashed border-indigo-500/40 pt-2 flex justify-between text-white font-bold text-base">
+                <span>TOTAL</span>
+                <span className="text-indigo-300">${fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
+              </div>
             </div>
             <div className="p-4 pt-0 flex gap-3">
               <button

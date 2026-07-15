@@ -3,13 +3,13 @@ import api from '../services/api';
 import { FiRefreshCw, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 const prizeTable = [
-  { ubicacion: 1,  cuatro_cifras_todos_los_dias: 175000, tres_cifras_lunes_a_viernes: 30000, tres_cifras_sabados: 35000, dos_cifras_todos_los_dias: 3500 },
-  { ubicacion: 2,  cuatro_cifras_todos_los_dias: 87500,  tres_cifras_lunes_a_viernes: 15000, tres_cifras_sabados: 17500, dos_cifras_todos_los_dias: 1750 },
-  { ubicacion: 3,  cuatro_cifras_todos_los_dias: 58300,  tres_cifras_lunes_a_viernes: 10000, tres_cifras_sabados: 11650, dos_cifras_todos_los_dias: 1165 },
-  { ubicacion: 4,  cuatro_cifras_todos_los_dias: 43750,  tres_cifras_lunes_a_viernes: 7500,  tres_cifras_sabados: 8750,  dos_cifras_todos_los_dias: 875 },
-  { ubicacion: 5,  cuatro_cifras_todos_los_dias: 35000,  tres_cifras_lunes_a_viernes: 6000,  tres_cifras_sabados: 7000,  dos_cifras_todos_los_dias: 700 },
-  { ubicacion: 10, cuatro_cifras_todos_los_dias: 17500,  tres_cifras_lunes_a_viernes: 3000,  tres_cifras_sabados: 3500,  dos_cifras_todos_los_dias: 350 },
-  { ubicacion: 20, cuatro_cifras_todos_los_dias: 8750,   tres_cifras_lunes_a_viernes: 1500,  tres_cifras_sabados: 1750,  dos_cifras_todos_los_dias: 175 },
+  { ubicacion: 1,  cuatro_cifras: 175000, tres_cifras: 30000, dos_cifras: 3500 },
+  { ubicacion: 2,  cuatro_cifras: 87500,  tres_cifras: 15000, dos_cifras: 1750 },
+  { ubicacion: 3,  cuatro_cifras: 58300,  tres_cifras: 10000, dos_cifras: 1165 },
+  { ubicacion: 4,  cuatro_cifras: 43750,  tres_cifras: 7500,  dos_cifras: 875 },
+  { ubicacion: 5,  cuatro_cifras: 35000,  tres_cifras: 6000,  dos_cifras: 700 },
+  { ubicacion: 10, cuatro_cifras: 17500,  tres_cifras: 3000,  dos_cifras: 350 },
+  { ubicacion: 20, cuatro_cifras: 8750,   tres_cifras: 1500,  dos_cifras: 175 },
 ];
 
 function fmt(n) {
@@ -53,8 +53,7 @@ export default function AciertosPage() {
               <tr className="text-gray-300">
                 <th className="p-2 text-left">Ubic</th>
                 <th className="p-2 text-right">4 cifras</th>
-                <th className="p-2 text-right">3 cifras (Lu-Vi)</th>
-                <th className="p-2 text-right">3 cifras (Sab)</th>
+                <th className="p-2 text-right">3 cifras (Lu-Sa)</th>
                 <th className="p-2 text-right">2 cifras</th>
               </tr>
             </thead>
@@ -62,10 +61,9 @@ export default function AciertosPage() {
               {prizeTable.map((row) => (
                 <tr key={row.ubicacion} className="border-t border-gray-700/30 text-gray-200">
                   <td className="p-2 font-bold">#{row.ubicacion}</td>
-                  <td className="p-2 text-right">${row.cuatro_cifras_todos_los_dias.toLocaleString('es-AR')}</td>
-                  <td className="p-2 text-right">${row.tres_cifras_lunes_a_viernes.toLocaleString('es-AR')}</td>
-                  <td className="p-2 text-right">${row.tres_cifras_sabados.toLocaleString('es-AR')}</td>
-                  <td className="p-2 text-right">${row.dos_cifras_todos_los_dias.toLocaleString('es-AR')}</td>
+                  <td className="p-2 text-right">${row.cuatro_cifras.toLocaleString('es-AR')}</td>
+                  <td className="p-2 text-right">${row.tres_cifras.toLocaleString('es-AR')}</td>
+                  <td className="p-2 text-right">${row.dos_cifras.toLocaleString('es-AR')}</td>
                 </tr>
               ))}
             </tbody>

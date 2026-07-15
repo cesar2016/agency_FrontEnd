@@ -5,6 +5,7 @@ import SelectLotteryDraw from './pages/SelectLotteryDraw';
 import PlaceBetPage from './pages/PlaceBetPage';
 
 import AciertosPage from './pages/AciertosPage';
+import HorariosPage from './pages/HorariosPage';
 import DashboardPage from './pages/DashboardPage';
 import ExtractUploadPage from './pages/ExtractUploadPage';
 import CashRegisterPage from './pages/CashRegisterPage';
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/" element={<ProtectedRoute><SelectLotteryDraw /></ProtectedRoute>} />
           <Route path="/bet" element={<ProtectedRoute><PlaceBetPage /></ProtectedRoute>} />
 
+          <Route path="/horarios" element={<ProtectedRoute><HorariosPage /></ProtectedRoute>} />
           <Route path="/aciertos" element={<ProtectedRoute roles={['admin', 'super_admin']}><AciertosPage /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute roles={['admin', 'super_admin']}><DashboardPage /></ProtectedRoute>} />
           <Route path="/extracts" element={<ProtectedRoute roles={['admin', 'super_admin']}><ExtractUploadPage /></ProtectedRoute>} />

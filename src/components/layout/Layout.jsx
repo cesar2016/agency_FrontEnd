@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { FiLogOut, FiDollarSign, FiTrendingUp, FiUpload, FiHome, FiCheckCircle, FiMenu, FiX } from 'react-icons/fi';
+import { FiLogOut, FiDollarSign, FiTrendingUp, FiUpload, FiHome, FiCheckCircle, FiClock, FiMenu, FiX } from 'react-icons/fi';
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -16,6 +16,7 @@ export default function Layout() {
 
   const links = [
     { to: '/', label: 'Apuestas', icon: FiHome },
+    { to: '/horarios', label: 'Horarios', icon: FiClock },
     ...(isAdmin ? [
       { to: '/dashboard', label: 'Dashboard', icon: FiTrendingUp },
       { to: '/aciertos', label: 'Aciertos', icon: FiCheckCircle },

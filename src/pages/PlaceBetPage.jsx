@@ -285,7 +285,7 @@ export default function PlaceBetPage() {
         <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-x-auto">
           <div className="p-3 border-b border-gray-700/50 flex items-center justify-between">
             <h3 className="text-white font-semibold text-sm">Jugadas ({cart.length})</h3>
-            <span className="text-indigo-300 font-bold">$ {fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
+            <span className="text-gray-300 font-bold">Sub total $ {fmt(subtotal)}</span>
           </div>
           <table className="w-full text-sm">
             <thead className="bg-gray-700/30">
@@ -315,12 +315,28 @@ export default function PlaceBetPage() {
               ))}
             </tbody>
           </table>
-          <div className="p-3 border-t border-gray-700/50">
+          <div className="p-3 border-t border-gray-700/50 space-y-1 text-sm">
+            <div className="flex justify-between text-gray-300">
+              <span>Sub total ({cart.length} jugadas)</span>
+              <span>$ {fmt(subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-gray-300">
+              <span>× {selectedLotteries.length} Lotería(s)</span>
+              <span>$ {fmt(subtotal * selectedLotteries.length)}</span>
+            </div>
+            <div className="flex justify-between text-gray-300">
+              <span>× {selectedDraws.length} Turno(s)</span>
+              <span>$ {fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
+            </div>
+            <div className="flex justify-between text-white font-bold text-base pt-1 border-t border-dashed border-gray-600/50">
+              <span>TOTAL</span>
+              <span className="text-indigo-300">$ {fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
+            </div>
             <button
               onClick={() => setShowPreview(true)}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg shadow-indigo-500/20"
+              className="mt-2 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg shadow-indigo-500/20"
             >
-              <FiEye size={16} /> Vista previa de Boleta — $ {fmt(subtotal * selectedLotteries.length * selectedDraws.length)}
+              <FiEye size={16} /> Vista previa de Boleta
             </button>
           </div>
         </div>
@@ -359,7 +375,7 @@ export default function PlaceBetPage() {
                             <td className="py-1 text-center text-gray-400">
                               {item.isRedoblona ? `R${item.first_range}/${item.second_range}` : `#${item.position}`}
                             </td>
-                            <td className="py-1 text-right text-white">${fmt(item.amount * selectedLotteries.length)}</td>
+                            <td className="py-1 text-right text-white">${fmt(item.amount)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -371,9 +387,23 @@ export default function PlaceBetPage() {
                   </div>
                 );
               })}
-              <div className="border-t border-dashed border-indigo-500/40 pt-2 flex justify-between text-white font-bold text-base">
-                <span>TOTAL</span>
-                <span className="text-indigo-300">${fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
+              <div className="border-t border-dashed border-indigo-500/40 pt-2 space-y-1">
+                <div className="flex justify-between text-gray-300 font-bold">
+                  <span>Sub total</span>
+                  <span>${fmt(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-gray-300">
+                  <span>× {selectedLotteries.length} Lotería(s)</span>
+                  <span>${fmt(subtotal * selectedLotteries.length)}</span>
+                </div>
+                <div className="flex justify-between text-gray-300">
+                  <span>× {selectedDraws.length} Turno(s)</span>
+                  <span>${fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
+                </div>
+                <div className="flex justify-between text-white font-bold text-base pt-1 border-t border-dashed border-gray-600/50">
+                  <span>TOTAL</span>
+                  <span className="text-indigo-300">${fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
+                </div>
               </div>
             </div>
             <div className="p-4 pt-0 flex gap-3">

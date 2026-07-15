@@ -24,7 +24,7 @@ function fmt(n) {
 }
 
 export default function PlaceBetPage() {
-  const { selectedLotteries, selectedDraws, lotteries, draws, cart, addToCart, removeFromCart, clearCart, submitBet } = useBet();
+  const { selectedByDraw, selectedDraws, lotteries, draws, cart, addToCart, removeFromCart, clearCart, submitBet, totalMultiplier, lotteryCountForDraw } = useBet();
   const navigate = useNavigate();
 
   const [number, setNumber] = useState('');
@@ -54,9 +54,11 @@ export default function PlaceBetPage() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
 
+  const allSelectedLotteryIds = Array.from(new Set(Object.values(selectedByDraw).flat()));
   const drawNames = draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.name).join(' / ');
-  const lotteryLabels = lotteries.filter((l) => selectedLotteries.includes(l.id)).map((l) => l.initials).join(', ');
+  const lotteryLabels = lotteries.filter((l) => allSelectedLotteryIds.includes(l.id)).map((l) => l.initials).join(', ');
   const subtotal = cart.reduce((acc, i) => acc + i.amount, 0);
+  const total = subtotal * totalMultiplier;
 
   const mapPositionToType = (pos) => {
     if (pos <= 1) return 'primera';
@@ -320,17 +322,19 @@ export default function PlaceBetPage() {
               <span>Sub total ({cart.length} jugadas)</span>
               <span>$ {fmt(subtotal)}</span>
             </div>
-            <div className="flex justify-between text-gray-300">
-              <span>× {selectedLotteries.length} Lotería(s)</span>
-              <span>$ {fmt(subtotal * selectedLotteries.length)}</span>
-            </div>
-            <div className="flex justify-between text-gray-300">
-              <span>× {selectedDraws.length} Turno(s)</span>
-              <span>$ {fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
-            </div>
+            {draws.filter((d) => selectedDraws.includes(d.id)).map((draw) => {
+              const n = lotteryCountForDraw(draw.id);
+              if (n === 0) return null;
+              return (
+                <div key={draw.id} className="flex justify-between text-gray-300">
+                  <span>{draw.name} × {n} Lot</span>
+                  <span>$ {fmt(subtotal * n)}</span>
+                </div>
+              );
+            })}
             <div className="flex justify-between text-white font-bold text-base pt-1 border-t border-dashed border-gray-600/50">
               <span>TOTAL</span>
-              <span className="text-indigo-300">$ {fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
+              <span className="text-indigo-300">$ {fmt(total)}</span>
             </div>
             <button
               onClick={() => setShowPreview(true)}
@@ -354,7 +358,9 @@ export default function PlaceBetPage() {
                 <p className="text-indigo-300 font-bold">{lotteryLabels}</p>
               </div>
               {draws.filter((d) => selectedDraws.includes(d.id)).map((draw) => {
-                const drawSubtotal = subtotal * selectedLotteries.length;
+                const n = lotteryCountForDraw(draw.id);
+                if (n === 0) return null;
+                const drawSubtotal = subtotal * n;
                 return (
                   <div key={draw.id}>
                     <p className="text-center text-white font-bold text-sm mb-1">{draw.name}</p>
@@ -381,7 +387,7 @@ export default function PlaceBetPage() {
                       </tbody>
                     </table>
                     <div className="flex justify-between text-gray-300 pt-1 border-t border-dashed border-gray-600/50">
-                      <span>Subtotal {draw.name}</span>
+                      <span>Subtotal {draw.name} × {n} Lot</span>
                       <span>${fmt(drawSubtotal)}</span>
                     </div>
                   </div>
@@ -392,17 +398,19 @@ export default function PlaceBetPage() {
                   <span>Sub total</span>
                   <span>${fmt(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-gray-300">
-                  <span>× {selectedLotteries.length} Lotería(s)</span>
-                  <span>${fmt(subtotal * selectedLotteries.length)}</span>
-                </div>
-                <div className="flex justify-between text-gray-300">
-                  <span>× {selectedDraws.length} Turno(s)</span>
-                  <span>${fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
-                </div>
+                {draws.filter((d) => selectedDraws.includes(d.id)).map((draw) => {
+                  const n = lotteryCountForDraw(draw.id);
+                  if (n === 0) return null;
+                  return (
+                    <div key={draw.id} className="flex justify-between text-gray-300">
+                      <span>{draw.name} × {n} Lot</span>
+                      <span>${fmt(subtotal * n)}</span>
+                    </div>
+                  );
+                })}
                 <div className="flex justify-between text-white font-bold text-base pt-1 border-t border-dashed border-gray-600/50">
                   <span>TOTAL</span>
-                  <span className="text-indigo-300">${fmt(subtotal * selectedLotteries.length * selectedDraws.length)}</span>
+                  <span className="text-indigo-300">${fmt(total)}</span>
                 </div>
               </div>
             </div>

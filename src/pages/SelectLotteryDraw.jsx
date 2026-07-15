@@ -30,7 +30,7 @@ function lotteryRank(initials) {
 }
 
 export default function SelectLotteryDraw() {
-  const { lotteries, draws, selectedLotteries, setSelectedLotteries, selectedDraws, setSelectedDraws, fetchLotteries, fetchDraws } = useBet();
+  const { lotteries, draws, selectedByDraw, toggleLotteryInDraw, setAllInDraw, fetchLotteries, fetchDraws } = useBet();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
@@ -47,6 +47,8 @@ export default function SelectLotteryDraw() {
       return next;
     });
   };
+
+  const hasSelection = Object.values(selectedByDraw).some((arr) => arr.length > 0);
 
   // Agrupar loterías por sorteo (draw) usando los schedules
   const drawsGrouped = useMemo(() => {
@@ -66,28 +68,15 @@ export default function SelectLotteryDraw() {
   }, [lotteries, draws]);
 
   const toggleLottery = (lotteryId, drawId) => {
-    setSelectedLotteries((prev) =>
-      prev.includes(lotteryId) ? prev.filter((i) => i !== lotteryId) : [...prev, lotteryId]
-    );
-    // Al seleccionar una lotería, asegurar que el sorteo quede seleccionado
-    setSelectedDraws((prev) =>
-      prev.includes(drawId) ? prev : [...prev, drawId]
-    );
+    toggleLotteryInDraw(drawId, lotteryId);
   };
 
   const toggleAllInDraw = (drawId, items) => {
-    const allInDraw = items.every((it) => selectedLotteries.includes(it.lottery.id));
-    if (allInDraw) {
-      setSelectedLotteries((prev) => prev.filter((id) => !items.some((it) => it.lottery.id === id)));
-      setSelectedDraws((prev) => prev.filter((i) => i !== drawId));
-    } else {
-      setSelectedLotteries((prev) => [
-        ...prev,
-        ...items.filter((it) => !prev.includes(it.lottery.id)).map((it) => it.lottery.id),
-      ]);
-      setSelectedDraws((prev) => (prev.includes(drawId) ? prev : [...prev, drawId]));
-    }
+    const allInDraw = items.length > 0 && items.every((it) => (selectedByDraw[drawId] || []).includes(it.lottery.id));
+    setAllInDraw(drawId, items.map((it) => it.lottery.id), !allInDraw);
   };
+
+  const lotteriesInDraw = (drawId) => selectedByDraw[drawId] || [];
 
   if (loading) {
     return (
@@ -106,8 +95,9 @@ export default function SelectLotteryDraw() {
 
       {drawsGrouped.map(({ draw, items }) => {
         const open = openDraws.has(draw.id);
-        const allInDraw = items.length > 0 && items.every((it) => selectedLotteries.includes(it.lottery.id));
-        const someInDraw = items.some((it) => selectedLotteries.includes(it.lottery.id));
+        const drawLots = selectedByDraw[draw.id] || [];
+        const allInDraw = items.length > 0 && items.every((it) => drawLots.includes(it.lottery.id));
+        const someInDraw = items.some((it) => drawLots.includes(it.lottery.id));
         const hasOpen = items.some((it) => !isClosed(it.closingTime));
         return (
           <div key={draw.id} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
@@ -141,7 +131,7 @@ export default function SelectLotteryDraw() {
                 <div className="divide-y divide-gray-700/20 max-h-80 overflow-y-auto">
                   {items.map(({ lottery, closingTime, drawTime }) => {
                     const closed = isClosed(closingTime);
-                    const selected = selectedLotteries.includes(lottery.id);
+                    const selected = drawLots.includes(lottery.id);
                     return (
                       <label
                         key={lottery.id}
@@ -180,7 +170,7 @@ export default function SelectLotteryDraw() {
 
       <button
         onClick={() => navigate('/bet')}
-        disabled={selectedLotteries.length === 0 || selectedDraws.length === 0}
+        disabled={!hasSelection}
         className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl transition shadow-lg shadow-indigo-500/20"
       >
         Continuar <FiArrowRight size={18} />

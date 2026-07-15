@@ -5,13 +5,14 @@ import { FiTrash2, FiArrowLeft, FiCheck, FiDownload, FiX } from 'react-icons/fi'
 import api from '../services/api';
 
 export default function CartPage() {
-  const { cart, removeFromCart, clearCart, submitBet, selectedDraw, draws, selectedLotteries } = useBet();
+  const { cart, removeFromCart, clearCart, submitBet, selectedByDraw, selectedDraws, draws, totalMultiplier, lotteryCountForDraw } = useBet();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
 
   const subtotal = cart.reduce((acc, item) => acc + item.amount, 0);
-  const drawName = draws.find((d) => d.id === selectedDraw)?.name || '';
+  const total = subtotal * totalMultiplier;
+  const drawNames = draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.name).join(' / ');
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -39,7 +40,7 @@ export default function CartPage() {
         </div>
         <h2 className="text-xl font-bold text-white mb-2">Apuesta Registrada</h2>
         <p className="text-indigo-300 text-lg font-mono mb-1">Secuencia: {result.sequence}</p>
-        <p className="text-gray-400 text-sm mb-6">{drawName} | Total: ${result.total}</p>
+        <p className="text-gray-400 text-sm mb-6">{drawNames} | Total: ${result.total}</p>
         <div className="flex gap-3 justify-center">
           <button onClick={() => downloadTicket(result.id)}
             className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm transition">
@@ -76,7 +77,7 @@ export default function CartPage() {
         <>
           <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-x-auto">
             <div className="p-4 border-b border-gray-700/50">
-              <h3 className="text-white font-semibold">{drawName}</h3>
+              <h3 className="text-white font-semibold">{drawNames}</h3>
             </div>
             <table className="w-full text-sm">
               <thead className="bg-gray-700/30">
@@ -108,18 +109,24 @@ export default function CartPage() {
                 ))}
               </tbody>
             </table>
-            <div className="p-4 border-t border-gray-700/50 space-y-1">
+            <div className="p-4 border-t border-gray-700/50 space-y-1 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-400 text-sm">Subtotal</span>
+                <span className="text-gray-400">Subtotal</span>
                 <span className="text-gray-300">${subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400 text-sm">Loterias ({selectedLotteries.length})</span>
-                <span className="text-gray-300">× {selectedLotteries.length}</span>
-              </div>
+              {draws.filter((d) => selectedDraws.includes(d.id)).map((draw) => {
+                const n = lotteryCountForDraw(draw.id);
+                if (n === 0) return null;
+                return (
+                  <div key={draw.id} className="flex justify-between">
+                    <span className="text-gray-400">{draw.name} × {n} Lot</span>
+                    <span className="text-gray-300">${(subtotal * n).toFixed(2)}</span>
+                  </div>
+                );
+              })}
               <div className="flex justify-between pt-1 border-t border-gray-700/30">
                 <span className="text-white font-semibold">TOTAL A PAGAR</span>
-                <span className="text-indigo-300 font-bold">${(subtotal * selectedLotteries.length).toFixed(2)}</span>
+                <span className="text-indigo-300 font-bold">${total.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -129,7 +136,7 @@ export default function CartPage() {
             disabled={submitting}
             className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white font-medium py-3 rounded-xl transition shadow-lg shadow-indigo-500/20"
           >
-            {submitting ? 'Procesando...' : `Emitir Ticket - $${(subtotal * selectedLotteries.length).toFixed(2)}`}
+            {submitting ? 'Procesando...' : `Emitir Ticket - $${total.toFixed(2)}`}
           </button>
         </>
       )}

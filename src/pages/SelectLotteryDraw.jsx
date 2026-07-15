@@ -64,12 +64,6 @@ export default function SelectLotteryDraw() {
     );
   };
 
-  const toggleDraw = (drawId) => {
-    setSelectedDraws((prev) =>
-      prev.includes(drawId) ? prev.filter((i) => i !== drawId) : [...prev, drawId]
-    );
-  };
-
   const toggleAllInDraw = (drawId, items) => {
     const allInDraw = items.every((it) => selectedLotteries.includes(it.lottery.id));
     if (allInDraw) {
@@ -101,9 +95,9 @@ export default function SelectLotteryDraw() {
 
       {drawsGrouped.map(({ draw, items }) => {
         const open = openDraws.has(draw.id);
-        const drawSelected = selectedDraws.includes(draw.id);
         const allInDraw = items.length > 0 && items.every((it) => selectedLotteries.includes(it.lottery.id));
         const someInDraw = items.some((it) => selectedLotteries.includes(it.lottery.id));
+        const hasOpen = items.some((it) => !isClosed(it.closingTime));
         return (
           <div key={draw.id} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between p-4">
@@ -115,25 +109,17 @@ export default function SelectLotteryDraw() {
                 <span className="text-white font-semibold text-base">{draw.name}</span>
                 <span className="text-xs text-gray-500 bg-gray-700/50 px-2 py-0.5 rounded-full">{items.length}</span>
               </button>
-              <label className="flex items-center gap-2 cursor-pointer" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="checkbox"
-                  checked={drawSelected}
-                  onChange={() => toggleDraw(draw.id)}
-                  className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
-                />
-                <span className="text-xs text-gray-400">Seleccionar turno</span>
-              </label>
             </div>
 
             {open && (
               <div className="border-t border-gray-700/30">
                 <div className="flex items-center justify-between px-4 py-2 bg-gray-700/20">
                   <span className="text-xs text-gray-400">Loterías de este turno (hora de cierre)</span>
-                  <label className="flex items-center gap-1.5 cursor-pointer text-xs text-indigo-300">
+                  <label className={`flex items-center gap-1.5 text-xs ${hasOpen ? 'cursor-pointer text-indigo-300' : 'cursor-not-allowed text-gray-600'}`}>
                     <input
                       type="checkbox"
                       checked={allInDraw}
+                      disabled={!hasOpen}
                       ref={(el) => { if (el) el.indeterminate = !allInDraw && someInDraw; }}
                       onChange={() => toggleAllInDraw(draw.id, items)}
                       className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"

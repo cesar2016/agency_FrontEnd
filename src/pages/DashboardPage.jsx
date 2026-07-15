@@ -22,10 +22,15 @@ export default function DashboardPage() {
     setBets(data.data || data);
   }, [filterDate, filterDrawIds]);
 
-  useEffect(() => {
-    api.get('/dashboard/stats').then((r) => setStats(r.data));
-    api.get('/draws').then((r) => setDraws(r.data));
+  const fetchStats = useCallback(async () => {
+    const { data } = await api.get('/dashboard/stats');
+    setStats(data);
   }, []);
+
+  useEffect(() => {
+    fetchStats();
+    api.get('/draws').then((r) => setDraws(r.data));
+  }, [fetchStats]);
 
   useEffect(() => { fetchBets(); }, [fetchBets]);
 
@@ -35,6 +40,7 @@ export default function DashboardPage() {
       await api.delete(`/bets/${deleteId}`);
       setDeleteId(null);
       fetchBets();
+      fetchStats();
     } catch {
       alert('Error al eliminar');
     }

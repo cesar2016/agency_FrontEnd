@@ -58,7 +58,7 @@ export default function PlaceBetPage() {
   const drawNames = draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.name).join(' / ');
   const lotteryLabels = lotteries.filter((l) => allSelectedLotteryIds.includes(l.id)).map((l) => l.initials).join(', ');
   const subtotal = cart.reduce((acc, i) => acc + i.amount, 0);
-  const total = subtotal * totalMultiplier;
+  const total = subtotal * totalMultiplier * selectedDraws.length;
 
   const mapPositionToType = (pos) => {
     if (pos <= 1) return 'primera';
@@ -332,6 +332,10 @@ export default function PlaceBetPage() {
                 </div>
               );
             })}
+            <div className="flex justify-between text-gray-300">
+              <span>× {selectedDraws.length} Turno(s)</span>
+              <span>$ {fmt(total)}</span>
+            </div>
             <div className="flex justify-between text-white font-bold text-base pt-1 border-t border-dashed border-gray-600/50">
               <span>TOTAL</span>
               <span className="text-indigo-300">$ {fmt(total)}</span>
@@ -410,6 +414,10 @@ export default function PlaceBetPage() {
                     </div>
                   );
                 })}
+                <div className="flex justify-between text-gray-300">
+                  <span>× {selectedDraws.length} Turno(s)</span>
+                  <span>${fmt(total)}</span>
+                </div>
                 <div className="flex justify-between text-white font-bold text-base pt-1 border-t border-dashed border-gray-600/50">
                   <span>TOTAL</span>
                   <span className="text-indigo-300">${fmt(total)}</span>

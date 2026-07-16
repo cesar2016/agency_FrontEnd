@@ -222,7 +222,7 @@ export default function ScrapeExtractsPage() {
                         </div>
 
                         {openExtract === lot.extract_id && lot.extract_id && (
-                          <ExtractNumbers drawId={draw.draw_id} lotteryId={lot.lottery_id} date={date} busy={busy} onProcess={processExtract} flash={flash} />
+                          <ExtractNumbers drawId={draw.draw_id} lotteryId={lot.lottery_id} date={date} extractId={lot.extract_id} busy={busy} onProcess={processExtract} flash={flash} />
                         )}
 
                         {pasteFor && pasteFor.drawId === draw.draw_id && pasteFor.lot.lottery_id === lot.lottery_id && (
@@ -268,25 +268,30 @@ export default function ScrapeExtractsPage() {
   );
 }
 
-function ExtractNumbers({ drawId, lotteryId, date, busy, onProcess, flash }) {
+function ExtractNumbers({ drawId, lotteryId, date, extractId: propExtractId, busy, onProcess, flash }) {
   const [nums, setNums] = useState([]);
   const [status, setStatus] = useState(null);
-  const [extractId, setExtractId] = useState(null);
+  const [extractId, setExtractId] = useState(propExtractId ?? null);
 
   useEffect(() => {
     let active = true;
-    api.get('/extracts', { params: { lottery_id: lotteryId, draw_id: drawId, date } })
-      .then((r) => {
-        const list = r.data.data || r.data;
-        const ex = Array.isArray(list) ? list[0] : null;
-        if (active && ex) {
-          setExtractId(ex.id);
-          setStatus(ex.status);
-          setNums((ex.numbers || []).slice().sort((a, b) => a.position - b.position));
-        }
-      });
+    if (propExtractId) {
+      setExtractId(propExtractId);
+    }
+    const load = propExtractId
+      ? api.get(`/extracts/${propExtractId}`)
+      : api.get('/extracts', { params: { lottery_id: lotteryId, draw_id: drawId, date } });
+
+    load.then((r) => {
+      const ex = r.data.data ?? r.data;
+      if (active && ex) {
+        setExtractId(ex.id);
+        setStatus(ex.status);
+        setNums((ex.numbers || []).slice().sort((a, b) => a.position - b.position));
+      }
+    });
     return () => { active = false; };
-  }, [drawId, lotteryId, date]);
+  }, [drawId, lotteryId, date, propExtractId]);
 
   const hasNumbers = nums.length > 0;
 

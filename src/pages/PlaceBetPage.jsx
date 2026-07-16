@@ -354,16 +354,18 @@ export default function PlaceBetPage() {
               <p className="text-white font-bold font-mono text-xs mt-1">BOLETA</p>
             </div>
             <div className="p-4 font-mono text-xs space-y-3 text-gray-200">
-              <div className="text-center border-b border-dashed border-gray-600/50 pb-2">
-                <p className="text-indigo-300 font-bold">{lotteryLabels}</p>
-              </div>
               {draws.filter((d) => selectedDraws.includes(d.id)).map((draw) => {
-                const n = lotteryCountForDraw(draw.id);
-                if (n === 0) return null;
+                const lotIds = selectedByDraw[draw.id] || [];
+                if (lotIds.length === 0) return null;
+                const lotInitials = lotIds
+                  .map((id) => lotteries.find((l) => l.id === id)?.initials)
+                  .filter(Boolean);
+                const n = lotIds.length;
                 const drawSubtotal = subtotal * n;
                 return (
                   <div key={draw.id}>
                     <p className="text-center text-white font-bold text-sm mb-1">{draw.name}</p>
+                    <p className="text-center text-indigo-300 font-bold mb-2">{lotInitials.join(' · ')}</p>
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-dashed border-gray-600/50 text-gray-400">

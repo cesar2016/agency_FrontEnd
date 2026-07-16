@@ -187,11 +187,11 @@ export default function ScrapeExtractsPage() {
                           <div className="flex items-center gap-2">
                             {lot.completed ? (
                               <span className="flex items-center gap-1 text-xs text-green-300 bg-green-500/15 px-2 py-1 rounded-full">
-                                <FiCheckCircle size={13} /> {lot.count}/20
+                                <FiCheckCircle size={13} /> {lot.count} cargado{lot.count === 1 ? '' : 's'}
                               </span>
                             ) : (
                               <span className="flex items-center gap-1 text-xs text-yellow-300 bg-yellow-500/15 px-2 py-1 rounded-full">
-                                <FiClock size={13} /> {lot.count}/20
+                                <FiClock size={13} /> sin cargar
                               </span>
                             )}
                             {!lot.completed && (
@@ -288,17 +288,17 @@ function ExtractNumbers({ drawId, lotteryId, date, busy, onProcess, flash }) {
     return () => { active = false; };
   }, [drawId, lotteryId, date]);
 
-  const completed = nums.length >= 20;
+  const hasNumbers = nums.length > 0;
 
   return (
     <div className="mt-3 bg-gray-900/40 rounded-xl p-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-gray-400">{nums.length}/20 números</span>
+        <span className="text-xs text-gray-400">{nums.length} número(s) cargado(s)</span>
         {extractId && status === 'pending' && (
           <button
             onClick={() => onProcess(extractId)}
-            disabled={!completed || busy[`proc-${extractId}`]}
-            title={completed ? '' : 'Completá los 20 números para calcular'}
+            disabled={!hasNumbers || busy[`proc-${extractId}`]}
+            title={hasNumbers ? '' : 'Cargá el número para calcular'}
             className="flex items-center gap-1 text-xs bg-emerald-600/40 hover:bg-emerald-600/60 text-emerald-200 px-2.5 py-1 rounded-lg transition disabled:opacity-40"
           >
             {busy[`proc-${extractId}`] ? <FiRefreshCw size={12} className="animate-spin" /> : <FiPlay size={12} />}

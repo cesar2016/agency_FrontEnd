@@ -21,6 +21,7 @@ export default function Layout() {
       { to: '/dashboard', label: 'Dashboard', icon: FiTrendingUp },
       { to: '/aciertos', label: 'Aciertos', icon: FiCheckCircle },
       { to: '/extracts', label: 'Extractos', icon: FiUpload },
+      { to: '/extracts/scrape', label: 'Scrapear', icon: FiDownload },
       { to: '/cash-register', label: 'Arqueo', icon: FiDollarSign },
     ] : []),
   ];

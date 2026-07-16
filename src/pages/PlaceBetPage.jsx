@@ -27,6 +27,12 @@ export default function PlaceBetPage() {
   const { selectedByDraw, selectedDraws, lotteries, draws, cart, addToCart, removeFromCart, clearCart, submitBet, totalMultiplier, lotteryCountForDraw } = useBet();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!result && selectedDraws.length === 0) {
+      navigate('/', { replace: true });
+    }
+  }, [result, selectedDraws, navigate]);
+
   const [number, setNumber] = useState('');
   const [position, setPosition] = useState('');
   const [amount, setAmount] = useState('');

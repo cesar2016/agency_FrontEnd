@@ -65,21 +65,18 @@ export function BetProvider({ children }) {
 
   // Activa/desactiva un grupo de favoritos explícitamente (no se deriva de la selección manual)
   const toggleGroupInDraw = useCallback((drawId, groupNum, ids) => {
-    let willActivate = false;
+    const currentGroups = selectedGroupsByDraw[drawId] ? [...selectedGroupsByDraw[drawId]] : [];
+    const willActivate = !currentGroups.includes(groupNum);
     setSelectedGroupsByDraw((prevGroups) => {
-      const currentGroups = prevGroups[drawId] ? [...prevGroups[drawId]] : [];
-      willActivate = !currentGroups.includes(groupNum);
+      const g = prevGroups[drawId] ? [...prevGroups[drawId]] : [];
+      const next = willActivate ? [...g, groupNum] : g.filter((x) => x !== groupNum);
       const copyGroups = { ...prevGroups };
-      if (willActivate) {
-        copyGroups[drawId] = [...currentGroups, groupNum];
-      } else {
-        copyGroups[drawId] = currentGroups.filter((g) => g !== groupNum);
-        if (copyGroups[drawId].length === 0) delete copyGroups[drawId];
-      }
+      if (next.length === 0) delete copyGroups[drawId];
+      else copyGroups[drawId] = next;
       return copyGroups;
     });
     setManyInDraw(drawId, ids, willActivate);
-  }, [setManyInDraw]);
+  }, [selectedGroupsByDraw, setManyInDraw]);
 
   const addToCart = (item) => {
     setCart((prev) => [...prev, { ...item, id: Date.now() }]);

@@ -124,7 +124,13 @@ export default function SelectLotteryDraw() {
         const someInDraw = openItems.some((it) => drawLots.includes(it.lottery.id));
         const hasOpen = openItems.length > 0;
         return (
-          <div key={draw.id} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
+          <div key={draw.id} className={`relative bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden ${hasOpen ? '' : 'opacity-60'}`}>
+            {!hasOpen && (
+              <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-1">
+                <FiLock className="text-red-500" size={26} />
+                <span className="text-xs font-semibold text-red-500">Cerrado</span>
+              </div>
+            )}
             <div className="flex items-center justify-between p-4">
               <button
                 onClick={() => toggleOpen(draw.id)}

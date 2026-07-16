@@ -29,8 +29,30 @@ function lotteryRank(initials) {
   return i === -1 ? 999 : i;
 }
 
+// Grupos de "Loterías Principales"
+const PRINCIPAL_GROUPS = {
+  5: ['NAC', 'PBA', 'CBA', 'SF', 'ER'],
+  8: ['NAC', 'PBA', 'CBA', 'SF', 'ER', 'MZA', 'CTES', 'CH'],
+  9: ['NAC', 'PBA', 'CBA', 'SF', 'ER', 'MZA', 'CTES', 'CH', 'URU'],
+};
+
+const PRINCIPAL_GROUP_LABEL = {
+  5: '5 Principales',
+  8: '8 Principales',
+  9: '9 Principales',
+};
+
+// Qué grupos de principales ofrece cada turno
+const DRAW_PRINCIPAL_GROUPS = {
+  'La Previa':  [5, 8],
+  'Primera':    [5, 8],
+  'Matutina':   [5, 9],
+  'Vespertina': [5, 8],
+  'Noctura':    [5, 9],
+};
+
 export default function SelectLotteryDraw() {
-  const { lotteries, draws, selectedByDraw, toggleLotteryInDraw, setAllInDraw, fetchLotteries, fetchDraws } = useBet();
+  const { lotteries, draws, selectedByDraw, toggleLotteryInDraw, setAllInDraw, setManyInDraw, fetchLotteries, fetchDraws } = useBet();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
@@ -116,8 +138,33 @@ export default function SelectLotteryDraw() {
 
             {open && (
               <div className="border-t border-gray-700/30">
-                <div className="flex items-center justify-between px-4 py-2 bg-gray-700/20">
-                  <span className="text-xs text-gray-400">Loterías de este turno (hora de cierre)</span>
+                <div className="flex items-center justify-between gap-3 px-4 py-2 bg-gray-700/20">
+                  <div className="flex items-center gap-3">
+                    {(DRAW_PRINCIPAL_GROUPS[draw.name] || []).map((g) => {
+                      const groupIds = openItems
+                        .filter((it) => PRINCIPAL_GROUPS[g].includes(it.lottery.initials))
+                        .map((it) => it.lottery.id);
+                      const allSel = groupIds.length > 0 && groupIds.every((id) => drawLots.includes(id));
+                      const someSel = groupIds.some((id) => drawLots.includes(id));
+                      return (
+                        <label
+                          key={g}
+                          className={`flex items-center gap-1.5 text-xs ${hasOpen ? 'cursor-pointer text-emerald-300' : 'cursor-not-allowed text-gray-600'}`}
+                          title={`Lección rápida: ${PRINCIPAL_GROUP_LABEL[g]}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={allSel}
+                            disabled={!hasOpen || groupIds.length === 0}
+                            ref={(el) => { if (el) el.indeterminate = !allSel && someSel; }}
+                            onChange={() => setManyInDraw(draw.id, groupIds, !allSel)}
+                            className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          {PRINCIPAL_GROUP_LABEL[g]}
+                        </label>
+                      );
+                    })}
+                  </div>
                   <label className={`flex items-center gap-1.5 text-xs ${hasOpen ? 'cursor-pointer text-indigo-300' : 'cursor-not-allowed text-gray-600'}`}>
                     <input
                       type="checkbox"

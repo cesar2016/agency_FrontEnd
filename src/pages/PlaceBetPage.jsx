@@ -60,6 +60,26 @@ export default function PlaceBetPage() {
   const subtotal = cart.reduce((acc, i) => acc + i.amount, 0);
   const total = subtotal * totalMultiplier;
 
+  const closingTimeFor = (drawId, lotteryId) => {
+    const l = lotteries.find((x) => x.id === lotteryId);
+    const sched = l?.schedules?.find((s) => s.draw_id === drawId);
+    return sched?.closing_time || null;
+  };
+
+  const isClosedFor = (drawId, lotteryId) => {
+    const ct = closingTimeFor(drawId, lotteryId);
+    if (!ct) return false;
+    const now = new Date();
+    const [h, m] = ct.split(':').map(Number);
+    const close = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+    return now > close;
+  };
+
+  const closedSelection = selectedDraws.find((drawId) =>
+    (selectedByDraw[drawId] || []).some((lotId) => isClosedFor(drawId, lotId))
+  );
+  const hasClosedSelection = closedSelection !== undefined;
+
   const mapPositionToType = (pos) => {
     if (pos <= 1) return 'primera';
     if (pos <= 5) return 'a_los_5';
@@ -114,13 +134,18 @@ export default function PlaceBetPage() {
   };
 
   const handleGenerate = async () => {
+    if (hasClosedSelection) {
+      setError('No se pueden registrar apuestas: el horario de cierre de uno o más sorteos ya pasó.');
+      return;
+    }
     setSubmitting(true);
     try {
       const data = await submitBet();
       setResult(data);
       setShowPreview(false);
-    } catch {
-      alert('Error al generar la boleta');
+    } catch (e) {
+      const msg = e?.response?.data?.message;
+      alert(msg || 'Error al generar la boleta');
     } finally {
       setSubmitting(false);
     }
@@ -425,7 +450,7 @@ export default function PlaceBetPage() {
               </button>
               <button
                 onClick={handleGenerate}
-                disabled={submitting}
+                disabled={submitting || hasClosedSelection}
                 className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg shadow-green-500/20"
               >
                 <FiCheck size={16} /> {submitting ? 'Generando...' : 'Compartir'}

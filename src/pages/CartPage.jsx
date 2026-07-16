@@ -5,7 +5,7 @@ import { FiTrash2, FiArrowLeft, FiCheck, FiDownload, FiX } from 'react-icons/fi'
 import api from '../services/api';
 
 export default function CartPage() {
-  const { cart, removeFromCart, clearCart, submitBet, selectedByDraw, selectedDraws, draws, totalMultiplier, lotteryCountForDraw } = useBet();
+  const { cart, removeFromCart, clearCart, submitBet, selectedByDraw, selectedDraws, draws, lotteries, totalMultiplier, lotteryCountForDraw } = useBet();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
@@ -14,13 +14,31 @@ export default function CartPage() {
   const total = subtotal * totalMultiplier;
   const drawNames = draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.name).join(' / ');
 
+  const isClosedFor = (drawId, lotteryId) => {
+    const l = lotteries.find((x) => x.id === lotteryId);
+    const ct = l?.schedules?.find((s) => s.draw_id === drawId)?.closing_time;
+    if (!ct) return false;
+    const now = new Date();
+    const [h, m] = ct.split(':').map(Number);
+    const close = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+    return now > close;
+  };
+  const hasClosedSelection = selectedDraws.some((drawId) =>
+    (selectedByDraw[drawId] || []).some((lotId) => isClosedFor(drawId, lotId))
+  );
+
   const handleSubmit = async () => {
+    if (hasClosedSelection) {
+      alert('No se pueden registrar apuestas: el horario de cierre de uno o más sorteos ya pasó.');
+      return;
+    }
     setSubmitting(true);
     try {
       const data = await submitBet();
       setResult(data);
-    } catch {
-      alert('Error al enviar la apuesta');
+    } catch (e) {
+      const msg = e?.response?.data?.message;
+      alert(msg || 'Error al enviar la apuesta');
     } finally {
       setSubmitting(false);
     }
@@ -133,7 +151,7 @@ export default function CartPage() {
 
           <button
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || hasClosedSelection}
             className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white font-medium py-3 rounded-xl transition shadow-lg shadow-indigo-500/20"
           >
             {submitting ? 'Procesando...' : `Emitir Ticket - $${total.toFixed(2)}`}

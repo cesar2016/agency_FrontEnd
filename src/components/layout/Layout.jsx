@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { FiLogOut, FiDollarSign, FiTrendingUp, FiUpload, FiHome, FiCheckCircle, FiClock, FiMenu, FiX } from 'react-icons/fi';
+import { FiLogOut, FiDollarSign, FiTrendingUp, FiUpload, FiHome, FiCheckCircle, FiClock, FiMenu, FiX, FiDownload } from 'react-icons/fi';
 
 export default function Layout() {
   const { user, logout } = useAuth();

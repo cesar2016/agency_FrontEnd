@@ -69,8 +69,10 @@ export default function PlaceBetPage() {
 
   const closingTimeFor = (drawId, lotteryId) => {
     const l = lotteries.find((x) => x.id === lotteryId);
-    const sched = l?.schedules?.find((s) => s.draw_id === drawId);
-    return sched?.closing_time || null;
+    const matching = (l?.schedules || []).filter((s) => s.draw_id === drawId);
+    if (matching.length === 0) return null;
+    const latest = matching.reduce((a, s) => (!a || s.draw_time > a.draw_time ? s : a));
+    return latest?.closing_time || null;
   };
 
   const isClosedFor = (drawId, lotteryId) => {

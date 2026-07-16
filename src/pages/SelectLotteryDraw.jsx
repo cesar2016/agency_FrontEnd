@@ -11,8 +11,17 @@ function isClosed(closingTime) {
   return now > close;
 }
 
-function todayLabel() {
-  const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+// Para una lotería puede haber varios sorteos en un turno (p. ej. San Juan Matutina
+// 14:30 y 15:00). Usamos el horario más tardío como el efectivo para mostrar y cerrar.
+function effectiveSchedule(schedules, drawId) {
+  const matching = (schedules || []).filter((s) => s.draw_id === drawId);
+  if (matching.length === 0) return null;
+  return matching.reduce((latest, s) =>
+    !latest || s.draw_time > latest.draw_time ? s : latest
+  );
+}
+
+function todayLabel() {  const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   const meses = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
   const d = new Date();
   return `${dias[d.getDay()]} ${d.getDate()}/${meses[d.getMonth()]}/${d.getFullYear()}`;
@@ -80,7 +89,7 @@ export default function SelectLotteryDraw() {
       .map((draw) => {
         const items = lotteries
           .map((l) => {
-            const sched = l.schedules?.find((s) => s.draw_id === draw.id);
+            const sched = effectiveSchedule(l.schedules, draw.id);
             return sched ? { lottery: l, closingTime: sched.closing_time, drawTime: sched.draw_time } : null;
           })
           .filter(Boolean)

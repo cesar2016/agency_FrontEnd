@@ -11,6 +11,8 @@ export function BetProvider({ children }) {
   const [selectedByDraw, setSelectedByDraw] = useState({});
   // Grupos de favoritos activados explícitamente por turno: { [drawId]: [groupNum, ...] }
   const [selectedGroupsByDraw, setSelectedGroupsByDraw] = useState({});
+  // "Todas" activado explícitamente por turno: { [drawId]: true }
+  const [selectedAllByDraw, setSelectedAllByDraw] = useState({});
 
   const fetchLotteries = useCallback(async () => {
     const { data } = await api.get('/lotteries');
@@ -78,6 +80,19 @@ export function BetProvider({ children }) {
     setManyInDraw(drawId, ids, willActivate);
   }, [selectedGroupsByDraw, setManyInDraw]);
 
+  // Activa/desactiva "Todas" explícitamente (no se deriva de la selección manual)
+  const toggleAllInDraw = useCallback((drawId, ids) => {
+    const current = !!selectedAllByDraw[drawId];
+    const willActivate = !current;
+    setSelectedAllByDraw((prev) => {
+      const copy = { ...prev };
+      if (willActivate) copy[drawId] = true;
+      else delete copy[drawId];
+      return copy;
+    });
+    setManyInDraw(drawId, ids, willActivate);
+  }, [selectedAllByDraw, setManyInDraw]);
+
   const addToCart = (item) => {
     setCart((prev) => [...prev, { ...item, id: Date.now() }]);
   };
@@ -134,6 +149,7 @@ export function BetProvider({ children }) {
         lotteries, draws, cart,
         selectedByDraw, selectedDraws, selectedLotteries,
         selectedGroupsByDraw, toggleGroupInDraw,
+        selectedAllByDraw, toggleAllInDraw,
         toggleLotteryInDraw, setAllInDraw, setManyInDraw, clearSelection,
         lotteryCountForDraw, totalMultiplier,
         fetchLotteries, fetchDraws,

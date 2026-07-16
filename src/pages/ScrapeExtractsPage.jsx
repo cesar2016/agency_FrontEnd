@@ -210,9 +210,9 @@ export default function ScrapeExtractsPage() {
                             >
                               Pegar
                             </button>
-                            {(lot.extract_id || lot.last_extract_id) && (
+                            {lot.extract_id && (
                               <button
-                                onClick={() => setOpenExtract(openExtract === (lot.extract_id ?? lot.last_extract_id) ? null : (lot.extract_id ?? lot.last_extract_id))}
+                                onClick={() => setOpenExtract(openExtract === lot.extract_id ? null : lot.extract_id)}
                                 className="flex items-center gap-1 text-xs bg-gray-700/50 hover:bg-gray-700 text-gray-200 px-2.5 py-1 rounded-lg transition"
                               >
                                 <FiGrid size={12} /> Ver

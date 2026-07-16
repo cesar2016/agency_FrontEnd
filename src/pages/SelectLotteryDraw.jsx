@@ -71,9 +71,10 @@ export default function SelectLotteryDraw() {
     toggleLotteryInDraw(drawId, lotteryId);
   };
 
-  const toggleAllInDraw = (drawId, items) => {
-    const allInDraw = items.length > 0 && items.every((it) => (selectedByDraw[drawId] || []).includes(it.lottery.id));
-    setAllInDraw(drawId, items.map((it) => it.lottery.id), !allInDraw);
+  const toggleAllInDraw = (drawId, openItems) => {
+    const openIds = openItems.map((it) => it.lottery.id);
+    const allSelected = openIds.length > 0 && openIds.every((id) => (selectedByDraw[drawId] || []).includes(id));
+    setAllInDraw(drawId, openIds, !allSelected);
   };
 
   const lotteriesInDraw = (drawId) => selectedByDraw[drawId] || [];
@@ -96,9 +97,10 @@ export default function SelectLotteryDraw() {
       {drawsGrouped.map(({ draw, items }) => {
         const open = openDraws.has(draw.id);
         const drawLots = selectedByDraw[draw.id] || [];
-        const allInDraw = items.length > 0 && items.every((it) => drawLots.includes(it.lottery.id));
-        const someInDraw = items.some((it) => drawLots.includes(it.lottery.id));
-        const hasOpen = items.some((it) => !isClosed(it.closingTime));
+        const openItems = items.filter((it) => !isClosed(it.closingTime));
+        const allInDraw = openItems.length > 0 && openItems.every((it) => drawLots.includes(it.lottery.id));
+        const someInDraw = openItems.some((it) => drawLots.includes(it.lottery.id));
+        const hasOpen = openItems.length > 0;
         return (
           <div key={draw.id} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between p-4">
@@ -122,7 +124,7 @@ export default function SelectLotteryDraw() {
                       checked={allInDraw}
                       disabled={!hasOpen}
                       ref={(el) => { if (el) el.indeterminate = !allInDraw && someInDraw; }}
-                      onChange={() => toggleAllInDraw(draw.id, items)}
+                      onChange={() => toggleAllInDraw(draw.id, openItems)}
                       className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
                     />
                     Todas

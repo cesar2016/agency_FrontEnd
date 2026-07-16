@@ -11,7 +11,7 @@ export default function CartPage() {
   const [result, setResult] = useState(null);
 
   const subtotal = cart.reduce((acc, item) => acc + item.amount, 0);
-  const total = subtotal * totalMultiplier * selectedDraws.length;
+  const total = subtotal * totalMultiplier;
   const drawNames = draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.name).join(' / ');
 
   const handleSubmit = async () => {
@@ -124,10 +124,6 @@ export default function CartPage() {
                   </div>
                 );
               })}
-              <div className="flex justify-between">
-                <span className="text-gray-400">× {selectedDraws.length} Turno(s)</span>
-                <span className="text-gray-300">${total.toFixed(2)}</span>
-              </div>
               <div className="flex justify-between pt-1 border-t border-gray-700/30">
                 <span className="text-white font-semibold">TOTAL A PAGAR</span>
                 <span className="text-indigo-300 font-bold">${total.toFixed(2)}</span>

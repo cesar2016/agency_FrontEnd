@@ -19,9 +19,9 @@ function todayLabel() {
 }
 
 const LOTTERY_ORDER = [
-  'NAC', 'PBA', 'SF', 'CBA', 'ER', 'MZA', 'CTES', 'CH', 'CAT', 'FSA',
-  'JUJ', 'LR', 'MIS', 'NQN', 'RN', 'SAL', 'SL', 'SC', 'SGO', 'TUC',
-  'CT', 'SJ', 'URU',
+  'NAC', 'PBA', 'SF', 'CBA', 'CBAT', 'ER', 'ERT', 'MZA', 'CTES', 'CH', 'CAT', 'FSA', 'FSAQ',
+  'JUJ', 'LR', 'MIS', 'NQN', 'RN', 'SAL', 'SALR', 'SL', 'SC', 'SGO', 'TUC',
+  'CT', 'SJ', 'URU', 'PAR',
 ];
 
 function lotteryRank(initials) {

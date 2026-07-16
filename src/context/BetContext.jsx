@@ -9,6 +9,8 @@ export function BetProvider({ children }) {
   const [cart, setCart] = useState([]);
   // Selección por turno: { [drawId]: [lotteryId, ...] }
   const [selectedByDraw, setSelectedByDraw] = useState({});
+  // Grupos de favoritos activados explícitamente por turno: { [drawId]: [groupNum, ...] }
+  const [selectedGroupsByDraw, setSelectedGroupsByDraw] = useState({});
 
   const fetchLotteries = useCallback(async () => {
     const { data } = await api.get('/lotteries');
@@ -42,7 +44,28 @@ export function BetProvider({ children }) {
     });
   }, []);
 
-  const clearSelection = useCallback(() => setSelectedByDraw({}), []);
+  const clearSelection = useCallback(() => {
+    setSelectedByDraw({});
+    setSelectedGroupsByDraw({});
+  }, []);
+
+  // Activa/desactiva un grupo de favoritos explícitamente (no se deriva de la selección manual)
+  const toggleGroupInDraw = useCallback((drawId, groupNum, ids) => {
+    let willActivate = false;
+    setSelectedGroupsByDraw((prevGroups) => {
+      const currentGroups = prevGroups[drawId] ? [...prevGroups[drawId]] : [];
+      willActivate = !currentGroups.includes(groupNum);
+      const copyGroups = { ...prevGroups };
+      if (willActivate) {
+        copyGroups[drawId] = [...currentGroups, groupNum];
+      } else {
+        copyGroups[drawId] = currentGroups.filter((g) => g !== groupNum);
+        if (copyGroups[drawId].length === 0) delete copyGroups[drawId];
+      }
+      return copyGroups;
+    });
+    setManyInDraw(drawId, ids, willActivate);
+  }, [setManyInDraw]);
 
   // Selecciona/deselecciona un conjunto de loterías en un turno (usado por "Loterías Principales")
   const setManyInDraw = useCallback((drawId, ids, select) => {
@@ -113,6 +136,7 @@ export function BetProvider({ children }) {
       value={{
         lotteries, draws, cart,
         selectedByDraw, selectedDraws, selectedLotteries,
+        selectedGroupsByDraw, toggleGroupInDraw,
         toggleLotteryInDraw, setAllInDraw, setManyInDraw, clearSelection,
         lotteryCountForDraw, totalMultiplier,
         fetchLotteries, fetchDraws,

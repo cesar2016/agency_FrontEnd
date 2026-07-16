@@ -52,7 +52,7 @@ const DRAW_PRINCIPAL_GROUPS = {
 };
 
 export default function SelectLotteryDraw() {
-  const { lotteries, draws, selectedByDraw, toggleLotteryInDraw, setAllInDraw, setManyInDraw, fetchLotteries, fetchDraws } = useBet();
+  const { lotteries, draws, selectedByDraw, selectedGroupsByDraw, toggleLotteryInDraw, setAllInDraw, setManyInDraw, toggleGroupInDraw, fetchLotteries, fetchDraws } = useBet();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
@@ -150,20 +150,18 @@ export default function SelectLotteryDraw() {
                       const groupIds = openItems
                         .filter((it) => PRINCIPAL_GROUPS[g].includes(it.lottery.initials))
                         .map((it) => it.lottery.id);
-                      const allSel = groupIds.length > 0 && groupIds.every((id) => drawLots.includes(id));
-                      const someSel = groupIds.some((id) => drawLots.includes(id));
+                      const active = (selectedGroupsByDraw[draw.id] || []).includes(g);
                       return (
                         <label
                           key={g}
-                          className={`flex items-center gap-1.5 text-xs ${hasOpen ? 'cursor-pointer text-emerald-300' : 'cursor-not-allowed text-gray-600'}`}
+                          className={`flex items-center gap-1.5 text-xs ${hasOpen && groupIds.length > 0 ? 'cursor-pointer text-emerald-300' : 'cursor-not-allowed text-gray-600'}`}
                           title={`Lección rápida: ${PRINCIPAL_GROUP_LABEL[g]}`}
                         >
                           <input
                             type="checkbox"
-                            checked={allSel}
+                            checked={active}
                             disabled={!hasOpen || groupIds.length === 0}
-                            ref={(el) => { if (el) el.indeterminate = !allSel && someSel; }}
-                            onChange={() => setManyInDraw(draw.id, groupIds, !allSel)}
+                            onChange={() => toggleGroupInDraw(draw.id, g, groupIds)}
                             className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-emerald-600 focus:ring-emerald-500"
                           />
                           {PRINCIPAL_GROUP_LABEL[g]}

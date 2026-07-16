@@ -27,6 +27,8 @@ export default function PlaceBetPage() {
   const { selectedByDraw, selectedDraws, lotteries, draws, cart, addToCart, removeFromCart, clearCart, submitBet, totalMultiplier, lotteryCountForDraw } = useBet();
   const navigate = useNavigate();
 
+  const [result, setResult] = useState(null);
+
   useEffect(() => {
     if (!result && selectedDraws.length === 0) {
       navigate('/', { replace: true });
@@ -58,7 +60,6 @@ export default function PlaceBetPage() {
   const [openRedoblona, setOpenRedoblona] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState(null);
 
   const allSelectedLotteryIds = Array.from(new Set(Object.values(selectedByDraw).flat()));
   const drawNames = draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.name).join(' / ');

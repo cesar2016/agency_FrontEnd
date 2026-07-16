@@ -49,6 +49,20 @@ export function BetProvider({ children }) {
     setSelectedGroupsByDraw({});
   }, []);
 
+  // Selecciona/deselecciona un conjunto de loterías en un turno (usado por "Loterías Principales")
+  const setManyInDraw = useCallback((drawId, ids, select) => {
+    setSelectedByDraw((prev) => {
+      const current = prev[drawId] ? [...prev[drawId]] : [];
+      const next = select
+        ? Array.from(new Set([...current, ...ids]))
+        : current.filter((id) => !ids.includes(id));
+      const copy = { ...prev };
+      if (next.length === 0) delete copy[drawId];
+      else copy[drawId] = next;
+      return copy;
+    });
+  }, []);
+
   // Activa/desactiva un grupo de favoritos explícitamente (no se deriva de la selección manual)
   const toggleGroupInDraw = useCallback((drawId, groupNum, ids) => {
     let willActivate = false;
@@ -66,20 +80,6 @@ export function BetProvider({ children }) {
     });
     setManyInDraw(drawId, ids, willActivate);
   }, [setManyInDraw]);
-
-  // Selecciona/deselecciona un conjunto de loterías en un turno (usado por "Loterías Principales")
-  const setManyInDraw = useCallback((drawId, ids, select) => {
-    setSelectedByDraw((prev) => {
-      const current = prev[drawId] ? [...prev[drawId]] : [];
-      const next = select
-        ? Array.from(new Set([...current, ...ids]))
-        : current.filter((id) => !ids.includes(id));
-      const copy = { ...prev };
-      if (next.length === 0) delete copy[drawId];
-      else copy[drawId] = next;
-      return copy;
-    });
-  }, []);
 
   const addToCart = (item) => {
     setCart((prev) => [...prev, { ...item, id: Date.now() }]);

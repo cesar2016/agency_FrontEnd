@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import {
   FiChevronDown, FiChevronUp, FiDownload, FiRefreshCw,
-  FiCheckCircle, FiClock, FiGrid, FiAlertTriangle,
+  FiCheckCircle, FiClock, FiGrid, FiAlertTriangle, FiTrash2,
 } from 'react-icons/fi';
 
 const LOTTERY_ORDER = [
@@ -59,33 +59,36 @@ export default function ScrapeExtractsPage() {
     });
   };
 
-  const scrapeOne = async (drawId, lot) => {
-    const key = `${drawId}-${lot.lottery_id}`;
-    if (lot.completed) return;
+  // Scrape manual desactivado temporalmente (se carga por texto / automático).
+  // const scrapeOne = async (drawId, lot) => { ... };
+  // const scrapeTurn = async (draw) => { ... };
+
+  const deleteOne = async (drawId, lot) => {
+    const key = `del-${drawId}-${lot.lottery_id}`;
     setBusy((b) => ({ ...b, [key]: true }));
     try {
-      const { data } = await api.post('/extracts/scrape', {
-        lottery_id: lot.lottery_id, draw_id: drawId,
+      await api.post('/extracts/delete-grilla', {
+        draw_id: drawId, lottery_id: lot.lottery_id,
       });
-      flash(`Extracto ${lot.initials} / ${draws.find((d) => d.draw_id === drawId)?.draw_name} cargado`);
+      flash(`Grilla de ${lot.initials} / ${draws.find((d) => d.draw_id === drawId)?.draw_name} eliminada`);
       await load();
-      setOpenExtract(data.extract?.id ?? openExtract);
     } catch (e) {
-      flash(e?.response?.data?.message || 'Error al scrapear');
+      flash(e?.response?.data?.message || 'Error al eliminar');
     } finally {
       setBusy((b) => ({ ...b, [key]: false }));
     }
   };
 
-  const scrapeTurn = async (draw) => {
-    const key = `turn-${draw.draw_id}`;
+  const deleteTurn = async (draw) => {
+    const key = `del-turn-${draw.draw_id}`;
+    if (!window.confirm(`¿Eliminar la grilla de TODAS las loterías del turno ${draw.draw_name}?`)) return;
     setBusy((b) => ({ ...b, [key]: true }));
     try {
-      const { data } = await api.post('/extracts/scrape-turn', { draw_id: draw.draw_id });
+      const { data } = await api.post('/extracts/delete-turn-grilla', { draw_id: draw.draw_id });
       flash(data.message);
       await load();
     } catch (e) {
-      flash(e?.response?.data?.message || 'Error al scrapear el turno');
+      flash(e?.response?.data?.message || 'Error al eliminar el turno');
     } finally {
       setBusy((b) => ({ ...b, [key]: false }));
     }
@@ -106,7 +109,7 @@ export default function ScrapeExtractsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-bold text-white">Extractos</h2>
-          <p className="text-sm text-gray-400">Resultados de hoy. Scrapeá por lotería o todo el turno. Los completos (20 números) se saltan.</p>
+          <p className="text-sm text-gray-400">Resultados de hoy. Cargá desde texto o eliminá grillas por turno.</p>
         </div>
       </div>
 
@@ -181,12 +184,12 @@ export default function ScrapeExtractsPage() {
                 {openDraws.has(draw.draw_id) ? <FiChevronUp className="text-gray-400" /> : <FiChevronDown className="text-gray-400" />}
               </button>
               <button
-                onClick={() => scrapeTurn(draw)}
-                disabled={busy[`turn-${draw.draw_id}`]}
-                className="flex items-center gap-1.5 text-xs bg-indigo-600/40 hover:bg-indigo-600/60 text-indigo-200 px-3 py-1.5 rounded-lg transition disabled:opacity-50"
+                onClick={() => deleteTurn(draw)}
+                disabled={busy[`del-turn-${draw.draw_id}`]}
+                className="flex items-center gap-1.5 text-xs bg-red-600/40 hover:bg-red-600/60 text-red-200 px-3 py-1.5 rounded-lg transition disabled:opacity-50"
               >
-                {busy[`turn-${draw.draw_id}`] ? <FiRefreshCw size={13} className="animate-spin" /> : <FiDownload size={13} />}
-                Scrapear turno
+                {busy[`del-turn-${draw.draw_id}`] ? <FiRefreshCw size={13} className="animate-spin" /> : <FiTrash2 size={13} />}
+                Eliminar turno
               </button>
             </div>
 
@@ -195,7 +198,7 @@ export default function ScrapeExtractsPage() {
                 {[...draw.lotteries]
                   .sort((a, b) => lotteryRank(a.initials) - lotteryRank(b.initials))
                   .map((lot) => {
-                    const key = `${draw.draw_id}-${lot.lottery_id}`;
+                    const key = `del-${draw.draw_id}-${lot.lottery_id}`;
                     return (
                       <div key={lot.lottery_id} className="px-5 py-3">
                         <div className="flex items-center justify-between">
@@ -210,35 +213,35 @@ export default function ScrapeExtractsPage() {
                                <span className="text-xs text-gray-500">Sorteo {lot.draw_time} · Cierre {lot.closing_time}</span>
                              )}
                            </div>
-                          <div className="flex items-center gap-2">
-                            {lot.completed ? (
-                              <span className="flex items-center gap-1 text-xs text-green-300 bg-green-500/15 px-2 py-1 rounded-full">
-                                <FiCheckCircle size={13} /> {lot.count} cargado{lot.count === 1 ? '' : 's'}
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1 text-xs text-yellow-300 bg-yellow-500/15 px-2 py-1 rounded-full">
-                                <FiClock size={13} /> sin cargar
-                              </span>
-                            )}
-                            {!lot.completed && (
-                              <button
-                                onClick={() => scrapeOne(draw.draw_id, lot)}
-                                disabled={busy[key]}
-                                className="flex items-center gap-1 text-xs bg-indigo-600/40 hover:bg-indigo-600/60 text-indigo-200 px-2.5 py-1 rounded-lg transition disabled:opacity-50"
-                              >
-                                {busy[key] ? <FiRefreshCw size={12} className="animate-spin" /> : <FiDownload size={12} />}
-                                Scrapear
-                              </button>
-                            )}
-                            {lot.extract_id && (
-                              <button
-                                onClick={() => setOpenExtract(openExtract === lot.extract_id ? null : lot.extract_id)}
-                                className="flex items-center gap-1 text-xs bg-gray-700/50 hover:bg-gray-700 text-gray-200 px-2.5 py-1 rounded-lg transition"
-                              >
-                                <FiGrid size={12} /> Ver
-                              </button>
-                            )}
-                          </div>
+                           <div className="flex items-center gap-2">
+                             {lot.completed ? (
+                               <span className="flex items-center gap-1 text-xs text-green-300 bg-green-500/15 px-2 py-1 rounded-full">
+                                 <FiCheckCircle size={13} /> {lot.count} cargado{lot.count === 1 ? '' : 's'}
+                               </span>
+                             ) : (
+                               <span className="flex items-center gap-1 text-xs text-yellow-300 bg-yellow-500/15 px-2 py-1 rounded-full">
+                                 <FiClock size={13} /> sin cargar
+                               </span>
+                             )}
+                             {lot.extract_id && (
+                               <button
+                                 onClick={() => setOpenExtract(openExtract === lot.extract_id ? null : lot.extract_id)}
+                                 className="flex items-center gap-1 text-xs bg-gray-700/50 hover:bg-gray-700 text-gray-200 px-2.5 py-1 rounded-lg transition"
+                               >
+                                 <FiGrid size={12} /> Ver
+                               </button>
+                             )}
+                             {lot.extract_id && (
+                               <button
+                                 onClick={() => deleteOne(draw.draw_id, lot)}
+                                 disabled={busy[key]}
+                                 className="flex items-center gap-1 text-xs bg-red-600/40 hover:bg-red-600/60 text-red-200 px-2.5 py-1 rounded-lg transition disabled:opacity-50"
+                               >
+                                 {busy[key] ? <FiRefreshCw size={12} className="animate-spin" /> : <FiTrash2 size={12} />}
+                                 Eliminar
+                               </button>
+                             )}
+                           </div>
                         </div>
 
                         {openExtract === lot.extract_id && lot.extract_id && (

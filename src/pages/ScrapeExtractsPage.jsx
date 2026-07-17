@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import {
-  FiChevronDown, FiChevronUp, FiDownload, FiRefreshCw, FiPlay,
+  FiChevronDown, FiChevronUp, FiDownload, FiRefreshCw,
   FiCheckCircle, FiClock, FiGrid, FiAlertTriangle,
 } from 'react-icons/fi';
 
@@ -84,19 +84,6 @@ export default function ScrapeExtractsPage() {
       flash(e?.response?.data?.message || 'Error al scrapear el turno');
     } finally {
       setBusy((b) => ({ ...b, [key]: false }));
-    }
-  };
-
-  const processExtract = async (extractId) => {
-    setBusy((b) => ({ ...b, [`proc-${extractId}`]: true }));
-    try {
-      await api.post(`/scrutiny/${extractId}`);
-      flash('Escrutinio calculado');
-      await load();
-    } catch {
-      flash('Error al calcular premios');
-    } finally {
-      setBusy((b) => ({ ...b, [`proc-${extractId}`]: false }));
     }
   };
 
@@ -251,7 +238,7 @@ export default function ScrapeExtractsPage() {
                         </div>
 
                         {openExtract === lot.extract_id && lot.extract_id && (
-                          <ExtractNumbers drawId={draw.draw_id} lotteryId={lot.lottery_id} extractId={lot.extract_id} busy={busy} onProcess={processExtract} flash={flash} />
+                          <ExtractNumbers drawId={draw.draw_id} lotteryId={lot.lottery_id} extractId={lot.extract_id} />
                         )}
                       </div>
                     );
@@ -265,7 +252,7 @@ export default function ScrapeExtractsPage() {
   );
 }
 
-function ExtractNumbers({ drawId, lotteryId, extractId: propExtractId, busy, onProcess, flash }) {
+function ExtractNumbers({ drawId, lotteryId, extractId: propExtractId }) {
   const [nums, setNums] = useState([]);
   const [status, setStatus] = useState(null);
   const [extractId, setExtractId] = useState(propExtractId ?? null);
@@ -292,19 +279,11 @@ function ExtractNumbers({ drawId, lotteryId, extractId: propExtractId, busy, onP
     <div className="mt-3 bg-gray-900/40 rounded-xl p-3">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-gray-400">{nums.length} número(s) cargado(s)</span>
-        {extractId && status === 'pending' && (
-          <button
-            onClick={() => onProcess(extractId)}
-            disabled={!hasNumbers || busy[`proc-${extractId}`]}
-            title={hasNumbers ? '' : 'Cargá el número para calcular'}
-            className="flex items-center gap-1 text-xs bg-emerald-600/40 hover:bg-emerald-600/60 text-emerald-200 px-2.5 py-1 rounded-lg transition disabled:opacity-40"
-          >
-            {busy[`proc-${extractId}`] ? <FiRefreshCw size={12} className="animate-spin" /> : <FiPlay size={12} />}
-            Calcular premios
-          </button>
-        )}
         {status === 'completed' && (
-          <span className="text-xs text-green-300 bg-green-500/15 px-2 py-1 rounded-full">Procesado</span>
+          <span className="text-xs text-green-300 bg-green-500/15 px-2 py-1 rounded-full">Premios calculados</span>
+        )}
+        {status === 'pending' && hasNumbers && (
+          <span className="text-xs text-yellow-300 bg-yellow-500/15 px-2 py-1 rounded-full">Calculando…</span>
         )}
       </div>
       <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">

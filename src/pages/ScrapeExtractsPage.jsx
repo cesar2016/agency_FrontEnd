@@ -17,7 +17,6 @@ function lotteryRank(initials) {
 }
 
 export default function ScrapeExtractsPage() {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [draws, setDraws] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
@@ -30,15 +29,17 @@ export default function ScrapeExtractsPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  // Siempre se muestran los resultados de hoy (el backend filtra por la fecha
+  // actual de Buenos Aires). No se usa ningun filtro de fecha.
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/extracts/scrape/status', { params: { date } });
+      const { data } = await api.get('/extracts/scrape/status');
       setDraws(data.draws || []);
     } finally {
       setLoading(false);
     }
-  }, [date]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -57,7 +58,7 @@ export default function ScrapeExtractsPage() {
     setBusy((b) => ({ ...b, [key]: true }));
     try {
       const { data } = await api.post('/extracts/scrape', {
-        lottery_id: lot.lottery_id, draw_id: drawId, date,
+        lottery_id: lot.lottery_id, draw_id: drawId,
       });
       flash(`Extracto ${lot.initials} / ${draws.find((d) => d.draw_id === drawId)?.draw_name} cargado`);
       await load();
@@ -73,7 +74,7 @@ export default function ScrapeExtractsPage() {
     const key = `turn-${draw.draw_id}`;
     setBusy((b) => ({ ...b, [key]: true }));
     try {
-      const { data } = await api.post('/extracts/scrape-turn', { draw_id: draw.draw_id, date });
+      const { data } = await api.post('/extracts/scrape-turn', { draw_id: draw.draw_id });
       flash(data.message);
       await load();
     } catch (e) {
@@ -106,7 +107,6 @@ export default function ScrapeExtractsPage() {
       const { data } = await api.post('/extracts/parse', {
         lottery_id: pasteFor.lot.lottery_id,
         draw_id: pasteFor.drawId,
-        date,
         raw: pasteText,
       });
       flash(`Extracto ${pasteFor.lot.initials} cargado (${data.extract?.numbers?.length ?? 0} números)`);
@@ -135,14 +135,8 @@ export default function ScrapeExtractsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-bold text-white">Scrapear Extractos</h2>
-          <p className="text-sm text-gray-400">Igual que Horarios: por turno. Scrapeá por lotería o todo el turno. Los completos (20 números) se saltan.</p>
+          <p className="text-sm text-gray-400">Resultados de hoy. Scrapeá por lotería o todo el turno. Los completos (20 números) se saltan.</p>
         </div>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-        />
       </div>
 
       {draws.map((draw) => {
@@ -222,7 +216,7 @@ export default function ScrapeExtractsPage() {
                         </div>
 
                         {openExtract === lot.extract_id && lot.extract_id && (
-                          <ExtractNumbers drawId={draw.draw_id} lotteryId={lot.lottery_id} date={date} extractId={lot.extract_id} busy={busy} onProcess={processExtract} flash={flash} />
+                          <ExtractNumbers drawId={draw.draw_id} lotteryId={lot.lottery_id} extractId={lot.extract_id} busy={busy} onProcess={processExtract} flash={flash} />
                         )}
 
                         {pasteFor && pasteFor.drawId === draw.draw_id && pasteFor.lot.lottery_id === lot.lottery_id && (
@@ -268,7 +262,7 @@ export default function ScrapeExtractsPage() {
   );
 }
 
-function ExtractNumbers({ drawId, lotteryId, date, extractId: propExtractId, busy, onProcess, flash }) {
+function ExtractNumbers({ drawId, lotteryId, extractId: propExtractId, busy, onProcess, flash }) {
   const [nums, setNums] = useState([]);
   const [status, setStatus] = useState(null);
   const [extractId, setExtractId] = useState(propExtractId ?? null);
@@ -278,11 +272,7 @@ function ExtractNumbers({ drawId, lotteryId, date, extractId: propExtractId, bus
     if (propExtractId) {
       setExtractId(propExtractId);
     }
-    const load = propExtractId
-      ? api.get(`/extracts/${propExtractId}`)
-      : api.get('/extracts', { params: { lottery_id: lotteryId, draw_id: drawId, date } });
-
-    load.then((r) => {
+    api.get(`/extracts/${propExtractId}`).then((r) => {
       const ex = r.data.data ?? r.data;
       if (active && ex) {
         setExtractId(ex.id);
@@ -291,7 +281,7 @@ function ExtractNumbers({ drawId, lotteryId, date, extractId: propExtractId, bus
       }
     });
     return () => { active = false; };
-  }, [drawId, lotteryId, date, propExtractId]);
+  }, [propExtractId]);
 
   const hasNumbers = nums.length > 0;
 

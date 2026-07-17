@@ -9,7 +9,7 @@ const api = axios.create({
 // que no cambian al navegar entre secciones (loterias, horarios, me, draws).
 // Reduce el delay perceptivo en produccion (la BD remota tarda ~0.8s por query).
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
-const GET_CACHE_KEY = 'api_get_cache_v1';
+const GET_CACHE_KEY = 'api_get_cache_v2';
 
 function readCache() {
   try {

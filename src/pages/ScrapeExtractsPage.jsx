@@ -38,7 +38,9 @@ export default function ScrapeExtractsPage() {
     setLoading(true);
     try {
       const { data } = await api.get('/extracts/scrape/status');
-      setDraws(data.draws || []);
+      const raw = Array.isArray(data?.draws) ? data.draws : [];
+      // Normaliza por si el backend devuelve lotteries como no-array.
+      setDraws(raw.map((d) => ({ ...d, lotteries: Array.isArray(d?.lotteries) ? d.lotteries : [] })));
     } finally {
       setLoading(false);
     }

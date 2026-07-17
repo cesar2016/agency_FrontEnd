@@ -6,7 +6,8 @@ import { FiLogOut, FiDollarSign, FiTrendingUp, FiHome, FiCheckCircle, FiClock, F
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const isAdmin = user?.roles?.some((r) => ['admin', 'super_admin'].includes(r));
+  const roles = Array.isArray(user?.roles) ? user.roles : [];
+  const isAdmin = roles.some((r) => ['admin', 'super_admin'].includes(r));
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = async () => {

@@ -15,7 +15,8 @@ function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex items-center justify-center min-h-screen text-white">Cargando...</div>;
   if (!user) return <Navigate to="/login" />;
-  if (roles && !roles.some((r) => user.roles?.includes(r))) return <Navigate to="/" />;
+  const userRoles = Array.isArray(user.roles) ? user.roles : [];
+  if (roles && !roles.some((r) => userRoles.includes(r))) return <Navigate to="/" />;
   return children;
 }
 

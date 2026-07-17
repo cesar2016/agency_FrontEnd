@@ -3,6 +3,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8383/api',
   headers: { Accept: 'application/json' },
+  timeout: 25000,
 });
 
 // Cache ligero de respuestas GET en sessionStorage para no recargar datos
@@ -69,7 +70,16 @@ api.interceptors.response.use(
     }
     return response;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    // Si la peticion GET fallo (timeout/red), limpiamos la cache de ese
+    // endpoint para no quedar atrapados con una respuesta vieja/rota.
+    if (error?.config && (error.config.method || 'get').toLowerCase() === 'get' && error.config.url) {
+      const map = readCache();
+      delete map[cacheKey(error.config.url)];
+      writeCache(map);
+    }
+    return Promise.reject(error);
+  }
 );
 
 export default api;

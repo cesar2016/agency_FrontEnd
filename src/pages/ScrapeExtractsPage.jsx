@@ -41,6 +41,8 @@ export default function ScrapeExtractsPage() {
       const raw = Array.isArray(data?.draws) ? data.draws : [];
       // Normaliza por si el backend devuelve lotteries como no-array.
       setDraws(raw.map((d) => ({ ...d, lotteries: Array.isArray(d?.lotteries) ? d.lotteries : [] })));
+    } catch (e) {
+      flash(e?.response?.data?.message || e?.message || 'No se pudo cargar el estado de extractos');
     } finally {
       setLoading(false);
     }

@@ -281,12 +281,6 @@ function ExtractNumbers({ drawId, lotteryId, extractId: propExtractId }) {
     <div className="mt-3 bg-gray-900/40 rounded-xl p-3">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-gray-400">{nums.length} número(s) cargado(s)</span>
-        {status === 'completed' && (
-          <span className="text-xs text-green-300 bg-green-500/15 px-2 py-1 rounded-full">Premios calculados</span>
-        )}
-        {status === 'pending' && hasNumbers && (
-          <span className="text-xs text-yellow-300 bg-yellow-500/15 px-2 py-1 rounded-full">Calculando…</span>
-        )}
       </div>
       <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
         {nums.map((n) => (

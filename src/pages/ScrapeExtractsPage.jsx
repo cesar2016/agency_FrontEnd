@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import {
   FiChevronDown, FiChevronUp, FiDownload, FiRefreshCw, FiPlay,
-  FiCheckCircle, FiClock, FiGrid,
+  FiCheckCircle, FiClock, FiGrid, FiAlertTriangle,
 } from 'react-icons/fi';
 
 const LOTTERY_ORDER = [
@@ -208,11 +208,17 @@ export default function ScrapeExtractsPage() {
                     return (
                       <div key={lot.lottery_id} className="px-5 py-3">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-indigo-300 w-8">{lot.initials}</span>
-                            <span className="text-gray-200 text-sm">{lot.name}</span>
-                            <span className="text-xs text-gray-500">Sorteo {lot.draw_time} · Cierre {lot.closing_time}</span>
-                          </div>
+                           <div className="flex items-center gap-2">
+                             <span className="font-mono font-bold text-indigo-300 w-8">{lot.initials}</span>
+                             <span className="text-gray-200 text-sm">{lot.name}</span>
+                             {lot.defect ? (
+                               <span className="flex items-center gap-1 text-xs text-red-300 bg-red-500/15 border border-red-500/40 px-2 py-0.5 rounded-full" title={lot.defect_note || 'Sin horario'}>
+                                 <FiAlertTriangle size={11} /> defect{lot.defect_note ? `: ${lot.defect_note}` : ''}
+                               </span>
+                             ) : (
+                               <span className="text-xs text-gray-500">Sorteo {lot.draw_time} · Cierre {lot.closing_time}</span>
+                             )}
+                           </div>
                           <div className="flex items-center gap-2">
                             {lot.completed ? (
                               <span className="flex items-center gap-1 text-xs text-green-300 bg-green-500/15 px-2 py-1 rounded-full">

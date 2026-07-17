@@ -38,9 +38,12 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   // Para GET, devolver cache fresco si existe (sin tocar la red).
-  if ((config.method || 'get').toLowerCase() === 'get' && config.url) {
+  // No cacheamos los detalles de extractos (/extracts/{id}) porque deben
+  // reflejar la grilla real y completa en todo momento.
+  const url = config.url || '';
+  if ((config.method || 'get').toLowerCase() === 'get' && url && !url.startsWith('/extracts/')) {
     const map = readCache();
-    const entry = map[cacheKey(config.url)];
+    const entry = map[cacheKey(url)];
     if (entry && Date.now() - entry.t < CACHE_TTL) {
       config.adapter = () =>
         Promise.resolve({
@@ -59,7 +62,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     const url = response.config.url || '';
-    if ((response.config.method || 'get').toLowerCase() === 'get' && url) {
+    // No cacheamos detalles de extractos; el resto de GETs sí.
+    if ((response.config.method || 'get').toLowerCase() === 'get' && url && !url.startsWith('/extracts/')) {
       const map = readCache();
       map[cacheKey(url)] = { t: Date.now(), data: response.data };
       writeCache(map);

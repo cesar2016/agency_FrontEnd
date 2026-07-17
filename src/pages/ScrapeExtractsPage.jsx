@@ -23,6 +23,9 @@ export default function ScrapeExtractsPage() {
   const [busy, setBusy] = useState({}); // claves: turno o "turno-loteria"
   const [openExtract, setOpenExtract] = useState(null);
   const [toast, setToast] = useState(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const flash = (msg) => {
     setToast(msg);
@@ -137,6 +140,61 @@ export default function ScrapeExtractsPage() {
           <h2 className="text-xl font-bold text-white">Scrapear Extractos</h2>
           <p className="text-sm text-gray-400">Resultados de hoy. Scrapeá por lotería o todo el turno. Los completos (20 números) se saltan.</p>
         </div>
+      </div>
+
+      {/* Carga masiva desde texto de resultados */}
+      <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
+        <button
+          onClick={() => setBulkOpen((v) => !v)}
+          className="flex items-center justify-between w-full px-5 py-4 text-left hover:opacity-80 transition"
+        >
+          <span className="flex items-center gap-2 text-indigo-300 font-semibold">
+            {bulkOpen ? <FiChevronUp /> : <FiChevronDown />}
+            Cargar resultados desde texto
+          </span>
+          <span className="text-xs text-gray-500">Pegá el bloque de resultados (fecha, sorteo y loterías)</span>
+        </button>
+        {bulkOpen && (
+          <div className="border-t border-gray-700/30 p-4 space-y-3">
+            <textarea
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+              rows={8}
+              placeholder={'📊 RESULTADOS QUINIELA 📊\n🕒 SORTEO: NOCTURNA\n📅 FECHA: 2026-07-16\n\n🎰 PROVINCIA\n01°: 8459    11°: 1964\n...'}
+              className="w-full bg-gray-900/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-indigo-500"
+            />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={async () => {
+                  if (!bulkText.trim()) return;
+                  setBulkBusy(true);
+                  try {
+                    const { data } = await api.post('/extracts/parse-bulk', { raw: bulkText });
+                    flash(`Cargados ${data.stored} extractos. Fecha ${data.date} · ${data.draw_name}` +
+                      (data.unmatched?.length ? ` · sin match: ${data.unmatched.join(', ')}` : ''));
+                    setBulkText('');
+                    setBulkOpen(false);
+                    await load();
+                  } catch (e) {
+                    flash(e?.response?.data?.message || 'Error al procesar el texto');
+                  } finally {
+                    setBulkBusy(false);
+                  }
+                }}
+                disabled={bulkBusy || !bulkText.trim()}
+                className="flex items-center gap-1.5 text-sm bg-indigo-600/50 hover:bg-indigo-600/70 text-indigo-100 px-4 py-2 rounded-lg transition disabled:opacity-50"
+              >
+                {bulkBusy ? <FiRefreshCw size={14} className="animate-spin" /> : <FiDownload size={14} />}
+                Procesar y cargar
+              </button>
+              {bulkOpen && (
+                <span className="text-xs text-gray-500">
+                  Las loterías sin match en la base quedan marcadas como “sin match”.
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {draws.map((draw) => {

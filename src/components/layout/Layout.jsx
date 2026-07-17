@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { FiLogOut, FiDollarSign, FiTrendingUp, FiUpload, FiHome, FiCheckCircle, FiClock, FiMenu, FiX, FiDownload } from 'react-icons/fi';
+import { FiLogOut, FiDollarSign, FiTrendingUp, FiHome, FiCheckCircle, FiClock, FiMenu, FiX, FiList } from 'react-icons/fi';
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -20,8 +20,7 @@ export default function Layout() {
     ...(isAdmin ? [
       { to: '/dashboard', label: 'Dashboard', icon: FiTrendingUp },
       { to: '/aciertos', label: 'Aciertos', icon: FiCheckCircle },
-      { to: '/extracts', label: 'Extractos', icon: FiUpload },
-      { to: '/extracts/scrape', label: 'Scrapear', icon: FiDownload },
+      { to: '/extracts/scrape', label: 'Extractos', icon: FiList },
       { to: '/cash-register', label: 'Arqueo', icon: FiDollarSign },
     ] : []),
   ];

@@ -7,7 +7,6 @@ import PlaceBetPage from './pages/PlaceBetPage';
 import AciertosPage from './pages/AciertosPage';
 import HorariosPage from './pages/HorariosPage';
 import DashboardPage from './pages/DashboardPage';
-import ExtractUploadPage from './pages/ExtractUploadPage';
 import ScrapeExtractsPage from './pages/ScrapeExtractsPage';
 import CashRegisterPage from './pages/CashRegisterPage';
 import Layout from './components/layout/Layout';
@@ -32,7 +31,6 @@ export default function App() {
           <Route path="/horarios" element={<ProtectedRoute><HorariosPage /></ProtectedRoute>} />
           <Route path="/aciertos" element={<ProtectedRoute roles={['admin', 'super_admin']}><AciertosPage /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute roles={['admin', 'super_admin']}><DashboardPage /></ProtectedRoute>} />
-          <Route path="/extracts" element={<ProtectedRoute roles={['admin', 'super_admin']}><ExtractUploadPage /></ProtectedRoute>} />
           <Route path="/extracts/scrape" element={<ProtectedRoute roles={['admin', 'super_admin']}><ScrapeExtractsPage /></ProtectedRoute>} />
           <Route path="/cash-register" element={<ProtectedRoute roles={['admin', 'super_admin']}><CashRegisterPage /></ProtectedRoute>} />
         </Route>

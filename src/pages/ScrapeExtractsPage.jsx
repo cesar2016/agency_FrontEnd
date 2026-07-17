@@ -100,29 +100,6 @@ export default function ScrapeExtractsPage() {
     }
   };
 
-  const [pasteFor, setPasteFor] = useState(null); // { drawId, lot }
-  const [pasteText, setPasteText] = useState('');
-
-  const submitPaste = async () => {
-    if (!pasteFor) return;
-    setBusy((b) => ({ ...b, [`paste-${pasteFor.drawId}-${pasteFor.lot.lottery_id}`]: true }));
-    try {
-      const { data } = await api.post('/extracts/parse', {
-        lottery_id: pasteFor.lot.lottery_id,
-        draw_id: pasteFor.drawId,
-        raw: pasteText,
-      });
-      flash(`Extracto ${pasteFor.lot.initials} cargado (${data.extract?.numbers?.length ?? 0} números)`);
-      setPasteFor(null);
-      setPasteText('');
-      await load();
-    } catch (e) {
-      flash(e?.response?.data?.message || 'Error al cargar desde texto');
-    } finally {
-      setBusy((b) => ({ ...b, [`paste-${pasteFor.drawId}-${pasteFor.lot.lottery_id}`]: false }));
-    }
-  };
-
   if (loading) {
     return <div className="flex justify-center pt-20"><FiRefreshCw className="animate-spin text-indigo-400" size={28} /></div>;
   }
@@ -137,7 +114,7 @@ export default function ScrapeExtractsPage() {
 
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-bold text-white">Scrapear Extractos</h2>
+          <h2 className="text-xl font-bold text-white">Extractos</h2>
           <p className="text-sm text-gray-400">Resultados de hoy. Scrapeá por lotería o todo el turno. Los completos (20 números) se saltan.</p>
         </div>
       </div>
@@ -256,12 +233,6 @@ export default function ScrapeExtractsPage() {
                                 Scrapear
                               </button>
                             )}
-                            <button
-                              onClick={() => { setPasteFor({ drawId: draw.draw_id, lot }); setPasteText(''); }}
-                              className="flex items-center gap-1 text-xs bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 px-2.5 py-1 rounded-lg transition"
-                            >
-                              Pegar
-                            </button>
                             {lot.extract_id && (
                               <button
                                 onClick={() => setOpenExtract(openExtract === lot.extract_id ? null : lot.extract_id)}
@@ -275,38 +246,6 @@ export default function ScrapeExtractsPage() {
 
                         {openExtract === lot.extract_id && lot.extract_id && (
                           <ExtractNumbers drawId={draw.draw_id} lotteryId={lot.lottery_id} extractId={lot.extract_id} busy={busy} onProcess={processExtract} flash={flash} />
-                        )}
-
-                        {pasteFor && pasteFor.drawId === draw.draw_id && pasteFor.lot.lottery_id === lot.lottery_id && (
-                          <div className="mt-3 bg-gray-900/40 rounded-xl p-3 space-y-2">
-                            <p className="text-xs text-gray-400">
-                              Pegá los 20 números de <span className="text-indigo-300">{lot.initials} / {draw.draw_name}</span>
-                              (copiá el texto de la página o los números separados por espacios/coma).
-                            </p>
-                            <textarea
-                              value={pasteText}
-                              onChange={(e) => setPasteText(e.target.value)}
-                              rows={3}
-                              placeholder="Ej: 2715 8815 4478 ..."
-                              className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-indigo-500"
-                            />
-                            <div className="flex gap-2">
-                              <button
-                                onClick={submitPaste}
-                                disabled={busy[`paste-${draw.draw_id}-${lot.lottery_id}`] || !pasteText.trim()}
-                                className="flex items-center gap-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg transition disabled:opacity-50"
-                              >
-                                {busy[`paste-${draw.draw_id}-${lot.lottery_id}`] ? <FiRefreshCw size={12} className="animate-spin" /> : <FiCheckCircle size={12} />}
-                                Cargar
-                              </button>
-                              <button
-                                onClick={() => setPasteFor(null)}
-                                className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-1.5 rounded-lg transition"
-                              >
-                                Cancelar
-                              </button>
-                            </div>
-                          </div>
                         )}
                       </div>
                     );

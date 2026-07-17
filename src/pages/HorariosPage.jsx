@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
-import { FiClock, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiClock, FiChevronDown, FiChevronUp, FiRefreshCw, FiAlertTriangle } from 'react-icons/fi';
 
 const LOTTERY_ORDER = [
   'NAC', 'PBA', 'SF', 'CBA', 'CBAT', 'ER', 'ERT', 'MZA', 'CTES', 'CH', 'CAT', 'FSA', 'FSAQ',
@@ -13,68 +13,140 @@ function lotteryRank(initials) {
   return i === -1 ? 999 : i;
 }
 
-export default function HorariosPage() {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [openDraws, setOpenDraws] = useState(() => new Set());
+const DRAW_ORDER = ['La Previa', 'Primera', 'Matutina', 'Vespertina', 'Noctura'];
 
-  useEffect(() => {
-    api.get('/horarios').then((r) => {
-      setData(r.data);
-    }).finally(() => setLoading(false));
+export default function HorariosPage() {
+  const [lotteries, setLotteries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const flash = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get('/schedules/status');
+      setLotteries(data.lotteries || []);
+    } catch {
+      flash('Error al cargar los horarios');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const toggleOpen = (drawId) => {
-    setOpenDraws((prev) => {
-      const next = new Set(prev);
-      if (next.has(drawId)) next.delete(drawId);
-      else next.add(drawId);
-      return next;
-    });
+  useEffect(() => { load(); }, [load]);
+
+  const refresh = async () => {
+    setBusy(true);
+    try {
+      const { data } = await api.post('/schedules/scrape');
+      flash(data.message + (data.defects?.length ? ` · defectos: ${data.defects.map((d) => d.initials).join(', ')}` : ''));
+      await load();
+    } catch {
+      flash('Error al actualizar los horarios');
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (loading) {
     return <div className="flex justify-center pt-20"><FiClock className="animate-spin text-indigo-400" size={28} /></div>;
   }
 
+  const sorted = [...lotteries].sort((a, b) => lotteryRank(a.initials) - lotteryRank(b.initials));
+
   return (
     <div className="max-w-4xl mx-auto space-y-4">
-      <h2 className="text-xl font-bold text-white">Horarios de cierre por turno</h2>
-      <p className="text-sm text-gray-400">Cada turno muestra las loterías que participan con su hora de cierre.</p>
-
-      {data.map((draw) => (
-        <div key={draw.draw_id} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
-          <button
-            onClick={() => toggleOpen(draw.draw_id)}
-            className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-700/30 transition"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-indigo-400 font-bold text-lg">{draw.draw_name}</span>
-              <span className="text-xs text-gray-500 bg-gray-700/50 px-2 py-0.5 rounded-full">{draw.lotteries.length} loterías</span>
-            </div>
-            {openDraws.has(draw.draw_id) ? <FiChevronUp className="text-gray-400" /> : <FiChevronDown className="text-gray-400" />}
-          </button>
-
-          {openDraws.has(draw.draw_id) && (
-            <div className="border-t border-gray-700/30 divide-y divide-gray-700/20">
-              {[...draw.lotteries]
-                .sort((a, b) => lotteryRank(a.initials) - lotteryRank(b.initials))
-                .map((lot) => (
-                <div key={lot.lottery_id} className="flex items-center justify-between px-5 py-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-indigo-300 w-8">{lot.initials}</span>
-                    <span className="text-gray-200">{lot.name}</span>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs">
-                    <span className="text-gray-400">Sorteo: <span className="text-gray-200 font-medium">{lot.draw_time}</span></span>
-                    <span className="text-yellow-400">Cierre: <span className="text-yellow-300 font-medium">{lot.closing_time}</span></span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+      {toast && (
+        <div className="bg-indigo-500/15 border border-indigo-500/30 text-indigo-200 px-4 py-2 rounded-lg text-sm">
+          {toast}
         </div>
-      ))}
+      )}
+
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-white">Horarios por lotería</h2>
+          <p className="text-sm text-gray-400">Horario de sorteo y cierre de cada turno. Las casillas en rojo marcan un “defect” (la fuente no tiene horario o no matcheó).</p>
+        </div>
+        <button
+          onClick={refresh}
+          disabled={busy}
+          className="flex items-center gap-1.5 text-sm bg-indigo-600/40 hover:bg-indigo-600/60 text-indigo-200 px-3 py-1.5 rounded-lg transition disabled:opacity-50"
+        >
+          {busy ? <FiRefreshCw size={14} className="animate-spin" /> : <FiClock size={14} />}
+          Actualizar horarios
+        </button>
+      </div>
+
+      <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
+        <div className="grid grid-cols-[80px_1fr] gap-2 px-5 py-3 border-b border-gray-700/30 text-xs text-gray-400 uppercase">
+          <span>Lotería</span>
+          <span>Turnos</span>
+        </div>
+        <div className="divide-y divide-gray-700/20">
+          {sorted.map((lot) => (
+            <div key={lot.lottery_id} className="px-5 py-3">
+              <div className="flex items-start gap-3">
+                <div className="flex items-center gap-2 w-[80px] shrink-0">
+                  <span className="font-mono font-bold text-indigo-300">{lot.initials}</span>
+                  {lot.defect && (
+                    <span className="flex items-center gap-1 text-[10px] text-red-300 bg-red-500/15 px-1.5 py-0.5 rounded-full" title="Hay turnos con defect">
+                      <FiAlertTriangle size={11} /> defect
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {lot.schedules
+                    .slice()
+                    .sort((a, b) => DRAW_ORDER.indexOf(a.draw) - DRAW_ORDER.indexOf(b.draw))
+                    .map((s, i) => {
+                      const isDefect = !!s.defect || !s.draw_time;
+                      return (
+                      <div
+                        key={i}
+                        className={
+                          'rounded-lg px-3 py-2 border text-sm ' +
+                          (isDefect
+                            ? 'border-red-500/40 bg-red-500/10'
+                            : 'border-gray-700/30 bg-gray-900/30')
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className={isDefect ? 'text-red-300 font-semibold' : 'text-gray-200'}>{s.draw}</span>
+                          {isDefect && <FiAlertTriangle size={13} className="text-red-400" />}
+                        </div>
+                        <div className="text-xs mt-1">
+                          {isDefect ? (
+                            <span className="text-red-300">{s.defect_note || 'Sin horario'}</span>
+                          ) : (
+                            <span className="text-gray-400">
+                              Sorteo <span className="text-gray-200 font-medium">{s.draw_time}</span> · Cierre{' '}
+                              <span className="text-yellow-300 font-medium">{s.closing_time}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      );
+                    })}
+                  {lot.schedules.length === 0 && (
+                    <span className="text-xs text-red-300 bg-red-500/10 border border-red-500/40 rounded-lg px-3 py-2">
+                      <FiAlertTriangle size={12} className="inline mr-1" /> Sin horarios en la fuente
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <p className="text-xs text-gray-500 flex items-center gap-1">
+        <FiAlertTriangle size={12} className="text-red-400" /> Marca roja “defect”: la fuente no publica el horario de ese turno o no matcheó con nuestros turnos.
+      </p>
     </div>
   );
 }

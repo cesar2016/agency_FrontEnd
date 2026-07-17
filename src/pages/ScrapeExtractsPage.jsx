@@ -63,35 +63,49 @@ export default function ScrapeExtractsPage() {
   // const scrapeOne = async (drawId, lot) => { ... };
   // const scrapeTurn = async (draw) => { ... };
 
-  const deleteOne = async (drawId, lot) => {
-    const key = `del-${drawId}-${lot.lottery_id}`;
-    setBusy((b) => ({ ...b, [key]: true }));
-    try {
-      await api.post('/extracts/delete-grilla', {
-        draw_id: drawId, lottery_id: lot.lottery_id,
-      });
-      flash(`Grilla de ${lot.initials} / ${draws.find((d) => d.draw_id === drawId)?.draw_name} eliminada`);
-      await load();
-    } catch (e) {
-      flash(e?.response?.data?.message || 'Error al eliminar');
-    } finally {
-      setBusy((b) => ({ ...b, [key]: false }));
-    }
+  const [confirm, setConfirm] = useState(null); // { title, message, onConfirm }
+
+  const deleteOne = (drawId, lot) => {
+    const drawName = draws.find((d) => d.draw_id === drawId)?.draw_name;
+    setConfirm({
+      title: `Eliminar grilla de ${lot.initials}`,
+      message: `Se eliminará la grilla completa de 20 números de ${lot.name} (${lot.initials}) en el turno ${drawName}. Esta acción no se puede deshacer.`,
+      onConfirm: async () => {
+        const key = `del-${drawId}-${lot.lottery_id}`;
+        setBusy((b) => ({ ...b, [key]: true }));
+        try {
+          await api.post('/extracts/delete-grilla', {
+            draw_id: drawId, lottery_id: lot.lottery_id,
+          });
+          flash(`Grilla de ${lot.initials} / ${drawName} eliminada`);
+          await load();
+        } catch (e) {
+          flash(e?.response?.data?.message || 'Error al eliminar');
+        } finally {
+          setBusy((b) => ({ ...b, [key]: false }));
+        }
+      },
+    });
   };
 
-  const deleteTurn = async (draw) => {
-    const key = `del-turn-${draw.draw_id}`;
-    if (!window.confirm(`¿Eliminar la grilla de TODAS las loterías del turno ${draw.draw_name}?`)) return;
-    setBusy((b) => ({ ...b, [key]: true }));
-    try {
-      const { data } = await api.post('/extracts/delete-turn-grilla', { draw_id: draw.draw_id });
-      flash(data.message);
-      await load();
-    } catch (e) {
-      flash(e?.response?.data?.message || 'Error al eliminar el turno');
-    } finally {
-      setBusy((b) => ({ ...b, [key]: false }));
-    }
+  const deleteTurn = (draw) => {
+    setConfirm({
+      title: `Eliminar turno ${draw.draw_name}`,
+      message: `Se eliminará la grilla completa de 20 números de TODAS las loterías del turno ${draw.draw_name}. Esta acción no se puede deshacer.`,
+      onConfirm: async () => {
+        const key = `del-turn-${draw.draw_id}`;
+        setBusy((b) => ({ ...b, [key]: true }));
+        try {
+          const { data } = await api.post('/extracts/delete-turn-grilla', { draw_id: draw.draw_id });
+          flash(data.message);
+          await load();
+        } catch (e) {
+          flash(e?.response?.data?.message || 'Error al eliminar el turno');
+        } finally {
+          setBusy((b) => ({ ...b, [key]: false }));
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -186,10 +200,10 @@ export default function ScrapeExtractsPage() {
               <button
                 onClick={() => deleteTurn(draw)}
                 disabled={busy[`del-turn-${draw.draw_id}`]}
-                className="flex items-center gap-1.5 text-xs bg-red-600/40 hover:bg-red-600/60 text-red-200 px-3 py-1.5 rounded-lg transition disabled:opacity-50"
+                title="Eliminar la grilla de todas las loterías de este turno"
+                className="flex items-center justify-center text-red-300 hover:text-white hover:bg-red-600/60 bg-red-600/20 border border-red-500/30 p-2 rounded-lg transition disabled:opacity-50"
               >
-                {busy[`del-turn-${draw.draw_id}`] ? <FiRefreshCw size={13} className="animate-spin" /> : <FiTrash2 size={13} />}
-                Eliminar turno
+                {busy[`del-turn-${draw.draw_id}`] ? <FiRefreshCw size={15} className="animate-spin" /> : <FiTrash2 size={15} />}
               </button>
             </div>
 
@@ -231,16 +245,16 @@ export default function ScrapeExtractsPage() {
                                  <FiGrid size={12} /> Ver
                                </button>
                              )}
-                             {lot.extract_id && (
-                               <button
-                                 onClick={() => deleteOne(draw.draw_id, lot)}
-                                 disabled={busy[key]}
-                                 className="flex items-center gap-1 text-xs bg-red-600/40 hover:bg-red-600/60 text-red-200 px-2.5 py-1 rounded-lg transition disabled:opacity-50"
-                               >
-                                 {busy[key] ? <FiRefreshCw size={12} className="animate-spin" /> : <FiTrash2 size={12} />}
-                                 Eliminar
-                               </button>
-                             )}
+                              {lot.extract_id && (
+                                <button
+                                  onClick={() => deleteOne(draw.draw_id, lot)}
+                                  disabled={busy[key]}
+                                  title="Eliminar esta grilla"
+                                  className="flex items-center justify-center text-red-300 hover:text-white hover:bg-red-600/60 bg-red-600/20 border border-red-500/30 p-1.5 rounded-lg transition disabled:opacity-50"
+                                >
+                                  {busy[key] ? <FiRefreshCw size={13} className="animate-spin" /> : <FiTrash2 size={13} />}
+                                </button>
+                              )}
                            </div>
                         </div>
 
@@ -255,6 +269,40 @@ export default function ScrapeExtractsPage() {
           </div>
         );
       })}
+
+      {confirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-gray-900 border border-red-500/30 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-700/50">
+              <span className="flex items-center justify-center w-9 h-9 rounded-full bg-red-500/15 text-red-400">
+                <FiAlertTriangle size={18} />
+              </span>
+              <h3 className="text-base font-semibold text-white">{confirm.title}</h3>
+            </div>
+            <div className="px-5 py-4">
+              <p className="text-sm text-gray-300 leading-relaxed">{confirm.message}</p>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-700/50">
+              <button
+                onClick={() => setConfirm(null)}
+                className="text-sm text-gray-300 hover:text-white bg-gray-700/60 hover:bg-gray-700 px-4 py-2 rounded-lg transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  const fn = confirm.onConfirm;
+                  setConfirm(null);
+                  await fn();
+                }}
+                className="text-sm font-medium text-white bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg transition"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

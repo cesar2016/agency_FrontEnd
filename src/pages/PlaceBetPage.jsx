@@ -147,6 +147,14 @@ export default function PlaceBetPage() {
       setError('Ambos numeros deben tener exactamente 2 digitos');
       return;
     }
+    if (![1, 5, 10, 20].includes(redFirstRange)) {
+      setError('El Rango 1° debe ser 1, 5, 10 o 20');
+      return;
+    }
+    if (![5, 10, 20].includes(redSecondRange) || redSecondRange < redFirstRange) {
+      setError('La Posicion debe ser 5, 10 o 20 y mayor o igual al Rango 1°');
+      return;
+    }
     const val = parseFloat(redAmount.replace(/\./g, ''));
     if (!val || val <= 0) {
       setError('Ingrese un importe valido');
@@ -312,10 +320,18 @@ export default function PlaceBetPage() {
           </div>
           <div className="flex-1 w-full">
             <label className="text-xs text-gray-400 block mb-1">Rango 1°</label>
-            <select value={redFirstRange} onChange={(e) => setRedFirstRange(Number(e.target.value))}
-              className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-4 text-white text-base focus:outline-none focus:border-indigo-500">
-              {[1, 5, 10, 20].map((r) => <option key={r} value={r}>{rangeLabel[r]}</option>)}
-            </select>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={2}
+              value={redFirstRange || ''}
+              onChange={(e) => {
+                const v = Number(e.target.value.replace(/\D/g, ''));
+                setRedFirstRange([1, 5, 10, 20].includes(v) ? v : 0);
+              }}
+              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-4 text-white text-base focus:outline-none focus:border-indigo-500"
+              placeholder="1/5/10/20"
+            />
           </div>
           <div className="flex-1 w-full">
             <label className="text-xs text-gray-400 block mb-1">Importe ($)</label>
@@ -339,11 +355,11 @@ export default function PlaceBetPage() {
         </button>
 
         {redModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="w-full max-w-xs bg-gray-900 border border-indigo-500/20 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+            <div className="w-full max-w-sm my-auto bg-gray-900 border border-indigo-500/20 rounded-2xl shadow-2xl overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-700/50">
                 <h3 className="text-base font-semibold text-white">Completar Redoblona</h3>
-                <p className="text-xs text-gray-400">Ingresá el 2° numero y su posicion.</p>
+                <p className="text-xs text-gray-400">Ingresá el 2° numero y su posicion (5, 10 o 20).</p>
               </div>
               <div className="p-5 space-y-3">
                 <div>
@@ -360,12 +376,18 @@ export default function PlaceBetPage() {
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 block mb-1">Posicion (2° rango)</label>
-                  <select value={redSecondRange} onChange={(e) => setRedSecondRange(Number(e.target.value))}
-                    className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-4 text-white text-base focus:outline-none focus:border-indigo-500">
-                    {[5, 10, 20].filter((r) => r >= redFirstRange).map((r) => (
-                      <option key={r} value={r}>{rangeLabel[r]}</option>
-                    ))}
-                  </select>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={2}
+                    value={redSecondRange || ''}
+                    onChange={(e) => {
+                      const v = Number(e.target.value.replace(/\D/g, ''));
+                      setRedSecondRange([5, 10, 20].includes(v) ? v : 0);
+                    }}
+                    className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-4 text-white text-base focus:outline-none focus:border-indigo-500"
+                    placeholder="5 / 10 / 20"
+                  />
                 </div>
               </div>
               <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-700/50">

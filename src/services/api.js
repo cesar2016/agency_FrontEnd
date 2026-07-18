@@ -28,8 +28,15 @@ function writeCache(map) {
   }
 }
 
-function cacheKey(url) {
-  return url;
+function cacheKey(url, params) {
+  // Incluir los params en la clave: sino, /bets?date=X y /bets?draw_ids=Y
+  // compartirian el mismo cache y los filtros no se reflejarian.
+  const qs = params && Object.keys(params).length
+    ? '?' + Object.entries(params)
+        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(Array.isArray(v) ? v.join(',') : v)}`)
+        .join('&')
+    : '';
+  return url + qs;
 }
 
 api.interceptors.request.use((config) => {
@@ -43,7 +50,7 @@ api.interceptors.request.use((config) => {
   const url = config.url || '';
   if ((config.method || 'get').toLowerCase() === 'get' && url && !url.startsWith('/extracts/')) {
     const map = readCache();
-    const entry = map[cacheKey(url)];
+    const entry = map[cacheKey(url, config.params)];
     if (entry && Date.now() - entry.t < CACHE_TTL) {
       config.adapter = () =>
         Promise.resolve({
@@ -65,7 +72,7 @@ api.interceptors.response.use(
     // No cacheamos detalles de extractos; el resto de GETs sí.
     if ((response.config.method || 'get').toLowerCase() === 'get' && url && !url.startsWith('/extracts/')) {
       const map = readCache();
-      map[cacheKey(url)] = { t: Date.now(), data: response.data };
+      map[cacheKey(url, response.config.params)] = { t: Date.now(), data: response.data };
       writeCache(map);
     }
     // Las mutaciones invalidan el cache de GET para refrescar al recargar.

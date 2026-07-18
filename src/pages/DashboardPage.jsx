@@ -9,7 +9,9 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [bets, setBets] = useState([]);
   const [draws, setDraws] = useState([]);
-  const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+  const [filterDate, setFilterDate] = useState(
+    new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
+  );
   const [filterDrawIds, setFilterDrawIds] = useState([]);
   const [viewBet, setViewBet] = useState(null);
   const [deleteId, setDeleteId] = useState(null);

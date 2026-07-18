@@ -298,8 +298,8 @@ export default function PlaceBetPage() {
       </Accordion>
 
       <Accordion title="La Redoblona" open={openRedoblona} onToggle={() => setOpenRedoblona(!openRedoblona)}>
-        <div className="flex flex-col sm:flex-row flex-wrap items-end gap-3">
-          <div className="flex-1 w-full sm:w-auto min-w-[110px]">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 w-full">
             <label className="text-xs text-gray-400 block mb-1">1° Numero</label>
             <input
               type="text"
@@ -307,39 +307,36 @@ export default function PlaceBetPage() {
               maxLength={2}
               value={redFirst}
               onChange={(e) => setRedFirst(e.target.value.replace(/\D/g, ''))}
-              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-4 text-white text-base focus:outline-none focus:border-indigo-500"
             />
           </div>
-          <div className="flex-1 w-full sm:w-auto min-w-[110px]">
+          <div className="flex-1 w-full">
             <label className="text-xs text-gray-400 block mb-1">Rango 1°</label>
             <select value={redFirstRange} onChange={(e) => setRedFirstRange(Number(e.target.value))}
-              className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
+              className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-4 text-white text-base focus:outline-none focus:border-indigo-500">
               {[1, 5, 10, 20].map((r) => <option key={r} value={r}>{rangeLabel[r]}</option>)}
             </select>
           </div>
-          <div className="flex-1 w-full sm:w-auto min-w-[110px]">
+          <div className="flex-1 w-full">
             <label className="text-xs text-gray-400 block mb-1">Importe ($)</label>
             <input
               type="text"
               inputMode="numeric"
               value={displayAmount(redAmount)}
               onChange={(e) => handleAmountChange(e.target.value, setRedAmount)}
-              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 text-center font-bold"
+              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-4 text-white text-base text-center font-bold focus:outline-none focus:border-indigo-500"
             />
           </div>
-          <button onClick={handleAddRedoblona}
-            className="flex items-center gap-1 text-sm bg-purple-600/40 hover:bg-purple-600/60 text-purple-200 px-4 py-2 rounded-lg transition">
-            <FiPlus size={14} /> Agregar Redoblona
-          </button>
-          <button
-            type="button"
-            onClick={() => setRedModalOpen(true)}
-            title="Agregar 2° numero y posicion"
-            className="flex items-center justify-center w-10 h-10 rounded-lg bg-white text-gray-900 font-bold text-xl leading-none hover:bg-gray-200 transition"
-          >
-            +
-          </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setRedModalOpen(true)}
+          className="mt-3 w-full flex items-center justify-center rounded-lg bg-white text-gray-900 font-bold text-lg hover:bg-gray-200 transition"
+          style={{ padding: '1.25rem 0' }}
+        >
+          R
+        </button>
 
         {redModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -357,14 +354,14 @@ export default function PlaceBetPage() {
                     maxLength={2}
                     value={redSecond}
                     onChange={(e) => setRedSecond(e.target.value.replace(/\D/g, ''))}
-                    className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-4 text-white text-base focus:outline-none focus:border-indigo-500"
                     placeholder="00"
                   />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 block mb-1">Posicion (2° rango)</label>
                   <select value={redSecondRange} onChange={(e) => setRedSecondRange(Number(e.target.value))}
-                    className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
+                    className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-4 text-white text-base focus:outline-none focus:border-indigo-500">
                     {[5, 10, 20].filter((r) => r >= redFirstRange).map((r) => (
                       <option key={r} value={r}>{rangeLabel[r]}</option>
                     ))}
@@ -379,10 +376,10 @@ export default function PlaceBetPage() {
                   Cancelar
                 </button>
                 <button
-                  onClick={() => setRedModalOpen(false)}
-                  className="text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg transition"
+                  onClick={() => { setRedModalOpen(false); handleAddRedoblona(); }}
+                  className="flex items-center gap-1 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg transition"
                 >
-                  Aceptar
+                  <FiPlus size={14} /> Agregar Redoblona
                 </button>
               </div>
             </div>

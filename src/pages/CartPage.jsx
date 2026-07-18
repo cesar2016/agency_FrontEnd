@@ -17,7 +17,8 @@ export default function CartPage() {
   const isClosedFor = (drawId, lotteryId) => {
     const l = lotteries.find((x) => x.id === lotteryId);
     const ct = l?.schedules?.find((s) => s.draw_id === drawId)?.closing_time;
-    if (!ct) return false;
+    // Sin horario cargado para ese sorteo => se considera cerrada.
+    if (!ct) return true;
     const now = new Date();
     const [h, m] = ct.split(':').map(Number);
     const close = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);

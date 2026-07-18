@@ -4,7 +4,8 @@ import { useBet } from '../context/BetContext';
 import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 function isClosed(closingTime) {
-  if (!closingTime) return false;
+  // Sin horario cargado para ese sorteo => se considera cerrada.
+  if (!closingTime) return true;
   const now = new Date();
   const [h, m] = closingTime.split(':').map(Number);
   const close = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);

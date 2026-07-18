@@ -77,7 +77,8 @@ export default function PlaceBetPage() {
 
   const isClosedFor = (drawId, lotteryId) => {
     const ct = closingTimeFor(drawId, lotteryId);
-    if (!ct) return false;
+    // Sin horario cargado para ese sorteo => se considera cerrada.
+    if (!ct) return true;
     const now = new Date();
     const [h, m] = ct.split(':').map(Number);
     const close = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);

@@ -288,7 +288,7 @@ export default function PlaceBetPage() {
           <button
             onClick={handleAddSimpleReduced}
             title="Replicar jugada con una cifra menos"
-            className="flex items-center justify-center bg-gray-700/60 hover:bg-gray-600 text-gray-100 border border-gray-500/40 px-3 py-2 rounded-lg transition"
+            className="flex items-center justify-center bg-white hover:bg-gray-100 text-black border border-gray-300 px-3 py-2 rounded-lg transition"
           >
             <FiArrowDown size={16} className="font-bold" />
           </button>

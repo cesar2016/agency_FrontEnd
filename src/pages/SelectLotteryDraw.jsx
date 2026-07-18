@@ -62,7 +62,7 @@ const DRAW_PRINCIPAL_GROUPS = {
 };
 
 export default function SelectLotteryDraw() {
-  const { lotteries, draws, selectedByDraw, selectedGroupsByDraw, selectedAllByDraw, toggleLotteryInDraw, setAllInDraw, setManyInDraw, toggleGroupInDraw, toggleAllInDrawExplicit, fetchLotteries, fetchDraws } = useBet();
+  const { lotteries, draws, selectedByDraw, selectedGroupsByDraw, selectedAllByDraw, toggleLotteryInDraw, setAllInDraw, setManyInDraw, toggleGroupInDraw, toggleAllInDraw, fetchLotteries, fetchDraws } = useBet();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());

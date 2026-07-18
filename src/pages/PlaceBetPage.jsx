@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
-import { FiPlus, FiCheck, FiX, FiArrowLeft, FiTrash2, FiChevronDown, FiChevronUp, FiEye } from 'react-icons/fi';
+import { FiPlus, FiCheck, FiX, FiArrowLeft, FiTrash2, FiChevronDown, FiChevronUp, FiEye, FiArrowDown } from 'react-icons/fi';
 import api from '../services/api';
 
 function Accordion({ title, count, open, onToggle, children }) {
@@ -115,6 +115,28 @@ export default function PlaceBetPage() {
     setNumber('');
     setPosition('');
     setAmount('');
+    setError('');
+  };
+
+  const handleAddSimpleReduced = () => {
+    const lastSimple = [...cart].reverse().find((i) => !i.isRedoblona);
+    const baseNumber = lastSimple ? lastSimple.number : number;
+    const basePos = lastSimple ? String(lastSimple.position) : position;
+    const baseAmount = lastSimple ? String(lastSimple.amount) : amount;
+
+    if (!baseNumber) {
+      setError('No hay ninguna jugada para replicar');
+      return;
+    }
+    const trimmed = baseNumber.replace(/^\s*0+/, '') || baseNumber;
+    if (trimmed.length <= 2) {
+      setError('La jugada ya tiene el minimo de 2 cifras');
+      return;
+    }
+    const reduced = trimmed.slice(1);
+    setNumber(reduced);
+    setPosition(basePos);
+    setAmount(baseAmount);
     setError('');
   };
 
@@ -256,12 +278,21 @@ export default function PlaceBetPage() {
             />
           </div>
         </div>
-        <button
-          onClick={handleAddSimple}
-          className="mt-3 flex items-center gap-1 text-sm bg-indigo-600/40 hover:bg-indigo-600/60 text-indigo-200 px-4 py-2 rounded-lg transition"
-        >
-          <FiPlus size={14} /> Agregar y seguir apostando
-        </button>
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            onClick={handleAddSimple}
+            className="flex items-center gap-1 text-sm bg-indigo-600/40 hover:bg-indigo-600/60 text-indigo-200 px-4 py-2 rounded-lg transition"
+          >
+            <FiPlus size={14} /> Agregar
+          </button>
+          <button
+            onClick={handleAddSimpleReduced}
+            title="Replicar jugada con una cifra menos"
+            className="flex items-center gap-1 text-sm bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 px-3 py-2 rounded-lg transition"
+          >
+            <FiArrowDown size={14} />
+          </button>
+        </div>
       </Accordion>
 
       <Accordion title="La Redoblona" open={openRedoblona} onToggle={() => setOpenRedoblona(!openRedoblona)}>

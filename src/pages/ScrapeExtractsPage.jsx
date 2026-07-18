@@ -38,7 +38,9 @@ export default function ScrapeExtractsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/extracts/scrape/status');
+      // fresh=1 para siempre reflejar la grilla real de horarios (la cantidad
+      // de loterias por turno debe coincidir con Horarios y Sorteos y Loterias).
+      const { data } = await api.get('/extracts/scrape/status?fresh=1');
       const raw = Array.isArray(data?.draws) ? data.draws : [];
       // Normaliza por si el backend devuelve lotteries como no-array.
       setDraws(raw.map((d) => ({ ...d, lotteries: Array.isArray(d?.lotteries) ? d.lotteries : [] })));

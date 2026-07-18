@@ -16,7 +16,7 @@ function lotteryRank(initials) {
 const DRAW_ORDER = ['La Previa', 'Primera', 'Matutina', 'Vespertina', 'Noctura'];
 
 export default function HorariosPage() {
-  const [lotteries, setLotteries] = useState([]);
+  const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState(null);
@@ -30,7 +30,7 @@ export default function HorariosPage() {
     setLoading(true);
     try {
       const { data } = await api.get('/schedules/status');
-      setLotteries(data.lotteries || []);
+      setSections(data.sections || []);
     } catch {
       flash('Error al cargar los horarios');
     } finally {
@@ -57,8 +57,6 @@ export default function HorariosPage() {
     return <div className="flex justify-center pt-20"><FiClock className="animate-spin text-indigo-400" size={28} /></div>;
   }
 
-  const sorted = [...lotteries].sort((a, b) => lotteryRank(a.initials) - lotteryRank(b.initials));
-
   return (
     <div className="max-w-4xl mx-auto space-y-4">
       {toast && (
@@ -82,66 +80,81 @@ export default function HorariosPage() {
         </button>
       </div>
 
-      <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
-        <div className="grid grid-cols-[80px_1fr] gap-2 px-5 py-3 border-b border-gray-700/30 text-xs text-gray-400 uppercase">
-          <span>Lotería</span>
-          <span>Turnos</span>
-        </div>
-        <div className="divide-y divide-gray-700/20">
-          {sorted.map((lot) => (
-            <div key={lot.lottery_id} className="px-5 py-3">
-              <div className="flex items-start gap-3">
-                <div className="flex items-center gap-2 w-[80px] shrink-0">
-                  <span className="font-mono font-bold text-indigo-300">{lot.initials}</span>
-                  {lot.defect && (
-                    <span className="flex items-center gap-1 text-[10px] text-red-300 bg-red-500/15 px-1.5 py-0.5 rounded-full" title="Hay turnos con defect">
-                      <FiAlertTriangle size={11} /> defect
-                    </span>
-                  )}
-                </div>
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {lot.schedules
-                    .slice()
-                    .sort((a, b) => DRAW_ORDER.indexOf(a.draw) - DRAW_ORDER.indexOf(b.draw))
-                    .map((s, i) => {
-                      const isDefect = !!s.defect || !s.draw_time;
-                      return (
-                      <div
-                        key={i}
-                        className={
-                          'rounded-lg px-3 py-2 border text-sm ' +
-                          (isDefect
-                            ? 'border-red-500/40 bg-red-500/10'
-                            : 'border-gray-700/30 bg-gray-900/30')
-                        }
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className={isDefect ? 'text-red-300 font-semibold' : 'text-gray-200'}>{s.draw}</span>
-                          {isDefect && <FiAlertTriangle size={13} className="text-red-400" />}
-                        </div>
-                        <div className="text-xs mt-1">
-                          {isDefect ? (
-                            <span className="text-red-300">{s.defect_note || 'Sin horario'}</span>
-                          ) : (
-                            <span className="text-gray-400">
-                              Sorteo <span className="text-gray-200 font-medium">{s.draw_time}</span> · Cierre{' '}
-                              <span className="text-yellow-300 font-medium">{s.closing_time}</span>
-                            </span>
-                          )}
-                        </div>
+      <div className="space-y-6">
+        {sections.map((section) => {
+          const sorted = [...section.lotteries].sort(
+            (a, b) => lotteryRank(a.initials) - lotteryRank(b.initials)
+          );
+          return (
+            <div key={section.scope} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
+              <div className="px-5 py-3 border-b border-indigo-500/20 flex items-center gap-2">
+                <span className="text-sm font-semibold text-white uppercase tracking-wide">{section.label}</span>
+                <span className="text-[10px] text-indigo-300 bg-indigo-500/15 px-1.5 py-0.5 rounded-full">
+                  {section.scope === 'sunday' ? 'Solo domingo' : 'Lun–Sáb'}
+                </span>
+              </div>
+              <div className="grid grid-cols-[80px_1fr] gap-2 px-5 py-3 border-b border-gray-700/30 text-xs text-gray-400 uppercase">
+                <span>Lotería</span>
+                <span>Turnos</span>
+              </div>
+              <div className="divide-y divide-gray-700/20">
+                {sorted.map((lot) => (
+                  <div key={lot.lottery_id} className="px-5 py-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex items-center gap-2 w-[80px] shrink-0">
+                        <span className="font-mono font-bold text-indigo-300">{lot.initials}</span>
+                        {lot.defect && (
+                          <span className="flex items-center gap-1 text-[10px] text-red-300 bg-red-500/15 px-1.5 py-0.5 rounded-full" title="Hay turnos con defect">
+                            <FiAlertTriangle size={11} /> defect
+                          </span>
+                        )}
                       </div>
-                      );
-                    })}
-                  {lot.schedules.length === 0 && (
-                    <span className="text-xs text-red-300 bg-red-500/10 border border-red-500/40 rounded-lg px-3 py-2">
-                      <FiAlertTriangle size={12} className="inline mr-1" /> Sin horarios en la fuente
-                    </span>
-                  )}
-                </div>
+                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {lot.schedules
+                          .slice()
+                          .sort((a, b) => DRAW_ORDER.indexOf(a.draw) - DRAW_ORDER.indexOf(b.draw))
+                          .map((s, i) => {
+                            const isDefect = !!s.defect || !s.draw_time;
+                            return (
+                            <div
+                              key={i}
+                              className={
+                                'rounded-lg px-3 py-2 border text-sm ' +
+                                (isDefect
+                                  ? 'border-red-500/40 bg-red-500/10'
+                                  : 'border-gray-700/30 bg-gray-900/30')
+                              }
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className={isDefect ? 'text-red-300 font-semibold' : 'text-gray-200'}>{s.draw}</span>
+                                {isDefect && <FiAlertTriangle size={13} className="text-red-400" />}
+                              </div>
+                              <div className="text-xs mt-1">
+                                {isDefect ? (
+                                  <span className="text-red-300">{s.defect_note || 'Sin horario'}</span>
+                                ) : (
+                                  <span className="text-gray-400">
+                                    Sorteo <span className="text-gray-200 font-medium">{s.draw_time}</span> · Cierre{' '}
+                                    <span className="text-yellow-300 font-medium">{s.closing_time}</span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            );
+                          })}
+                        {lot.schedules.length === 0 && (
+                          <span className="text-xs text-red-300 bg-red-500/10 border border-red-500/40 rounded-lg px-3 py-2">
+                            <FiAlertTriangle size={12} className="inline mr-1" /> Sin horarios en la fuente
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       <p className="text-xs text-gray-500 flex items-center gap-1">

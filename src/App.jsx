@@ -8,6 +8,7 @@ import AciertosPage from './pages/AciertosPage';
 import HorariosPage from './pages/HorariosPage';
 import DashboardPage from './pages/DashboardPage';
 import ScrapeExtractsPage from './pages/ScrapeExtractsPage';
+import ManualExtractPage from './pages/ManualExtractPage';
 import CashRegisterPage from './pages/CashRegisterPage';
 import Layout from './components/layout/Layout';
 
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/aciertos" element={<ProtectedRoute roles={['admin', 'super_admin']}><AciertosPage /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute roles={['admin', 'super_admin']}><DashboardPage /></ProtectedRoute>} />
           <Route path="/extracts/scrape" element={<ProtectedRoute roles={['admin', 'super_admin']}><ScrapeExtractsPage /></ProtectedRoute>} />
+          <Route path="/extracts/manual" element={<ProtectedRoute roles={['admin', 'super_admin']}><ManualExtractPage /></ProtectedRoute>} />
           <Route path="/cash-register" element={<ProtectedRoute roles={['admin', 'super_admin']}><CashRegisterPage /></ProtectedRoute>} />
         </Route>
       </Routes>

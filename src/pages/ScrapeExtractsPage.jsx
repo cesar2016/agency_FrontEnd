@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 import {
   FiChevronDown, FiChevronUp, FiDownload, FiRefreshCw,
@@ -125,6 +126,16 @@ export default function ScrapeExtractsPage() {
           <h2 className="text-xl font-bold text-white">Extractos</h2>
           <p className="text-sm text-gray-400">Resultados de hoy. Cargá desde texto o eliminá grillas por turno.</p>
         </div>
+      </div>
+
+      {/* Acceso a la carga manual, de a un sorteo por vez */}
+      <div className="flex justify-end">
+        <Link
+          to="/extracts/manual"
+          className="flex items-center gap-1.5 text-sm bg-indigo-600/50 hover:bg-indigo-600/70 text-indigo-100 px-4 py-2 rounded-lg transition"
+        >
+          <FiGrid size={14} /> Carga manual
+        </Link>
       </div>
 
       {/* Carga masiva desde texto de resultados */}

@@ -20,6 +20,7 @@ export default function HorariosPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState(null);
+  const [filter, setFilter] = useState('all'); // all | daily | saturday | sunday
 
   const flash = (msg) => {
     setToast(msg);
@@ -80,8 +81,32 @@ export default function HorariosPage() {
         </button>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        {[
+          { k: 'all', label: 'Todos' },
+          { k: 'daily', label: 'Lun–Vie' },
+          { k: 'saturday', label: 'Sábado' },
+          { k: 'sunday', label: 'Domingo' },
+        ].map((f) => (
+          <button
+            key={f.k}
+            onClick={() => setFilter(f.k)}
+            className={
+              'text-xs px-3 py-1.5 rounded-full border transition ' +
+              (filter === f.k
+                ? 'bg-indigo-600/40 border-indigo-400 text-indigo-100'
+                : 'bg-gray-800/40 border-gray-700/40 text-gray-400 hover:text-white')
+            }
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       <div className="space-y-6">
-        {sections.map((section) => {
+        {sections
+          .filter((s) => filter === 'all' || s.scope === filter)
+          .map((section) => {
           const sorted = [...section.lotteries].sort(
             (a, b) => lotteryRank(a.initials) - lotteryRank(b.initials)
           );
@@ -90,7 +115,7 @@ export default function HorariosPage() {
               <div className="px-5 py-3 border-b border-indigo-500/20 flex items-center gap-2">
                 <span className="text-sm font-semibold text-white uppercase tracking-wide">{section.label}</span>
                 <span className="text-[10px] text-indigo-300 bg-indigo-500/15 px-1.5 py-0.5 rounded-full">
-                  {section.scope === 'sunday' ? 'Solo domingo' : 'Lun–Sáb'}
+                  {section.scope === 'sunday' ? 'Solo domingo' : section.scope === 'saturday' ? 'Solo sábado' : 'Lun–Vie'}
                 </span>
               </div>
               <div className="grid grid-cols-[80px_1fr] gap-2 px-5 py-3 border-b border-gray-700/30 text-xs text-gray-400 uppercase">

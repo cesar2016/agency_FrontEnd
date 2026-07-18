@@ -82,8 +82,24 @@ export default function ManualExtractPage() {
         draw_date: new Date().toISOString().slice(0, 10),
         numbers: numbers.map((n, i) => ({ position: i + 1, number: n })),
       };
+      // El proxy MySQL de produccion es inestable y falla ~50% de las veces
+      // con 500/timeout. Reintentamos hasta 3 veces antes de mostrar error.
+      let data = null;
+      let lastErr = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const res = await api.post('/extracts', payload);
+          data = res.data;
+          break;
+        } catch (e) {
+          lastErr = e;
+          const st = e?.response?.status;
+          if (st && st < 500 && st !== undefined) break; // error de validacion: no reintentar
+          if (attempt < 3) await new Promise((r) => setTimeout(r, 800 * attempt));
+        }
+      }
+      if (!data) throw lastErr;
       // Endpoint existente: crea el extracto y devuelve el registro completo.
-      const { data } = await api.post('/extracts', payload);
       setPreview(data.data ?? data);
     } catch (err) {
       const status = err?.response?.status;

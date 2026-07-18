@@ -103,10 +103,10 @@ export default function SelectLotteryDraw() {
     toggleLotteryInDraw(drawId, lotteryId);
   };
 
-  const toggleAllInDraw = (drawId, openItems) => {
+  const toggleAllInDrawLocal = (drawId, openItems) => {
     const openIds = openItems.map((it) => it.lottery.id);
     const allSelected = openItems.length > 0 && openItems.every((it) => drawLots.includes(it.lottery.id));
-    toggleAllInDrawExplicit(drawId, openIds, !allSelected);
+    toggleAllInDraw(drawId, openIds, !allSelected);
   };
 
   const lotteriesInDraw = (drawId) => selectedByDraw[drawId] || [];
@@ -181,8 +181,8 @@ export default function SelectLotteryDraw() {
                      <input
                        type="checkbox"
                        checked={openItems.length > 0 && openItems.every((it) => drawLots.includes(it.lottery.id))}
-                       disabled={!hasOpen || openItems.length === 0}
-                       onChange={() => toggleAllInDraw(draw.id, openItems)}
+                        disabled={!hasOpen || openItems.length === 0}
+                        onChange={() => toggleAllInDrawLocal(draw.id, openItems)}
                        className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
                      />
                      Todas

@@ -45,16 +45,17 @@ export default function PlaceBetPage() {
   const [redFirstRange, setRedFirstRange] = useState(1);
   const [redSecondRange, setRedSecondRange] = useState(5);
   const [redAmount, setRedAmount] = useState('');
+  const [redModalOpen, setRedModalOpen] = useState(false);
 
-  const rangeOptions = { 1: [{ v: 5, l: 'A los 5' }, { v: 10, l: 'A los 10' }, { v: 20, l: 'A los 20' }], 5: [{ v: 5, l: 'A los 5' }, { v: 10, l: 'A los 10' }, { v: 20, l: 'A los 20' }], 10: [{ v: 10, l: 'A los 10' }, { v: 20, l: 'A los 20' }], 20: [{ v: 20, l: 'A los 20' }] };
   const rangeLabel = { 1: 'A la cabeza', 5: 'A los 5', 10: 'A los 10', 20: 'A los 20' };
 
+  // El 2° rango (Posicion) solo admite 5/10/20 y debe ser >= al 1° rango.
   useEffect(() => {
-    const opts = rangeOptions[redFirstRange];
-    if (!opts.find((o) => o.v === redSecondRange)) {
-      setRedSecondRange(opts[0].v);
+    if (redSecondRange < redFirstRange || ![5, 10, 20].includes(redSecondRange)) {
+      const valid = [5, 10, 20].filter((r) => r >= redFirstRange);
+      setRedSecondRange(valid[0]);
     }
-  }, [redFirstRange]);
+  }, [redFirstRange, redSecondRange]);
 
   const [openSimple, setOpenSimple] = useState(true);
   const [openRedoblona, setOpenRedoblona] = useState(false);
@@ -297,42 +298,26 @@ export default function PlaceBetPage() {
       </Accordion>
 
       <Accordion title="La Redoblona" open={openRedoblona} onToggle={() => setOpenRedoblona(!openRedoblona)}>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">1er Numero</label>
+        <div className="flex flex-col sm:flex-row flex-wrap items-end gap-3">
+          <div className="flex-1 w-full sm:w-auto min-w-[110px]">
+            <label className="text-xs text-gray-400 block mb-1">1° Numero</label>
             <input
               type="text"
+              inputMode="numeric"
               maxLength={2}
               value={redFirst}
               onChange={(e) => setRedFirst(e.target.value.replace(/\D/g, ''))}
               className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
             />
           </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">2do Numero</label>
-            <input
-              type="text"
-              maxLength={2}
-              value={redSecond}
-              onChange={(e) => setRedSecond(e.target.value.replace(/\D/g, ''))}
-              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">Rango 1</label>
+          <div className="flex-1 w-full sm:w-auto min-w-[110px]">
+            <label className="text-xs text-gray-400 block mb-1">Rango 1°</label>
             <select value={redFirstRange} onChange={(e) => setRedFirstRange(Number(e.target.value))}
               className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
               {[1, 5, 10, 20].map((r) => <option key={r} value={r}>{rangeLabel[r]}</option>)}
             </select>
           </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">Rango 2</label>
-            <select value={redSecondRange} onChange={(e) => setRedSecondRange(Number(e.target.value))}
-              className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
-              {rangeOptions[redFirstRange].map((r) => <option key={r.v} value={r.v}>{r.l}</option>)}
-            </select>
-          </div>
-          <div>
+          <div className="flex-1 w-full sm:w-auto min-w-[110px]">
             <label className="text-xs text-gray-400 block mb-1">Importe ($)</label>
             <input
               type="text"
@@ -342,11 +327,67 @@ export default function PlaceBetPage() {
               className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 text-center font-bold"
             />
           </div>
+          <button onClick={handleAddRedoblona}
+            className="flex items-center gap-1 text-sm bg-purple-600/40 hover:bg-purple-600/60 text-purple-200 px-4 py-2 rounded-lg transition">
+            <FiPlus size={14} /> Agregar Redoblona
+          </button>
+          <button
+            type="button"
+            onClick={() => setRedModalOpen(true)}
+            title="Agregar 2° numero y posicion"
+            className="flex items-center justify-center w-10 h-10 rounded-lg bg-white text-gray-900 font-bold text-xl leading-none hover:bg-gray-200 transition"
+          >
+            +
+          </button>
         </div>
-        <button onClick={handleAddRedoblona}
-          className="mt-3 flex items-center gap-1 text-sm bg-purple-600/40 hover:bg-purple-600/60 text-purple-200 px-4 py-2 rounded-lg transition">
-          <FiPlus size={14} /> Agregar Redoblona
-        </button>
+
+        {redModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="w-full max-w-xs bg-gray-900 border border-indigo-500/20 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-700/50">
+                <h3 className="text-base font-semibold text-white">Completar Redoblona</h3>
+                <p className="text-xs text-gray-400">Ingresá el 2° numero y su posicion.</p>
+              </div>
+              <div className="p-5 space-y-3">
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">2° Numero</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={2}
+                    value={redSecond}
+                    onChange={(e) => setRedSecond(e.target.value.replace(/\D/g, ''))}
+                    className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    placeholder="00"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">Posicion (2° rango)</label>
+                  <select value={redSecondRange} onChange={(e) => setRedSecondRange(Number(e.target.value))}
+                    className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
+                    {[5, 10, 20].filter((r) => r >= redFirstRange).map((r) => (
+                      <option key={r} value={r}>{rangeLabel[r]}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-700/50">
+                <button
+                  onClick={() => setRedModalOpen(false)}
+                  className="text-sm text-gray-300 hover:text-white bg-gray-700/60 hover:bg-gray-700 px-4 py-2 rounded-lg transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => setRedModalOpen(false)}
+                  className="text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg transition"
+                >
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </Accordion>
 
       {cart.length > 0 && (

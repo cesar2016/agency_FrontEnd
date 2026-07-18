@@ -103,7 +103,7 @@ export default function SelectLotteryDraw() {
     toggleLotteryInDraw(drawId, lotteryId);
   };
 
-  const toggleAllInDrawLocal = (drawId, openItems) => {
+  const toggleAllInDrawLocal = (drawId, openItems, drawLots) => {
     const openIds = openItems.map((it) => it.lottery.id);
     const allSelected = openItems.length > 0 && openItems.every((it) => drawLots.includes(it.lottery.id));
     toggleAllInDraw(drawId, openIds, !allSelected);
@@ -182,7 +182,7 @@ export default function SelectLotteryDraw() {
                        type="checkbox"
                        checked={openItems.length > 0 && openItems.every((it) => drawLots.includes(it.lottery.id))}
                         disabled={!hasOpen || openItems.length === 0}
-                        onChange={() => toggleAllInDrawLocal(draw.id, openItems)}
+                        onChange={() => toggleAllInDrawLocal(draw.id, openItems, drawLots)}
                        className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
                      />
                      Todas

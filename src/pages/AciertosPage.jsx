@@ -12,6 +12,16 @@ const prizeTable = [
   { ubicacion: 20, cuatro_cifras: 8750,   tres_cifras: 1500,  dos_cifras: 175 },
 ];
 
+// Tabla de pagos de Redoblona (los valores son de ejemplo, por terminacion de 2 cifras).
+const redoblonaTable = [
+  { play: 1,    r1_5: 1280,    r1_10: 640,    r1_20: 336.84,  r5_5: 256,   r5_10: 128,   r5_20: 64,   r10_10: 64,  r10_20: 32,  r20_20: 16 },
+  { play: 2,    r1_5: 2560,    r1_10: 1280,   r1_20: 673.68,  r5_5: 512,   r5_10: 256,   r5_20: 128,  r10_10: 128, r10_20: 64,  r20_20: 32 },
+  { play: 2.5,  r1_5: 3200,    r1_10: 1600.5, r1_20: 842.10,  r5_5: 640,   r5_10: 320,   r5_20: 160,  r10_10: 160, r10_20: 80,  r20_20: 40 },
+  { play: 5,    r1_5: 6400,    r1_10: 3200,   r1_20: 1684.20, r5_5: 1280,  r5_10: 640,   r5_20: 320,  r10_10: 320, r10_20: 160, r20_20: 80 },
+  { play: 10,   r1_5: 12800,   r1_10: 6400,   r1_20: 3368.40, r5_5: 2560,  r5_10: 1280,  r5_20: 640,  r10_10: 640, r10_20: 320, r20_20: 160 },
+  { play: 25,   r1_5: 32000,   r1_10: 16000,  r1_20: 8421.00, r5_5: 6400,  r5_10: 3200,  r5_20: 1600, r10_10: 1600,r10_20: 800, r20_20: 400 },
+];
+
 function fmt(n) {
   return Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -51,28 +61,91 @@ export default function AciertosPage() {
       </div>
 
       {showTable && (
-        <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-gray-700/50">
-              <tr className="text-gray-300">
-                <th className="p-2 text-left">Ubic</th>
-                <th className="p-2 text-right">4 cifras</th>
-                <th className="p-2 text-right">3 cifras (Lu-Sa)</th>
-                <th className="p-2 text-right">2 cifras</th>
-              </tr>
-            </thead>
-            <tbody>
-              {prizeTable.map((row) => (
-                <tr key={row.ubicacion} className="border-t border-gray-700/30 text-gray-200">
-                  <td className="p-2 font-bold">#{row.ubicacion}</td>
-                  <td className="p-2 text-right">${row.cuatro_cifras.toLocaleString('es-AR')}</td>
-                  <td className="p-2 text-right">${row.tres_cifras.toLocaleString('es-AR')}</td>
-                  <td className="p-2 text-right">${row.dos_cifras.toLocaleString('es-AR')}</td>
+        <>
+          <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-x-auto">
+            <div className="px-4 py-2 text-sm font-semibold text-white border-b border-gray-700/30">Loterías (terminación por cifras)</div>
+            <table className="w-full text-xs">
+              <thead className="bg-gray-700/50">
+                <tr className="text-gray-300">
+                  <th className="p-2 text-left">Ubic</th>
+                  <th className="p-2 text-right">4 cifras</th>
+                  <th className="p-2 text-right">3 cifras (Lu-Sa)</th>
+                  <th className="p-2 text-right">2 cifras</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {prizeTable.map((row) => (
+                  <tr key={row.ubicacion} className="border-t border-gray-700/30 text-gray-200">
+                    <td className="p-2 font-bold">#{row.ubicacion}</td>
+                    <td className="p-2 text-right">${row.cuatro_cifras.toLocaleString('es-AR')}</td>
+                    <td className="p-2 text-right">${row.tres_cifras.toLocaleString('es-AR')}</td>
+                    <td className="p-2 text-right">${row.dos_cifras.toLocaleString('es-AR')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-x-auto">
+            <div className="px-4 py-2 text-sm font-semibold text-white border-b border-gray-700/30">Redoblona (por terminación de 2 cifras)</div>
+            <table className="w-full text-xs">
+              <thead className="bg-gray-700/50">
+                <tr className="text-gray-300">
+                  <th className="p-2 text-left">Juega $</th>
+                  <th className="p-2 text-right">Al 1° todo a los 5</th>
+                  <th className="p-2 text-right">Al 1° todo a los 10</th>
+                  <th className="p-2 text-right">Al 1° todo a los 20</th>
+                </tr>
+              </thead>
+              <tbody>
+                {redoblonaTable.map((r) => (
+                  <tr key={`a1-${r.play}`} className="border-t border-gray-700/30 text-gray-200">
+                    <td className="p-2 font-bold">${Number(r.play).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="p-2 text-right">${Number(r.r1_5).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="p-2 text-right">${Number(r.r1_10).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="p-2 text-right">${Number(r.r1_20).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <thead className="bg-gray-700/50">
+                <tr className="text-gray-300">
+                  <th className="p-2 text-left">Juega $</th>
+                  <th className="p-2 text-right">A los 5 todo a los 5</th>
+                  <th className="p-2 text-right">A los 5 todo a los 10</th>
+                  <th className="p-2 text-right">A los 5 todo a los 20</th>
+                </tr>
+              </thead>
+              <tbody>
+                {redoblonaTable.map((r) => (
+                  <tr key={`a5-${r.play}`} className="border-t border-gray-700/30 text-gray-200">
+                    <td className="p-2 font-bold">${Number(r.play).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="p-2 text-right">${Number(r.r5_5).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="p-2 text-right">${Number(r.r5_10).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="p-2 text-right">${Number(r.r5_20).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <thead className="bg-gray-700/50">
+                <tr className="text-gray-300">
+                  <th className="p-2 text-left">Juega $</th>
+                  <th className="p-2 text-right">A los 10 todo a los 10</th>
+                  <th className="p-2 text-right">A los 10 todo a los 20</th>
+                  <th className="p-2 text-right">A los 20 todo a los 20</th>
+                </tr>
+              </thead>
+              <tbody>
+                {redoblonaTable.map((r) => (
+                  <tr key={`a10-${r.play}`} className="border-t border-gray-700/30 text-gray-200">
+                    <td className="p-2 font-bold">${Number(r.play).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="p-2 text-right">${Number(r.r10_10).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="p-2 text-right">${Number(r.r10_20).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="p-2 text-right">${Number(r.r20_20).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {Object.keys(aciertos).length === 0 ? (
@@ -113,14 +186,14 @@ export default function AciertosPage() {
                           {r.bet_item_id
                             ? r.bet_item?.number
                             : r.redoblona_id
-                              ? `${r.redoblona?.first_number}/${r.redoblona?.second_number}`
+                              ? `${String(r.redoblona?.first_number).padStart(2, '0')}-${String(r.redoblona?.second_number).padStart(2, '0')}`
                               : '-'}
                         </td>
                         <td className="p-2 text-center text-xs text-gray-400">
                           {r.position
                             ? `#${r.position}`
                             : r.redoblona_id
-                              ? `R${r.redoblona?.first_range}/${r.redoblona?.second_range}`
+                              ? `${String(r.redoblona?.first_range).padStart(2, '0')} y ${String(r.redoblona?.second_range).padStart(2, '0')}`
                               : '-'}
                         </td>
                         <td className="p-2 text-right">${fmt(r.bet?.total || 0)}</td>

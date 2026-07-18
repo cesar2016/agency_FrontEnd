@@ -368,10 +368,10 @@ export default function PlaceBetPage() {
               {cart.map((item) => (
                 <tr key={item.id} className="border-t border-gray-700/30">
                   <td className="p-2 text-white font-mono">
-                    {item.isRedoblona ? `${item.first_number}/${item.second_number}` : item.number}
+                    {item.isRedoblona ? `${String(item.first_number).padStart(2, '0')}-${String(item.second_number).padStart(2, '0')}` : item.number}
                   </td>
                   <td className="p-2 text-gray-300 text-center text-xs">
-                    {item.isRedoblona ? `R${item.first_range}/${item.second_range}` : `#${item.position}`}
+                    {item.isRedoblona ? `${String(item.first_range).padStart(2, '0')} y ${String(item.second_range).padStart(2, '0')}` : `#${item.position}`}
                   </td>
                   <td className="p-2 text-right text-white">$ {fmt(item.amount)}</td>
                   <td className="p-2 text-right">
@@ -444,10 +444,10 @@ export default function PlaceBetPage() {
                         {cart.map((item) => (
                           <tr key={item.id}>
                             <td className="py-1 text-white font-bold">
-                              {item.isRedoblona ? `${item.first_number}/${item.second_number}` : item.number}
+                              {item.isRedoblona ? `${String(item.first_number).padStart(2, '0')}-${String(item.second_number).padStart(2, '0')}` : item.number}
                             </td>
                             <td className="py-1 text-center text-gray-400">
-                              {item.isRedoblona ? `R${item.first_range}/${item.second_range}` : `#${item.position}`}
+                              {item.isRedoblona ? `${String(item.first_range).padStart(2, '0')} y ${String(item.second_range).padStart(2, '0')}` : `#${item.position}`}
                             </td>
                             <td className="py-1 text-right text-white">${fmt(item.amount)}</td>
                           </tr>

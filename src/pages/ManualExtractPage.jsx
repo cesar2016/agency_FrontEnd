@@ -86,7 +86,13 @@ export default function ManualExtractPage() {
       const { data } = await api.post('/extracts', payload);
       setPreview(data.data ?? data);
     } catch (err) {
-      flash(err?.response?.data?.message || 'Error al cargar el extracto');
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.message;
+      if (status >= 500) {
+        flash('Error del servidor al guardar. Reintentá en unos segundos.');
+      } else {
+        flash(msg || 'No se pudo cargar el extracto');
+      }
     } finally {
       setBusy(false);
     }
@@ -226,14 +232,14 @@ export default function ManualExtractPage() {
             </div>
 
             <div className="px-5 py-4">
-              <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+              <div className="grid grid-cols-2 gap-2">
                 {(preview.numbers || [])
                   .slice()
                   .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
                   .map((num) => (
-                    <div key={num.id || num.position} className="rounded-lg px-1.5 py-1.5 text-center bg-gray-800/60">
-                      <span className="text-[10px] text-gray-500 block">#{num.position}</span>
-                      <span className="font-mono font-bold text-sm text-white">{num.number}</span>
+                    <div key={num.id || num.position} className="flex items-center justify-between rounded-lg px-3 py-2 bg-gray-800/60">
+                      <span className="text-[10px] text-gray-500">#{num.position}</span>
+                      <span className="font-mono font-bold text-base text-white">{num.number}</span>
                     </div>
                   ))}
               </div>

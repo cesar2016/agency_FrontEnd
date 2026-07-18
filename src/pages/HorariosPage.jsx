@@ -44,11 +44,25 @@ export default function HorariosPage() {
   const refresh = async () => {
     setBusy(true);
     try {
-      const { data } = await api.post('/schedules/scrape');
+      // La instancia en producción a veces "duerme"; reintentamos una vez ante
+      // un timeout para no mostrar un error falso por un arranque en frío.
+      let data;
+      try {
+        const res = await api.post('/schedules/scrape', {}, { timeout: 60000 });
+        data = res.data;
+      } catch (firstErr) {
+        if (firstErr.code === 'ECONNABORTED' || firstErr.response?.status >= 500) {
+          const res = await api.post('/schedules/scrape', {}, { timeout: 60000 });
+          data = res.data;
+        } else {
+          throw firstErr;
+        }
+      }
       flash(data.message + (data.defects?.length ? ` · defectos: ${data.defects.map((d) => d.initials).join(', ')}` : ''));
       await load();
-    } catch {
-      flash('Error al actualizar los horarios');
+    } catch (err) {
+      const msg = err?.response?.data?.message;
+      flash(msg ? `Error: ${msg}` : 'Error al actualizar los horarios');
     } finally {
       setBusy(false);
     }

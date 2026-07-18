@@ -105,7 +105,8 @@ export default function SelectLotteryDraw() {
 
   const toggleAllInDraw = (drawId, openItems) => {
     const openIds = openItems.map((it) => it.lottery.id);
-    toggleAllInDrawExplicit(drawId, openIds);
+    const allSelected = openItems.length > 0 && openItems.every((it) => drawLots.includes(it.lottery.id));
+    toggleAllInDrawExplicit(drawId, openIds, !allSelected);
   };
 
   const lotteriesInDraw = (drawId) => selectedByDraw[drawId] || [];
@@ -129,7 +130,6 @@ export default function SelectLotteryDraw() {
         const open = openDraws.has(draw.id);
         const drawLots = selectedByDraw[draw.id] || [];
         const openItems = items.filter((it) => !isClosed(it.closingTime));
-        const allActive = !!selectedAllByDraw[draw.id];
         const hasOpen = openItems.length > 0;
         return (
           <div key={draw.id} className={`relative bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden ${hasOpen ? '' : 'opacity-60'}`}>
@@ -177,16 +177,16 @@ export default function SelectLotteryDraw() {
                       );
                     })}
                   </div>
-                  <label className={`flex items-center gap-1.5 text-xs ${hasOpen ? 'cursor-pointer text-indigo-300' : 'cursor-not-allowed text-gray-600'}`}>
-                    <input
-                      type="checkbox"
-                      checked={allActive}
-                      disabled={!hasOpen || openItems.length === 0}
-                      onChange={() => toggleAllInDraw(draw.id, openItems)}
-                      className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    Todas
-                  </label>
+                   <label className={`flex items-center gap-1.5 text-xs ${hasOpen ? 'cursor-pointer text-indigo-300' : 'cursor-not-allowed text-gray-600'}`}>
+                     <input
+                       type="checkbox"
+                       checked={openItems.length > 0 && openItems.every((it) => drawLots.includes(it.lottery.id))}
+                       disabled={!hasOpen || openItems.length === 0}
+                       onChange={() => toggleAllInDraw(draw.id, openItems)}
+                       className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
+                     />
+                     Todas
+                   </label>
                 </div>
                 <div className="divide-y divide-gray-700/20 max-h-80 overflow-y-auto">
                   {items.map(({ lottery, closingTime, drawTime }) => {

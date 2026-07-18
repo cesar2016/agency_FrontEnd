@@ -80,18 +80,17 @@ export function BetProvider({ children }) {
     setManyInDraw(drawId, ids, willActivate);
   }, [selectedGroupsByDraw, setManyInDraw]);
 
-  // Activa/desactiva "Todas" explícitamente (no se deriva de la selección manual)
-  const toggleAllInDraw = useCallback((drawId, ids) => {
-    const current = !!selectedAllByDraw[drawId];
-    const willActivate = !current;
+  // Activa/desactiva "Todas". Recibe el estado deseado (select) para ser
+  // idempotente: marca todas si no estaban todas, o las desmarca si ya lo estaban.
+  const toggleAllInDraw = useCallback((drawId, ids, select) => {
     setSelectedAllByDraw((prev) => {
       const copy = { ...prev };
-      if (willActivate) copy[drawId] = true;
+      if (select) copy[drawId] = true;
       else delete copy[drawId];
       return copy;
     });
-    setManyInDraw(drawId, ids, willActivate);
-  }, [selectedAllByDraw, setManyInDraw]);
+    setManyInDraw(drawId, ids, select);
+  }, [setManyInDraw]);
 
   const addToCart = (item) => {
     setCart((prev) => [...prev, { ...item, id: Date.now() }]);

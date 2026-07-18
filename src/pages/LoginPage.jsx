@@ -23,10 +23,12 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm bg-gray-800/50 backdrop-blur-sm border border-indigo-500/20 rounded-2xl p-8 shadow-2xl">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent text-center mb-2">
-          AGENCIA
-        </h1>
-        <p className="text-gray-400 text-sm text-center mb-6">Quinielas de Argentina</p>
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <img src="/logo.png" alt="Logo" className="h-12 w-12 object-contain" />
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+            AGENCIA
+          </h1>
+        </div>
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-2 rounded-lg mb-4">
             {error}

@@ -306,8 +306,8 @@ export default function PlaceBetPage() {
       </Accordion>
 
       <Accordion title="La Redoblona" open={openRedoblona} onToggle={() => setOpenRedoblona(!openRedoblona)}>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 w-full">
+        <div className="flex gap-2">
+          <div className="flex-1 min-w-0">
             <label className="text-xs text-gray-400 block mb-1">1° Numero</label>
             <input
               type="text"
@@ -315,10 +315,10 @@ export default function PlaceBetPage() {
               maxLength={2}
               value={redFirst}
               onChange={(e) => setRedFirst(e.target.value.replace(/\D/g, ''))}
-              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-4 text-white text-base focus:outline-none focus:border-indigo-500"
+              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-2 py-4 text-white text-base focus:outline-none focus:border-indigo-500"
             />
           </div>
-          <div className="flex-1 w-full">
+          <div className="flex-1 min-w-0">
             <label className="text-xs text-gray-400 block mb-1">Rango 1°</label>
             <input
               type="text"
@@ -329,18 +329,18 @@ export default function PlaceBetPage() {
                 const v = Number(e.target.value.replace(/\D/g, ''));
                 setRedFirstRange([1, 5, 10, 20].includes(v) ? v : 0);
               }}
-              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-4 text-white text-base focus:outline-none focus:border-indigo-500"
+              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-2 py-4 text-white text-base focus:outline-none focus:border-indigo-500"
               placeholder="1/5/10/20"
             />
           </div>
-          <div className="flex-1 w-full">
+          <div className="flex-1 min-w-0">
             <label className="text-xs text-gray-400 block mb-1">Importe ($)</label>
             <input
               type="text"
               inputMode="numeric"
               value={displayAmount(redAmount)}
               onChange={(e) => handleAmountChange(e.target.value, setRedAmount)}
-              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-4 text-white text-base text-center font-bold focus:outline-none focus:border-indigo-500"
+              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg px-2 py-4 text-white text-base text-center font-bold focus:outline-none focus:border-indigo-500"
             />
           </div>
         </div>
@@ -355,13 +355,13 @@ export default function PlaceBetPage() {
         </button>
 
         {redModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-            <div className="w-full max-w-sm my-auto bg-gray-900 border border-indigo-500/20 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+            <div className="w-full max-w-sm self-start mt-16 bg-gray-900 border border-indigo-500/20 rounded-2xl shadow-2xl overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-700/50">
                 <h3 className="text-base font-semibold text-white">Completar Redoblona</h3>
                 <p className="text-xs text-gray-400">Ingresá el 2° numero y su posicion (5, 10 o 20).</p>
               </div>
-              <div className="p-5 space-y-3">
+              <div className="p-5 space-y-2">
                 <div>
                   <label className="text-xs text-gray-400 block mb-1">2° Numero</label>
                   <input

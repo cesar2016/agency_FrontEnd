@@ -23,7 +23,11 @@ export default function AciertosPage() {
   const [openDraw, setOpenDraw] = useState(null);
 
   useEffect(() => {
-    api.get('/aciertos').then((r) => {
+    // Solo los aciertos del dia de hoy (hora Argentina).
+    const today = new Date().toLocaleDateString('en-CA', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+    });
+    api.get(`/aciertos?date=${today}`).then((r) => {
       setAciertos(r.data);
       const keys = Object.keys(r.data);
       if (keys.length > 0) setOpenDraw(keys[0]);
@@ -90,6 +94,7 @@ export default function AciertosPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-700/30">
                     <tr className="text-gray-400">
+                      <th className="p-2 text-left">Turno</th>
                       <th className="p-2 text-left">Loteria</th>
                       <th className="p-2 text-left">Pasador</th>
                       <th className="p-2 text-left">Numero</th>
@@ -101,6 +106,7 @@ export default function AciertosPage() {
                   <tbody>
                     {results.map((r) => (
                       <tr key={r.id} className="border-t border-gray-700/30 text-gray-200">
+                        <td className="p-2 text-xs text-indigo-300 whitespace-nowrap">{r.extract?.draw?.name || '-'}</td>
                         <td className="p-2 text-xs">{r.extract?.lottery?.initials || '-'}</td>
                         <td className="p-2 text-xs">{r.bet?.user?.name || '-'}</td>
                         <td className="p-2 font-mono font-bold text-white">
@@ -123,9 +129,9 @@ export default function AciertosPage() {
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot>
+                   <tfoot>
                     <tr className="border-t border-indigo-500/30 bg-indigo-900/20">
-                      <td colSpan={5} className="p-2 text-right text-white font-bold text-sm">TOTAL PREMIOS</td>
+                      <td colSpan={6} className="p-2 text-right text-white font-bold text-sm">TOTAL PREMIOS</td>
                       <td className="p-2 text-right text-green-400 font-bold text-sm">
                         ${fmt(results.reduce((sum, r) => sum + Number(r.prize_amount), 0))}
                       </td>

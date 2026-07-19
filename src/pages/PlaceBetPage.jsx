@@ -258,7 +258,7 @@ export default function PlaceBetPage() {
       )}
 
       <Accordion title="Apuesta Simple" open={openSimple} onToggle={() => setOpenSimple(!openSimple)}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="text-xs text-gray-400 block mb-1 text-center">Numero</label>
             <input

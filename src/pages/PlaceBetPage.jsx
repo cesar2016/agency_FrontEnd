@@ -23,49 +23,6 @@ function fmt(n) {
   return Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// Pagos por apuesta a 1 cifra segun el puesto (veces el importe jugado).
-// Solo aplica para numeros de 1 cifra y posiciones del 1 al 10.
-const SINGLE_DIGIT_PAYOUT = [
-  { range: 'Al 1 (Cabeza)', mult: 7.00 },
-  { range: 'A los 2',       mult: 3.50 },
-  { range: 'A los 3',       mult: 2.33 },
-  { range: 'A los 4',       mult: 1.75 },
-  { range: 'A los 5',       mult: 1.40 },
-  { range: 'A los 6',       mult: 1.166 },
-  { range: 'A los 7',       mult: 1.00 },
-  { range: 'A los 8',       mult: 0.875 },
-  { range: 'A los 9',       mult: 0.777 },
-  { range: 'A los 10',      mult: 0.70 },
-];
-
-function SingleDigitPayoutTable() {
-  return (
-    <div className="mt-3 bg-gray-900/40 border border-gray-700/40 rounded-xl overflow-x-auto">
-      <div className="px-3 py-2 text-xs font-semibold text-gray-300 border-b border-gray-700/40">
-        Pagos a 1 cifra (solo puestos 1 al 10)
-      </div>
-      <table className="w-full text-xs">
-        <thead className="bg-gray-700/40">
-          <tr className="text-gray-300">
-            <th className="p-2 text-left">Rango elegido</th>
-            <th className="p-2 text-right">Premio unitario</th>
-            <th className="p-2 text-right">Ej. $100 acertando 1 vez</th>
-          </tr>
-        </thead>
-        <tbody>
-          {SINGLE_DIGIT_PAYOUT.map((r) => (
-            <tr key={r.range} className="border-t border-gray-700/30 text-gray-200">
-              <td className="p-2">{r.range}</td>
-              <td className="p-2 text-right">{r.mult.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} ×</td>
-              <td className="p-2 text-right">${fmt(100 * r.mult)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 export default function PlaceBetPage() {
   const { selectedByDraw, selectedDraws, lotteries, draws, cart, addToCart, removeFromCart, clearCart, submitBet, totalMultiplier, lotteryCountForDraw } = useBet();
   const navigate = useNavigate();
@@ -356,7 +313,6 @@ export default function PlaceBetPage() {
             <FiArrowDown size={16} className="font-bold" />
           </button>
         </div>
-        <SingleDigitPayoutTable />
       </Accordion>
 
       <Accordion title="La Redoblona" open={openRedoblona} onToggle={() => setOpenRedoblona(!openRedoblona)}>

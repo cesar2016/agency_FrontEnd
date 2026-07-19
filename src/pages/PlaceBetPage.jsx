@@ -321,23 +321,22 @@ export default function PlaceBetPage() {
           </div>
           <div>
             <label className="text-xs text-gray-400 block mb-1 text-center">Rango 1°</label>
-            <div className="flex gap-1">
-              {[1, 5, 10, 20].map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRedFirstRange(r)}
-                  className={`flex-1 text-center font-bold text-lg rounded-lg border transition ${
-                    redFirstRange === r
-                      ? 'bg-indigo-600 border-indigo-500 text-white'
-                      : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-700'
-                  }`}
-                  style={{ padding: '1.25rem 0' }}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={2}
+              value={redFirstRange || ''}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/\D/g, '');
+                const v = Number(raw);
+                if (raw === '' || [1, 2, 5, 10, 20].includes(v)) {
+                  setRedFirstRange(v);
+                }
+              }}
+              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg text-center font-bold text-xl text-white focus:outline-none focus:border-indigo-500"
+              style={{ padding: '1.5rem 0.5rem' }}
+              placeholder="1/5/10/20"
+            />
           </div>
           <div>
             <label className="text-xs text-gray-400 block mb-1 text-center">Importe $</label>

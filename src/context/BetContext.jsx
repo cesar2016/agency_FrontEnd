@@ -132,7 +132,10 @@ export function BetProvider({ children }) {
         draw_id: drawId,
         lottery_ids: selectedByDraw[drawId],
       })),
-      draw_date: new Date().toISOString().split('T')[0],
+      // Fecha en zona America/Argentina/Buenos_Aires (no UTC): las jugadas
+      // posteriores a las 21hs deben seguir contando para el dia local en curso,
+      // no pasarse al dia siguiente por el corrimiento UTC de toISOString().
+      draw_date: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }),
       items: cart.filter((i) => !i.isRedoblona).map(({ id, isRedoblona, ...rest }) => rest),
       redoblonas: cart.filter((i) => i.isRedoblona).map(({ id, isRedoblona, ...rest }) => rest),
     };

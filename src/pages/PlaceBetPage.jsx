@@ -168,9 +168,8 @@ export default function PlaceBetPage() {
       amount: val,
       isRedoblona: true,
     });
-    setRedFirst('');
     setRedSecond('');
-    setRedAmount('');
+    setRedSecondRange(0);
     setError('');
   };
 

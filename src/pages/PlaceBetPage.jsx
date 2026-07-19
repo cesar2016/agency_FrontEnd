@@ -136,8 +136,8 @@ export default function PlaceBetPage() {
       return;
     }
     const trimmed = baseNumber.replace(/^\s*0+/, '') || baseNumber;
-    if (trimmed.length <= 1) {
-      setError('La jugada ya tiene el minimo de 1 cifra');
+    if (trimmed.length <= 2) {
+      setError('La jugada ya tiene el minimo de 2 cifras');
       return;
     }
     const reduced = trimmed.slice(1);

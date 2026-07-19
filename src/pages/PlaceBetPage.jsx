@@ -199,7 +199,13 @@ export default function PlaceBetPage() {
   const downloadTicket = async (id) => {
     const blob = await getTicketBlob(id);
     const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `boleta-${id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const shareTicket = async (id, sequence) => {

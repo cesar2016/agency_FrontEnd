@@ -48,7 +48,13 @@ export default function CartPage() {
   const downloadTicket = async (id) => {
     const { data } = await api.get(`/tickets/${id}/download`, { responseType: 'blob' });
     const url = URL.createObjectURL(data);
-    window.open(url, '_blank');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `boleta-${id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   if (result) {

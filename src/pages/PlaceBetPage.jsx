@@ -136,8 +136,8 @@ export default function PlaceBetPage() {
       return;
     }
     const trimmed = baseNumber.replace(/^\s*0+/, '') || baseNumber;
-    if (trimmed.length <= 2) {
-      setError('La jugada ya tiene el minimo de 2 cifras');
+    if (trimmed.length <= 1) {
+      setError('La jugada ya tiene el minimo de 1 cifra');
       return;
     }
     const reduced = trimmed.slice(1);
@@ -269,7 +269,7 @@ export default function PlaceBetPage() {
               onChange={(e) => setNumber(e.target.value.replace(/\D/g, ''))}
               className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg text-center font-bold text-xl text-white focus:outline-none focus:border-indigo-500"
               style={{ padding: '1.5rem 0.5rem' }}
-              placeholder="47"
+              placeholder="47 o 7"
             />
           </div>
           <div>

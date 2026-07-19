@@ -181,7 +181,7 @@ export default function DashboardPage() {
               <p><span className="text-gray-400">Secuencia:</span> <span className="text-white">{viewBet.sequence}</span></p>
               <p><span className="text-gray-400">Pasador:</span> <span className="text-white">{viewBet.user?.name}</span></p>
                 <p><span className="text-gray-400">Sorteo:</span> <span className="text-white">{(viewBet.draws || []).map((d) => d.name).join(' / ') || viewBet.draw?.name}</span></p>
-              <p><span className="text-gray-400">Fecha:</span> <span className="text-white">{viewBet.draw_date}</span></p>
+              <p><span className="text-gray-400">Fecha:</span> <span className="text-white">{viewBet.draw_date} {viewBet.created_at ? `· ${viewBet.created_at.split(' ')[1]}` : ''}</span></p>
               <p><span className="text-gray-400">Loterias:</span> <span className="text-indigo-300">{(viewBet.lotteries || []).map((l) => l.initials).join(', ')}</span></p>
               <table className="w-full mt-2">
                 <thead>

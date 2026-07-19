@@ -327,8 +327,11 @@ export default function PlaceBetPage() {
               maxLength={2}
               value={redFirstRange || ''}
               onChange={(e) => {
-                const v = Number(e.target.value.replace(/\D/g, ''));
-                setRedFirstRange([1, 5, 10, 20].includes(v) ? v : 0);
+                const raw = e.target.value.replace(/\D/g, '');
+                const v = Number(raw);
+                if (raw === '' || [1, 2, 5, 10, 20].includes(v)) {
+                  setRedFirstRange(v);
+                }
               }}
               className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg text-center font-bold text-xl text-white focus:outline-none focus:border-indigo-500"
               style={{ padding: '1.5rem 0.5rem' }}
@@ -388,8 +391,11 @@ export default function PlaceBetPage() {
                   maxLength={2}
                   value={redSecondRange || ''}
                   onChange={(e) => {
-                    const v = Number(e.target.value.replace(/\D/g, ''));
-                    setRedSecondRange([5, 10, 20].includes(v) ? v : 0);
+                    const raw = e.target.value.replace(/\D/g, '');
+                    const v = Number(raw);
+                    if (raw === '' || [1, 2, 5, 10, 20].includes(v)) {
+                      setRedSecondRange(v);
+                    }
                   }}
                   className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg text-center font-bold text-xl text-white focus:outline-none focus:border-indigo-500"
                   style={{ padding: '1.5rem 0.5rem' }}

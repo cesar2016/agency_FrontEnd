@@ -12,6 +12,21 @@ const prizeTable = [
   { ubicacion: 20, cuatro_cifras: 8750,   tres_cifras: 1500,  dos_cifras: 175 },
 ];
 
+// Pagos por apuesta a 1 cifra segun el puesto (veces el importe jugado).
+// Solo aplica para numeros de 1 cifra y posiciones del 1 al 10.
+const singleDigitPayout = [
+  { range: 'Al 1 (Cabeza)', mult: 7.00 },
+  { range: 'A los 2',       mult: 3.50 },
+  { range: 'A los 3',       mult: 2.33 },
+  { range: 'A los 4',       mult: 1.75 },
+  { range: 'A los 5',       mult: 1.40 },
+  { range: 'A los 6',       mult: 1.166 },
+  { range: 'A los 7',       mult: 1.00 },
+  { range: 'A los 8',       mult: 0.875 },
+  { range: 'A los 9',       mult: 0.777 },
+  { range: 'A los 10',      mult: 0.70 },
+];
+
 // Tabla de pagos de Redoblona (los valores son de ejemplo, por terminacion de 2 cifras).
 const redoblonaTable = [
   { play: 1,    r1_5: 1280,    r1_10: 640,    r1_20: 336.84,  r5_5: 256,   r5_10: 128,   r5_20: 64,   r10_10: 64,  r10_20: 32,  r20_20: 16 },
@@ -140,6 +155,28 @@ export default function AciertosPage() {
                     <td className="p-2 text-right">${Number(r.r10_10).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="p-2 text-right">${Number(r.r10_20).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="p-2 text-right">${Number(r.r20_20).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-x-auto">
+            <div className="px-4 py-2 text-sm font-semibold text-white border-b border-gray-700/30">Apuestas a 1 cifra (solo puestos 1 al 10)</div>
+            <table className="w-full text-xs">
+              <thead className="bg-gray-700/50">
+                <tr className="text-gray-300">
+                  <th className="p-2 text-left">Rango elegido</th>
+                  <th className="p-2 text-right">Premio unitario</th>
+                  <th className="p-2 text-right">Ej. $100 acertando 1 vez</th>
+                </tr>
+              </thead>
+              <tbody>
+                {singleDigitPayout.map((r) => (
+                  <tr key={r.range} className="border-t border-gray-700/30 text-gray-200">
+                    <td className="p-2">{r.range}</td>
+                    <td className="p-2 text-right">{r.mult.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} ×</td>
+                    <td className="p-2 text-right">${Number(100 * r.mult).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   </tr>
                 ))}
               </tbody>

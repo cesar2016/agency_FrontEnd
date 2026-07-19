@@ -161,30 +161,61 @@ export default function ScrapeExtractsPage() {
               placeholder={'📊 RESULTADOS QUINIELA 📊\n🕒 SORTEO: NOCTURNA\n📅 FECHA: 2026-07-16\n\n🎰 PROVINCIA\n01°: 8459    11°: 1964\n...'}
               className="w-full bg-gray-900/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-indigo-500"
             />
-            <div className="flex items-center gap-3">
-              <button
-                onClick={async () => {
-                  if (!bulkText.trim()) return;
-                  setBulkBusy(true);
-                  try {
-                    const { data } = await api.post('/extracts/parse-bulk', { raw: bulkText });
-                    flash(`Cargados ${data.stored} extractos. Fecha ${data.date} · ${data.draw_name}` +
-                      (data.unmatched?.length ? ` · sin match: ${data.unmatched.join(', ')}` : ''));
-                    setBulkText('');
-                    setBulkOpen(false);
-                    await load();
-                  } catch (e) {
-                    flash(e?.response?.data?.message || 'Error al procesar el texto');
-                  } finally {
-                    setBulkBusy(false);
-                  }
-                }}
-                disabled={bulkBusy || !bulkText.trim()}
-                className="flex items-center gap-1.5 text-sm bg-indigo-600/50 hover:bg-indigo-600/70 text-indigo-100 px-4 py-2 rounded-lg transition disabled:opacity-50"
-              >
-                {bulkBusy ? <FiRefreshCw size={14} className="animate-spin" /> : <FiDownload size={14} />}
-                Procesar y cargar
-              </button>
+             <div className="flex items-center gap-3">
+               <button
+                 onClick={async () => {
+                   if (!bulkText.trim()) return;
+                   setBulkBusy(true);
+                   try {
+                     // Carga por lotes para no superar el timeout de Railway
+                     // cuando el proxy MySQL es inestable. Cada lote reintenta
+                     // hasta 3 veces; si un lote falla se reporta y se sigue
+                     // con el siguiente (no se pierde todo el texto).
+                     const BATCH = 5;
+                     let offset = 0;
+                     let total = null;
+                     let stored = 0;
+                     let pending = [];
+                     do {
+                       let ok = false;
+                       for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+                         try {
+                           const { data } = await api.post('/extracts/parse-bulk', {
+                             raw: bulkText, offset, limit: BATCH,
+                           });
+                           if (total === null) total = data.total;
+                           stored += data.stored;
+                           if (data.failed?.length) pending.push(...data.failed.map((f) => f.initials));
+                           offset += BATCH;
+                           ok = true;
+                         } catch (err) {
+                           if (attempt === 3) {
+                             flash('Lote fallido (reintentos agotados). Reintentá más tarde.');
+                           } else {
+                             await new Promise((r) => setTimeout(r, 800));
+                           }
+                         }
+                       }
+                       if (!ok) offset += BATCH; // evita bucle infinito si sigue fallando
+                     } while (total !== null && offset < total);
+
+                     flash(`Cargados ${stored} extractos.` +
+                       (pending.length ? ` Sin guardar: ${pending.join(', ')}` : ' Completo.'));
+                     setBulkText('');
+                     setBulkOpen(false);
+                     await load();
+                   } catch (e) {
+                     flash(e?.response?.data?.message || 'Error al procesar el texto');
+                   } finally {
+                     setBulkBusy(false);
+                   }
+                 }}
+                 disabled={bulkBusy || !bulkText.trim()}
+                 className="flex items-center gap-1.5 text-sm bg-indigo-600/50 hover:bg-indigo-600/70 text-indigo-100 px-4 py-2 rounded-lg transition disabled:opacity-50"
+               >
+                 {bulkBusy ? <FiRefreshCw size={14} className="animate-spin" /> : <FiDownload size={14} />}
+                 Procesar y cargar
+               </button>
               {bulkOpen && (
                 <span className="text-xs text-gray-500">
                   Las loterías sin match en la base quedan marcadas como “sin match”.

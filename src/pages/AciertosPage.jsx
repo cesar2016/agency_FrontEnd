@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { FiRefreshCw, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext';
+import { FiRefreshCw, FiChevronDown, FiChevronUp, FiRotateCcw } from 'react-icons/fi';
 
 const prizeTable = [
   { ubicacion: 1,  cuatro_cifras: 175000, tres_cifras: 30000, dos_cifras: 3500 },
@@ -42,22 +43,56 @@ function fmt(n) {
 }
 
 export default function AciertosPage() {
+  const { user } = useAuth();
+  const roles = Array.isArray(user?.roles) ? user.roles : [];
+  const isAdmin = roles.some((r) => ['admin', 'super_admin'].includes(r));
+
   const [aciertos, setAciertos] = useState({});
   const [loading, setLoading] = useState(true);
   const [showTable, setShowTable] = useState(false);
   const [openDraw, setOpenDraw] = useState(null);
+  const [recalc, setRecalc] = useState({ open: false, running: false, processed: 0, total: 0, done: false, error: null });
 
-  useEffect(() => {
-    // Solo los aciertos del dia de hoy (hora Argentina).
-    const today = new Date().toLocaleDateString('en-CA', {
-      timeZone: 'America/Argentina/Buenos_Aires',
-    });
+  const today = new Date().toLocaleDateString('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+  });
+
+  const loadAciertos = () => {
     api.get(`/aciertos?date=${today}`).then((r) => {
       setAciertos(r.data);
       const keys = Object.keys(r.data);
       if (keys.length > 0) setOpenDraw(keys[0]);
-    }).finally(() => setLoading(false));
+    });
+  };
+
+  useEffect(() => {
+    // Solo los aciertos del dia de hoy (hora Argentina).
+    loadAciertos();
+    setLoading(false);
   }, []);
+
+  const handleRecalc = async () => {
+    setRecalc({ open: true, running: true, processed: 0, total: 0, done: false, error: null });
+    const limit = 8;
+    let offset = 0;
+    try {
+      // Procesamos en lotes para no superar el timeout del backend/proxy.
+      while (true) {
+        const { data } = await api.post('/scrutiny/recalc', { date: today, offset, limit });
+        setRecalc((p) => ({
+          ...p,
+          processed: p.processed + data.processed,
+          total: data.total,
+        }));
+        if (data.done) break;
+        offset += limit;
+      }
+      loadAciertos();
+      setRecalc((p) => ({ ...p, running: false, done: true }));
+    } catch (e) {
+      setRecalc((p) => ({ ...p, running: false, error: 'Ocurrió un error al recalcular. Reintentá.' }));
+    }
+  };
 
   if (loading) {
     return <div className="flex justify-center pt-20"><FiRefreshCw className="animate-spin text-indigo-400" size={28} /></div>;
@@ -67,12 +102,25 @@ export default function AciertosPage() {
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-white">Aciertos</h2>
-        <button
-          onClick={() => setShowTable(!showTable)}
-          className="text-sm text-indigo-400 hover:text-indigo-300 transition"
-        >
-          {showTable ? 'Ocultar' : 'Ver'} tabla de premios
-        </button>
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <button
+              onClick={handleRecalc}
+              disabled={recalc.running}
+              className="flex items-center gap-1.5 text-sm text-indigo-400 hover:text-indigo-300 transition disabled:opacity-50"
+              title="Volver a calcular los aciertos del día"
+            >
+              <FiRotateCcw size={14} className={recalc.running ? 'animate-spin' : ''} />
+              Recalcular
+            </button>
+          )}
+          <button
+            onClick={() => setShowTable(!showTable)}
+            className="text-sm text-indigo-400 hover:text-indigo-300 transition"
+          >
+            {showTable ? 'Ocultar' : 'Ver'} tabla de premios
+          </button>
+        </div>
       </div>
 
       {showTable && (
@@ -254,6 +302,48 @@ export default function AciertosPage() {
         )
       )
     )}
+      {recalc.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm bg-gray-800 border border-indigo-500/20 rounded-2xl p-6 space-y-4 shadow-xl">
+            <div className="flex items-center gap-2">
+              <FiRotateCcw size={18} className={recalc.running ? 'animate-spin text-indigo-400' : 'text-indigo-400'} />
+              <h3 className="text-lg font-bold text-white">Recalculando aciertos</h3>
+            </div>
+
+            {!recalc.error ? (
+              <>
+                <p className="text-sm text-gray-400">
+                  {recalc.running
+                    ? 'Procesando extractos del día…'
+                    : recalc.done
+                      ? 'Cálculo finalizado.'
+                      : 'Listo para recalcular.'}
+                </p>
+                <div className="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className="bg-indigo-500 h-2.5 rounded-full transition-all duration-300"
+                    style={{ width: `${recalc.total ? Math.round((recalc.processed / recalc.total) * 100) : 0}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 text-center">
+                  {recalc.processed} / {recalc.total} extractos procesados
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-red-400">{recalc.error}</p>
+            )}
+
+            {!recalc.running && (
+              <button
+                onClick={() => setRecalc({ open: false, running: false, processed: 0, total: 0, done: false, error: null })}
+                className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition"
+              >
+                Cerrar
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

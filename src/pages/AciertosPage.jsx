@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { FiRefreshCw, FiChevronDown, FiChevronUp, FiRotateCcw } from 'react-icons/fi';
+import { FiRefreshCw, FiRotateCcw } from 'react-icons/fi';
 
 const prizeTable = [
   { ubicacion: 1,  cuatro_cifras: 175000, tres_cifras: 30000, dos_cifras: 3500 },
@@ -50,7 +50,6 @@ export default function AciertosPage() {
   const [aciertos, setAciertos] = useState({});
   const [loading, setLoading] = useState(true);
   const [showTable, setShowTable] = useState(false);
-  const [openDraw, setOpenDraw] = useState(null);
   const [recalc, setRecalc] = useState({ open: false, running: false, processed: 0, total: 0, done: false, error: null });
 
   const today = new Date().toLocaleDateString('en-CA', {
@@ -63,8 +62,6 @@ export default function AciertosPage() {
     if (bust) params._t = Date.now();
     api.get('/aciertos', { params }).then((r) => {
       setAciertos(r.data);
-      const keys = Object.keys(r.data);
-      if (keys.length > 0) setOpenDraw(keys[0]);
     });
   };
 
@@ -241,70 +238,65 @@ export default function AciertosPage() {
           No hay aciertos registrados
         </div>
       ) : (
-        Object.entries(aciertos).map(([drawName, results]) => (
-          <div key={drawName} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
-            <button
-              onClick={() => setOpenDraw(openDraw === drawName ? null : drawName)}
-              className="w-full flex items-center justify-between p-4 text-white font-semibold hover:bg-gray-700/20 transition"
-            >
-              <span>{drawName} <span className="text-sm text-gray-400 font-normal">({results.length} aciertos)</span></span>
-              {openDraw === drawName ? <FiChevronUp size={18} className="text-gray-400" /> : <FiChevronDown size={18} className="text-gray-400" />}
-            </button>
-            {openDraw === drawName && (
-              <div className="p-4 pt-0 overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-700/30">
-                    <tr className="text-gray-400">
-                      <th className="p-2 text-left">Turno</th>
-                      <th className="p-2 text-left">Loteria</th>
-                      <th className="p-2 text-left">Pasador</th>
-                      <th className="p-2 text-left">Numero</th>
-                      <th className="p-2 text-center">Pos</th>
-                      <th className="p-2 text-right">Apuesta</th>
-                      <th className="p-2 text-right">Premio</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.map((r) => (
-                      <tr key={r.id} className="border-t border-gray-700/30 text-gray-200">
-                        <td className="p-2 text-xs text-indigo-300 whitespace-nowrap">{r.extract?.draw?.name || '-'}</td>
-                        <td className="p-2 text-xs">{r.extract?.lottery?.initials || '-'}</td>
-                        <td className="p-2 text-xs">{r.bet?.user?.name || '-'}</td>
-                        <td className="p-2 font-mono font-bold text-white">
-                          {r.bet_item_id
-                            ? r.bet_item?.number
-                            : r.redoblona_id
-                              ? `${String(r.redoblona?.first_number).padStart(2, '0')}-${String(r.redoblona?.second_number).padStart(2, '0')}`
-                              : '-'}
-                        </td>
-                        <td className="p-2 text-center text-xs text-gray-400">
-                          {r.position
-                            ? `#${r.position}`
-                            : r.redoblona_id
-                              ? `${String(r.redoblona?.first_range).padStart(2, '0')} y ${String(r.redoblona?.second_range).padStart(2, '0')}`
-                              : '-'}
-                        </td>
-                        <td className="p-2 text-right">${fmt(r.bet?.total || 0)}</td>
-                        <td className="p-2 text-right text-green-400 font-bold">${fmt(r.prize_amount)}</td>
-
-                      </tr>
-                    ))}
-                  </tbody>
-                   <tfoot>
-                    <tr className="border-t border-indigo-500/30 bg-indigo-900/20">
-                      <td colSpan={6} className="p-2 text-right text-white font-bold text-sm">TOTAL PREMIOS</td>
-                      <td className="p-2 text-right text-green-400 font-bold text-sm">
-                        ${fmt(results.reduce((sum, r) => sum + Number(r.prize_amount), 0))}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
+        <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
+          <div className="p-4 text-white font-semibold">
+            Aciertos del día{' '}
+            <span className="text-sm text-gray-400 font-normal">
+              ({Object.values(aciertos).flat().length} aciertos)
+            </span>
           </div>
-        )
-      )
-    )}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-700/30">
+                <tr className="text-gray-400">
+                  <th className="p-2 text-left">Turno</th>
+                  <th className="p-2 text-left">Loteria</th>
+                  <th className="p-2 text-left">Pasador</th>
+                  <th className="p-2 text-left">Numero</th>
+                  <th className="p-2 text-center">Pos</th>
+                  <th className="p-2 text-right">Apuesta</th>
+                  <th className="p-2 text-right">Premio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(aciertos).flatMap(([drawName, results]) =>
+                  results.map((r) => (
+                    <tr key={r.id} className="border-t border-gray-700/30 text-gray-200">
+                      <td className="p-2 text-xs text-indigo-300 whitespace-nowrap">{r.extract?.draw?.name || '-'}</td>
+                      <td className="p-2 text-xs">{r.extract?.lottery?.initials || '-'}</td>
+                      <td className="p-2 text-xs">{r.bet?.user?.name || '-'}</td>
+                      <td className="p-2 font-mono font-bold text-white">
+                        {r.bet_item_id
+                          ? r.bet_item?.number
+                          : r.redoblona_id
+                            ? `${String(r.redoblona?.first_number).padStart(2, '0')}-${String(r.redoblona?.second_number).padStart(2, '0')}`
+                            : '-'}
+                      </td>
+                      <td className="p-2 text-center text-xs text-gray-400">
+                        {r.position
+                          ? `#${r.position}`
+                          : r.redoblona_id
+                            ? `${String(r.redoblona?.first_range).padStart(2, '0')} y ${String(r.redoblona?.second_range).padStart(2, '0')}`
+                            : '-'}
+                      </td>
+                      <td className="p-2 text-right">${fmt(r.bet?.total || 0)}</td>
+                      <td className="p-2 text-right text-green-400 font-bold">${fmt(r.prize_amount)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-indigo-500/30 bg-indigo-900/20">
+                  <td colSpan={6} className="p-2 text-right text-white font-bold text-sm">TOTAL PREMIOS</td>
+                  <td className="p-2 text-right text-green-400 font-bold text-sm">
+                    ${fmt(Object.values(aciertos).flat().reduce((sum, r) => sum + Number(r.prize_amount || 0), 0))}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
       {recalc.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-sm bg-gray-800 border border-indigo-500/20 rounded-2xl p-6 space-y-4 shadow-xl">

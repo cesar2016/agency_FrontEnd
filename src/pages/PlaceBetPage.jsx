@@ -118,7 +118,14 @@ export default function PlaceBetPage() {
       setError('Ingrese un importe valido');
       return;
     }
-    addToCart({ number, position: pos, type: mapPositionToType(pos), amount: val });
+    // 1 cifra: solo a cabeza (pos 1) o a los 10. Nunca a los 5.
+    const type =
+      number.length === 1
+        ? pos === 1
+          ? 'primera'
+          : 'a_los_10'
+        : mapPositionToType(pos);
+    addToCart({ number, position: pos, type, amount: val });
     setNumber('');
     setPosition('');
     setAmount('');

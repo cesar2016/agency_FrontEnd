@@ -57,8 +57,11 @@ export default function AciertosPage() {
     timeZone: 'America/Argentina/Buenos_Aires',
   });
 
-  const loadAciertos = () => {
-    api.get(`/aciertos?date=${today}`).then((r) => {
+  const loadAciertos = (bust = true) => {
+    const params = { date: today };
+    // Al recalcular, evitamos el cache de 5 min para reflejar el nuevo calculo.
+    if (bust) params._t = Date.now();
+    api.get('/aciertos', { params }).then((r) => {
       setAciertos(r.data);
       const keys = Object.keys(r.data);
       if (keys.length > 0) setOpenDraw(keys[0]);
@@ -87,7 +90,7 @@ export default function AciertosPage() {
         if (data.done) break;
         offset += limit;
       }
-      loadAciertos();
+      loadAciertos(true);
       setRecalc((p) => ({ ...p, running: false, done: true }));
     } catch (e) {
       setRecalc((p) => ({ ...p, running: false, error: 'Ocurrió un error al recalcular. Reintentá.' }));

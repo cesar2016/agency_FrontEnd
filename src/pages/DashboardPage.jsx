@@ -9,8 +9,11 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [bets, setBets] = useState([]);
   const [draws, setDraws] = useState([]);
-  // Por defecto sin filtro de fecha: se muestran TODAS las jugadas.
-  const [filterDate, setFilterDate] = useState('');
+  // Por defecto la fecha de hoy (hora Argentina): se muestran las jugadas del dia.
+  const today = new Date().toLocaleDateString('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+  });
+  const [filterDate, setFilterDate] = useState(today);
   const [filterDrawIds, setFilterDrawIds] = useState([]);
   const [viewBet, setViewBet] = useState(null);
   const [deleteId, setDeleteId] = useState(null);

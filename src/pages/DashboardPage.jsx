@@ -9,9 +9,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [bets, setBets] = useState([]);
   const [draws, setDraws] = useState([]);
-  const [filterDate, setFilterDate] = useState(
-    new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
-  );
+  // Por defecto sin filtro de fecha: se muestran TODAS las jugadas.
+  const [filterDate, setFilterDate] = useState('');
   const [filterDrawIds, setFilterDrawIds] = useState([]);
   const [viewBet, setViewBet] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -23,6 +22,9 @@ export default function DashboardPage() {
     const { data } = await api.get('/bets', { params });
     setBets(data.data || data);
   }, [filterDate, filterDrawIds]);
+
+  // Limpia el filtro de fecha para volver a mostrar TODAS las jugadas.
+  const clearDateFilter = () => setFilterDate('');
 
   const fetchStats = useCallback(async () => {
     const { data } = await api.get('/dashboard/stats');
@@ -84,6 +86,16 @@ export default function DashboardPage() {
             onChange={(e) => setFilterDate(e.target.value)}
             className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 w-full sm:w-40"
           />
+          <button
+            onClick={clearDateFilter}
+            className={`text-xs px-3 py-2 rounded-lg border transition whitespace-nowrap ${
+              filterDate === ''
+                ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-200'
+                : 'bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500'
+            }`}
+          >
+            Todas
+          </button>
           <div className="flex flex-wrap gap-2">
             {draws.map((d) => {
               const selected = filterDrawIds.includes(d.id);

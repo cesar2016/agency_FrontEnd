@@ -207,13 +207,19 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(viewBet.items || []).map((item) => (
-                    <tr key={item.id}>
-                      <td className="py-1 text-white font-bold">{item.number}</td>
-                      <td className="py-1 text-center text-gray-400">{item.type === 'primera' ? '#1' : `#${item.type?.replace('a_los_', '') || ''}`}</td>
-                      <td className="py-1 text-right text-white">${fmt(item.amount)}</td>
-                    </tr>
-                  ))}
+                  {(() => {
+                    const allPlays = [
+                      ...(viewBet.items || []).map((i) => ({ ...i, _seq: ({ primera: 1, a_los_5: 5, a_los_10: 10, a_los_20: 20 })[i.type] || 99, _isRedo: false })),
+                      ...(viewBet.redoblonas || []).map((r) => ({ ...r, _seq: r.first_range, _isRedo: true, number: `${String(r.first_number).padStart(2, '0')}-${String(r.second_number).padStart(2, '0')}`, type: `${String(r.first_range).padStart(2, '0')} y ${String(r.second_range).padStart(2, '0')}` })),
+                    ].sort((a, b) => a._seq - b._seq);
+                    return allPlays.map((play) => (
+                      <tr key={play.id}>
+                        <td className="py-1 text-white font-bold">{play.number}</td>
+                        <td className="py-1 text-center text-gray-400">{play._isRedo ? `R ${play.type}` : (play.type === 'primera' ? '#1' : `#${play.type?.replace('a_los_', '') || ''}`)}</td>
+                        <td className="py-1 text-right text-white">${fmt(play.amount)}</td>
+                      </tr>
+                    ));
+                  })()}
                 </tbody>
               </table>
               <div className="border-t border-dashed border-gray-600/50 pt-2 flex justify-between text-white font-bold">

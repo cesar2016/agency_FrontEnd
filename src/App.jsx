@@ -10,6 +10,7 @@ import DashboardPage from './pages/DashboardPage';
 import ScrapeExtractsPage from './pages/ScrapeExtractsPage';
 import ManualExtractPage from './pages/ManualExtractPage';
 import CashRegisterPage from './pages/CashRegisterPage';
+import ScraperDashboardPage from './pages/ScraperDashboardPage';
 import Layout from './components/layout/Layout';
 
 function ProtectedRoute({ children, roles }) {
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/extracts/scrape" element={<ProtectedRoute roles={['admin', 'super_admin']}><ScrapeExtractsPage /></ProtectedRoute>} />
           <Route path="/extracts/manual" element={<ProtectedRoute roles={['admin', 'super_admin']}><ManualExtractPage /></ProtectedRoute>} />
           <Route path="/cash-register" element={<ProtectedRoute roles={['admin', 'super_admin']}><CashRegisterPage /></ProtectedRoute>} />
+          <Route path="/scraper-dashboard/:path?" element={<ProtectedRoute roles={['admin', 'super_admin']}><ScraperDashboardPage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </div>

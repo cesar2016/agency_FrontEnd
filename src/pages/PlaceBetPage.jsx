@@ -532,7 +532,10 @@ export default function PlaceBetPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {cart.map((item) => (
+                        {[...cart].sort((a, b) => {
+                          const seq = (p) => p.isRedoblona ? p.first_range : ({ primera: 1, a_los_5: 5, a_los_10: 10, a_los_20: 20 })[p.position] || 99;
+                          return seq(a) - seq(b);
+                        }).map((item) => (
                           <tr key={item.id}>
                             <td className="py-1 text-white font-bold">
                               {item.isRedoblona ? `${String(item.first_number).padStart(2, '0')}-${String(item.second_number).padStart(2, '0')}` : item.number}

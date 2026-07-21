@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import {
   FiChevronDown, FiChevronUp, FiDownload, FiRefreshCw,
-  FiCheckCircle, FiClock, FiGrid, FiAlertTriangle, FiTrash2,
+  FiCheckCircle, FiClock, FiGrid, FiAlertTriangle, FiTrash2, FiUpload,
 } from 'react-icons/fi';
 
 const LOTTERY_ORDER = [
@@ -27,10 +27,52 @@ export default function ScrapeExtractsPage() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState('');
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [filterDate, setFilterDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  });
+  const [loadingMongo, setLoadingMongo] = useState({}); // "drawId-lotteryId" -> true
+  const [mongoProgress, setMongoProgress] = useState({}); // "drawId-lotteryId" -> { step, message }
+  const savedScrollY = useRef(0);
 
   const flash = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
+  };
+
+  const loadFromMongo = async (drawId, lot) => {
+    const key = `${drawId}-${lot.lottery_id}`;
+    setLoadingMongo((prev) => ({ ...prev, [key]: true }));
+    setMongoProgress((prev) => ({ ...prev, [key]: { step: 0, message: 'Conectando con MongoDB...' } }));
+
+    try {
+      setMongoProgress((prev) => ({ ...prev, [key]: { step: 25, message: 'Buscando extracto en MongoDB...' } }));
+      const { data } = await api.post('/extracts/load-from-mongo', {
+        lottery_id: lot.lottery_id,
+        draw_id: drawId,
+        date: filterDate,
+      });
+
+      setMongoProgress((prev) => ({ ...prev, [key]: { step: 75, message: 'Guardando en base de datos...' } }));
+
+      await new Promise((r) => setTimeout(r, 300));
+
+      setMongoProgress((prev) => ({ ...prev, [key]: { step: 100, message: '¡Completado!' } }));
+      flash(`${lot.initials}: ${data.message}`);
+      savedScrollY.current = window.scrollY;
+      await load();
+      requestAnimationFrame(() => window.scrollTo(0, savedScrollY.current));
+    } catch (e) {
+      flash(e?.response?.data?.message || `Error al cargar ${lot.initials}`);
+      setLoadingMongo((prev) => ({ ...prev, [key]: false }));
+      setMongoProgress((prev) => ({ ...prev, [key]: undefined }));
+    } finally {
+      setTimeout(() => {
+        setLoadingMongo((prev) => ({ ...prev, [key]: false }));
+        setMongoProgress((prev) => ({ ...prev, [key]: undefined }));
+      }, 2000);
+    }
   };
 
   // Siempre se muestran los resultados de hoy (el backend filtra por la fecha
@@ -38,18 +80,15 @@ export default function ScrapeExtractsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      // fresh=1 para siempre reflejar la grilla real de horarios (la cantidad
-      // de loterias por turno debe coincidir con Horarios y Sorteos y Loterias).
-      const { data } = await api.get('/extracts/scrape/status?fresh=1');
+      const { data } = await api.get(`/extracts/scrape/status?fresh=1&date=${filterDate}`);
       const raw = Array.isArray(data?.draws) ? data.draws : [];
-      // Normaliza por si el backend devuelve lotteries como no-array.
       setDraws(raw.map((d) => ({ ...d, lotteries: Array.isArray(d?.lotteries) ? d.lotteries : [] })));
     } catch (e) {
       flash(e?.response?.data?.message || e?.message || 'No se pudo cargar el estado de extractos');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filterDate]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -78,7 +117,7 @@ export default function ScrapeExtractsPage() {
         setBusy((b) => ({ ...b, [key]: true }));
         try {
           await api.post('/extracts/delete-grilla', {
-            draw_id: drawId, lottery_id: lot.lottery_id,
+            draw_id: drawId, lottery_id: lot.lottery_id, date: filterDate,
           });
           flash(`Grilla de ${lot.initials} / ${drawName} eliminada`);
           await load();
@@ -99,7 +138,7 @@ export default function ScrapeExtractsPage() {
         const key = `del-turn-${draw.draw_id}`;
         setBusy((b) => ({ ...b, [key]: true }));
         try {
-          const { data } = await api.post('/extracts/delete-turn-grilla', { draw_id: draw.draw_id });
+          const { data } = await api.post('/extracts/delete-turn-grilla', { draw_id: draw.draw_id, date: filterDate });
           flash(data.message);
           await load();
         } catch (e) {
@@ -126,8 +165,14 @@ export default function ScrapeExtractsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-bold text-white">Extractos</h2>
-          <p className="text-sm text-gray-400">Resultados de hoy. Cargá desde texto o eliminá grillas por turno.</p>
+          <p className="text-sm text-gray-400">Resultados de {filterDate}.</p>
         </div>
+        <input
+          type="date"
+          value={filterDate}
+          onChange={(e) => setFilterDate(e.target.value)}
+          className="bg-gray-800/60 border border-gray-600 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+        />
       </div>
 
       {/* Acceso a la carga manual, de a un sorteo por vez */}
@@ -276,12 +321,47 @@ export default function ScrapeExtractsPage() {
                                <span className="flex items-center gap-1 text-xs text-green-300 bg-green-500/15 px-2 py-1 rounded-full">
                                  <FiCheckCircle size={13} /> {lot.count} cargado{lot.count === 1 ? '' : 's'}
                                </span>
-                             ) : (
-                               <span className="flex items-center gap-1 text-xs text-yellow-300 bg-yellow-500/15 px-2 py-1 rounded-full">
-                                 <FiClock size={13} /> sin cargar
-                               </span>
-                             )}
-                             {lot.extract_id && (
+                              ) : (
+                                <span className="flex items-center gap-1 text-xs text-yellow-300 bg-yellow-500/15 px-2 py-1 rounded-full">
+                                  <FiClock size={13} /> sin cargar
+                                </span>
+                              )}
+                              {!lot.completed ? (
+                                (() => {
+                                  const mKey = `${draw.draw_id}-${lot.lottery_id}`;
+                                  const prog = mongoProgress[mKey];
+                                  if (loadingMongo[mKey] && prog) {
+                                    return (
+                                      <div className="flex items-center gap-2 min-w-[140px]">
+                                        <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                          <div
+                                            className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                                            style={{ width: `${prog.step}%` }}
+                                          />
+                                        </div>
+                                        <span className="text-xs text-indigo-300 whitespace-nowrap">{prog.step}%</span>
+                                      </div>
+                                    );
+                                  }
+                                  if (loadingMongo[mKey]) {
+                                    return (
+                                      <div className="flex items-center gap-1">
+                                        <FiRefreshCw size={13} className="animate-spin text-indigo-400" />
+                                        <span className="text-xs text-indigo-300">Cargando...</span>
+                                      </div>
+                                    );
+                                  }
+                                  return (
+                                    <button
+                                      onClick={() => loadFromMongo(draw.draw_id, lot)}
+                                      className="flex items-center gap-1 text-xs bg-indigo-600/50 hover:bg-indigo-600/70 text-indigo-100 px-2.5 py-1 rounded-lg transition"
+                                    >
+                                      <FiUpload size={12} /> Cargar
+                                    </button>
+                                  );
+                                })()
+                              ) : null}
+                              {lot.extract_id && (
                                <button
                                  onClick={() => setOpenExtract(openExtract === lot.extract_id ? null : lot.extract_id)}
                                  className="flex items-center gap-1 text-xs bg-gray-700/50 hover:bg-gray-700 text-gray-200 px-2.5 py-1 rounded-lg transition"

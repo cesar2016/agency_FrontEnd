@@ -114,7 +114,10 @@ export default function CartPage() {
                 </tr>
               </thead>
               <tbody>
-                {cart.map((item) => (
+                {[...cart].sort((a, b) => {
+                  const seq = (p) => p.isRedoblona ? p.first_range : ({ primera: 1, a_los_5: 5, a_los_10: 10, a_los_20: 20 })[p.position] || 99;
+                  return seq(a) - seq(b);
+                }).map((item) => (
                   <tr key={item.id} className="border-t border-gray-700/30">
                     <td className="p-3 text-white font-mono">
                       {item.isRedoblona ? `${item.first_number}/${item.second_number}` : item.number}

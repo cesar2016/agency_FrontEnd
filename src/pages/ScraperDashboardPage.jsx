@@ -112,7 +112,7 @@ export default function ScraperDashboardPage() {
           srcDoc={injectedHtml}
           className="flex-1 w-full border-none"
           title="Scraper Dashboard"
-          sandbox="allow-scripts allow-same-origin allow-forms"
+          sandbox="allow-scripts allow-forms"
         />
       )}
     </div>

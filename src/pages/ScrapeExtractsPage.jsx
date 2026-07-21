@@ -27,11 +27,7 @@ export default function ScrapeExtractsPage() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState('');
   const [bulkBusy, setBulkBusy] = useState(false);
-  const [filterDate, setFilterDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().split('T')[0];
-  });
+  const today = () => new Date().toISOString().split('T')[0];
   const [loadingMongo, setLoadingMongo] = useState({}); // "drawId-lotteryId" -> true
   const [mongoProgress, setMongoProgress] = useState({}); // "drawId-lotteryId" -> { step, message }
   const savedScrollY = useRef(0);
@@ -51,7 +47,7 @@ export default function ScrapeExtractsPage() {
       const { data } = await api.post('/extracts/load-from-mongo', {
         lottery_id: lot.lottery_id,
         draw_id: drawId,
-        date: filterDate,
+        date: today(),
       });
 
       setMongoProgress((prev) => ({ ...prev, [key]: { step: 75, message: 'Guardando en base de datos...' } }));
@@ -80,7 +76,7 @@ export default function ScrapeExtractsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get(`/extracts/scrape/status?fresh=1&date=${filterDate}`);
+      const { data } = await api.get(`/extracts/scrape/status?fresh=1&date=${today()}`);
       const raw = Array.isArray(data?.draws) ? data.draws : [];
       setDraws(raw.map((d) => ({ ...d, lotteries: Array.isArray(d?.lotteries) ? d.lotteries : [] })));
     } catch (e) {
@@ -88,7 +84,7 @@ export default function ScrapeExtractsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterDate]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -117,7 +113,7 @@ export default function ScrapeExtractsPage() {
         setBusy((b) => ({ ...b, [key]: true }));
         try {
           await api.post('/extracts/delete-grilla', {
-            draw_id: drawId, lottery_id: lot.lottery_id, date: filterDate,
+            draw_id: drawId, lottery_id: lot.lottery_id, date: today(),
           });
           flash(`Grilla de ${lot.initials} / ${drawName} eliminada`);
           await load();
@@ -138,7 +134,7 @@ export default function ScrapeExtractsPage() {
         const key = `del-turn-${draw.draw_id}`;
         setBusy((b) => ({ ...b, [key]: true }));
         try {
-          const { data } = await api.post('/extracts/delete-turn-grilla', { draw_id: draw.draw_id, date: filterDate });
+          const { data } = await api.post('/extracts/delete-turn-grilla', { draw_id: draw.draw_id, date: today() });
           flash(data.message);
           await load();
         } catch (e) {
@@ -165,14 +161,8 @@ export default function ScrapeExtractsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-bold text-white">Extractos</h2>
-          <p className="text-sm text-gray-400">Resultados de {filterDate}.</p>
+          <p className="text-sm text-gray-400">Resultados de hoy. Cargá desde texto o eliminá grillas por turno.</p>
         </div>
-        <input
-          type="date"
-          value={filterDate}
-          onChange={(e) => setFilterDate(e.target.value)}
-          className="bg-gray-800/60 border border-gray-600 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-        />
       </div>
 
       {/* Acceso a la carga manual, de a un sorteo por vez */}

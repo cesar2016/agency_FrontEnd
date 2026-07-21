@@ -20,15 +20,18 @@ export default function ScraperDashboardPage() {
     let active = true;
     setLoading(true);
     setError(null);
+    console.log('[ScraperDashboard] Fetching:', `/externos/dashboard/${current}`);
 
     api.get(`/externos/dashboard/${current}`, {
       responseType: 'text',
       headers: { Accept: 'text/html' },
     })
       .then(({ data }) => {
+        console.log('[ScraperDashboard] HTML loaded, length:', data.length);
         if (active) { setHtml(data); setLoading(false); }
       })
       .catch((e) => {
+        console.error('[ScraperDashboard] Error:', e);
         if (active) {
           setError(e?.response?.data?.message || e?.message || 'Error al cargar');
           setLoading(false);
@@ -47,20 +50,28 @@ export default function ScraperDashboardPage() {
 
   const injectedHtml = useMemo(() => {
     if (!html || !token) return '';
+    console.log('[ScraperDashboard] Injecting HTML with token:', token.substring(0, 20) + '...');
+    console.log('[ScraperDashboard] apiBase:', apiBase);
     return html.replace(
       '</head>',
       `<script>
         const __token__ = ${JSON.stringify(token)};
         const __apiBase__ = ${JSON.stringify(apiBase)};
         const origFetch = window.fetch.bind(window);
+        console.log('[Iframe] Fetch override initialized. apiBase:', __apiBase__);
         window.fetch = function(url, opts = {}) {
+          const originalUrl = url;
           if (typeof url === 'string' && url.startsWith('/')) {
             url = __apiBase__ + url;
           }
           opts.headers = opts.headers || {};
           opts.headers['Authorization'] = 'Bearer ' + __token__;
           opts.headers['Accept'] = opts.headers['Accept'] || 'application/json, text/plain, */*';
-          return origFetch(url, opts);
+          console.log('[Iframe fetch]', originalUrl, '->', url, 'method:', opts.method || 'GET');
+          return origFetch(url, opts).catch(err => {
+            console.error('[Iframe fetch error]', url, err);
+            throw err;
+          });
         };
       <\/script></head>`
     );

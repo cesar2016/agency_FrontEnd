@@ -25,6 +25,7 @@ export default function ScraperDashboardPage() {
     api.get(`/externos/dashboard/${current}`, {
       responseType: 'text',
       headers: { Accept: 'text/html' },
+      params: { _t: Date.now() },
     })
       .then(({ data }) => {
         console.log('[ScraperDashboard] HTML loaded, length:', data.length);

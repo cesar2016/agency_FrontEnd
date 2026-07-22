@@ -114,27 +114,44 @@ export default function CartPage() {
                 </tr>
               </thead>
               <tbody>
-                {[...cart].sort((a, b) => {
-                  const seq = (p) => p.isRedoblona ? p.first_range : ({ primera: 1, a_los_5: 5, a_los_10: 10, a_los_20: 20 })[p.position] || 99;
-                  return seq(a) - seq(b);
-                }).map((item) => (
-                  <tr key={item.id} className="border-t border-gray-700/30">
-                    <td className="p-3 text-white font-mono">
-                      {item.isRedoblona ? `${item.first_number}/${item.second_number}` : item.number}
-                    </td>
-                    <td className="p-3 text-gray-300 text-center text-xs">
-                      {item.isRedoblona
-                        ? `R${item.first_range}/${item.second_range}`
-                        : `#${item.position}`}
-                    </td>
-                    <td className="p-3 text-right text-white">${item.amount.toFixed(2)}</td>
-                    <td className="p-3 text-right">
-                      <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-300">
-                        <FiTrash2 size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {cart.filter(i => !i.isRedoblona).length > 0 && (
+                  <>
+                    <tr className="border-t border-gray-700/30">
+                      <td colSpan={4} className="p-2 text-center text-indigo-300 font-bold text-xs">Jugada Simple</td>
+                    </tr>
+                    {cart.filter(i => !i.isRedoblona).map((item) => (
+                      <tr key={item.id} className="border-t border-gray-700/30">
+                        <td className="p-3 text-white font-mono">{item.number}</td>
+                        <td className="p-3 text-gray-300 text-center text-xs">#{item.position}</td>
+                        <td className="p-3 text-right text-white">${item.amount.toFixed(2)}</td>
+                        <td className="p-3 text-right">
+                          <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-300">
+                            <FiTrash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </>
+                )}
+                {cart.filter(i => i.isRedoblona).length > 0 && (
+                  <>
+                    <tr className="border-t border-gray-700/30">
+                      <td colSpan={4} className="p-2 text-center text-indigo-300 font-bold text-xs">REDOBLONA</td>
+                    </tr>
+                    {cart.filter(i => i.isRedoblona).map((item) => (
+                      <tr key={item.id} className="border-t border-gray-700/30">
+                        <td className="p-3 text-white font-mono">{item.first_number}/{item.second_number}</td>
+                        <td className="p-3 text-gray-300 text-center text-xs">R{item.first_range}/{item.second_range}</td>
+                        <td className="p-3 text-right text-white">${item.amount.toFixed(2)}</td>
+                        <td className="p-3 text-right">
+                          <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-300">
+                            <FiTrash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </>
+                )}
               </tbody>
             </table>
             <div className="p-4 border-t border-gray-700/50 space-y-1 text-sm">

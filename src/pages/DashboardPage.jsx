@@ -208,17 +208,37 @@ export default function DashboardPage() {
                 </thead>
                 <tbody>
                   {(() => {
-                    const allPlays = [
-                      ...(viewBet.items || []).map((i) => ({ ...i, _seq: ({ primera: 1, a_los_5: 5, a_los_10: 10, a_los_20: 20 })[i.type] || 99, _isRedo: false })),
-                      ...(viewBet.redoblonas || []).map((r) => ({ ...r, _seq: r.first_range, _isRedo: true, number: `${String(r.first_number).padStart(2, '0')}-${String(r.second_number).padStart(2, '0')}`, type: `${String(r.first_range).padStart(2, '0')} y ${String(r.second_range).padStart(2, '0')}` })),
-                    ].sort((a, b) => a._seq - b._seq);
-                    return allPlays.map((play) => (
-                      <tr key={play.id}>
-                        <td className="py-1 text-white font-bold">{play.number}</td>
-                        <td className="py-1 text-center text-gray-400">{play._isRedo ? `R ${play.type}` : (play.type === 'primera' ? '#1' : `#${play.type?.replace('a_los_', '') || ''}`)}</td>
-                        <td className="py-1 text-right text-white">${fmt(play.amount)}</td>
-                      </tr>
-                    ));
+                    const items = (viewBet.items || []).map((i) => ({ ...i, _isRedo: false }));
+                    const redos = (viewBet.redoblonas || []).map((r) => ({ ...r, _isRedo: true, number: `${String(r.first_number).padStart(2, '0')}-${String(r.second_number).padStart(2, '0')}`, type: `${String(r.first_range).padStart(2, '0')} y ${String(r.second_range).padStart(2, '0')}` }));
+                    return (
+                      <>
+                        {items.length > 0 && (
+                          <>
+                            <tr><td colSpan="3" className="text-center text-indigo-300 font-bold py-1">Jugada Simple Secuencia: {viewBet.sequence}-1</td></tr>
+                            {items.map((play) => (
+                              <tr key={play.id}>
+                                <td className="py-1 text-white font-bold">{play.number}</td>
+                                <td className="py-1 text-center text-gray-400">{play.type === 'primera' ? '#1' : `#${play.type?.replace('a_los_', '') || ''}`}</td>
+                                <td className="py-1 text-right text-white">${fmt(play.amount)}</td>
+                              </tr>
+                            ))}
+                          </>
+                        )}
+                        {redos.length > 0 && (
+                          <>
+                            <tr><td colSpan="3" className="text-center pt-3 pb-1 text-indigo-300 font-bold">REDOBLONA</td></tr>
+                            <tr><td colSpan="3" className="text-center text-indigo-300 text-[10px] pb-1">Redoblona Secuencia: {viewBet.sequence}-2</td></tr>
+                            {redos.map((play) => (
+                              <tr key={play.id}>
+                                <td className="py-1 text-white font-bold">{play.number}</td>
+                                <td className="py-1 text-center text-gray-400">{play.type}</td>
+                                <td className="py-1 text-right text-white">${fmt(play.amount)}</td>
+                              </tr>
+                            ))}
+                          </>
+                        )}
+                      </>
+                    );
                   })()}
                 </tbody>
               </table>

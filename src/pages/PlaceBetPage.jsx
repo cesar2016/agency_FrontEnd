@@ -532,20 +532,30 @@ export default function PlaceBetPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {[...cart].sort((a, b) => {
-                          const seq = (p) => p.isRedoblona ? p.first_range : ({ primera: 1, a_los_5: 5, a_los_10: 10, a_los_20: 20 })[p.position] || 99;
-                          return seq(a) - seq(b);
-                        }).map((item) => (
-                          <tr key={item.id}>
-                            <td className="py-1 text-white font-bold">
-                              {item.isRedoblona ? `${String(item.first_number).padStart(2, '0')}-${String(item.second_number).padStart(2, '0')}` : item.number}
-                            </td>
-                            <td className="py-1 text-center text-gray-400">
-                              {item.isRedoblona ? `${String(item.first_range).padStart(2, '0')} y ${String(item.second_range).padStart(2, '0')}` : `#${item.position}`}
-                            </td>
-                            <td className="py-1 text-right text-white">${fmt(item.amount)}</td>
-                          </tr>
-                        ))}
+                        {cart.filter(i => !i.isRedoblona).length > 0 && (
+                          <>
+                            <tr><td colSpan="3" className="text-center text-indigo-300 font-bold py-1">Jugada Simple</td></tr>
+                            {cart.filter(i => !i.isRedoblona).map((item) => (
+                              <tr key={item.id}>
+                                <td className="py-1 text-white font-bold">{item.number}</td>
+                                <td className="py-1 text-center text-gray-400">#{item.position}</td>
+                                <td className="py-1 text-right text-white">${fmt(item.amount)}</td>
+                              </tr>
+                            ))}
+                          </>
+                        )}
+                        {cart.filter(i => i.isRedoblona).length > 0 && (
+                          <>
+                            <tr><td colSpan="3" className="text-center pt-3 pb-1 text-indigo-300 font-bold">REDOBLONA</td></tr>
+                            {cart.filter(i => i.isRedoblona).map((item) => (
+                              <tr key={item.id}>
+                                <td className="py-1 text-white font-bold">{String(item.first_number).padStart(2, '0')}-{String(item.second_number).padStart(2, '0')}</td>
+                                <td className="py-1 text-center text-gray-400">{String(item.first_range).padStart(2, '0')} y {String(item.second_range).padStart(2, '0')}</td>
+                                <td className="py-1 text-right text-white">${fmt(item.amount)}</td>
+                              </tr>
+                            ))}
+                          </>
+                        )}
                       </tbody>
                     </table>
                     <div className="flex justify-between text-gray-300 pt-1 border-t border-dashed border-gray-600/50">

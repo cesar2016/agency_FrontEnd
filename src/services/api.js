@@ -47,10 +47,10 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   // Para GET, devolver cache fresco si existe (sin tocar la red).
-  // No cacheamos los detalles de extractos (/extracts/{id}) porque deben
-  // reflejar la grilla real y completa en todo momento.
+  // No cacheamos los detalles de extractos (/extracts/{id}) ni el dashboard
+  // (/externos/dashboard/) porque deben reflejar datos frescos en todo momento.
   const url = config.url || '';
-  if ((config.method || 'get').toLowerCase() === 'get' && url && !url.startsWith('/extracts/')) {
+  if ((config.method || 'get').toLowerCase() === 'get' && url && !url.startsWith('/extracts/') && !url.startsWith('/externos/dashboard/')) {
     const map = readCache();
     const entry = map[cacheKey(url, config.params)];
     if (entry && Date.now() - entry.t < CACHE_TTL) {
@@ -71,8 +71,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     const url = response.config.url || '';
-    // No cacheamos detalles de extractos; el resto de GETs sí.
-    if ((response.config.method || 'get').toLowerCase() === 'get' && url && !url.startsWith('/extracts/')) {
+    // No cacheamos detalles de extractos ni dashboard; el resto de GETs sí.
+    if ((response.config.method || 'get').toLowerCase() === 'get' && url && !url.startsWith('/extracts/') && !url.startsWith('/externos/dashboard/')) {
       const map = readCache();
       map[cacheKey(url, response.config.params)] = { t: Date.now(), data: response.data };
       writeCache(map);

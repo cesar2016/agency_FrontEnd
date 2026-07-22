@@ -31,6 +31,7 @@ export default function ScrapeExtractsPage() {
   const [selectedDate, setSelectedDate] = useState(today());
   const [loadingMongo, setLoadingMongo] = useState({}); // "drawId-lotteryId" -> true
   const [mongoProgress, setMongoProgress] = useState({}); // "drawId-lotteryId" -> { step, message }
+  const [mongoOptions, setMongoOptions] = useState(null); // { drawId, lot, targetHora, message, options }
   const savedScrollY = useRef(0);
 
   const flash = (msg) => {
@@ -38,18 +39,20 @@ export default function ScrapeExtractsPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const loadFromMongo = async (drawId, lot) => {
+  const loadFromMongo = async (drawId, lot, mongoExtractoId = null) => {
     const key = `${drawId}-${lot.lottery_id}`;
     setLoadingMongo((prev) => ({ ...prev, [key]: true }));
     setMongoProgress((prev) => ({ ...prev, [key]: { step: 0, message: 'Conectando con MongoDB...' } }));
 
     try {
       setMongoProgress((prev) => ({ ...prev, [key]: { step: 25, message: 'Buscando extracto en MongoDB...' } }));
-      const { data } = await api.post('/extracts/load-from-mongo', {
+      const payload = {
         lottery_id: lot.lottery_id,
         draw_id: drawId,
         date: selectedDate,
-      });
+      };
+      if (mongoExtractoId) payload.mongo_extracto_id = mongoExtractoId;
+      const { data } = await api.post('/extracts/load-from-mongo', payload);
 
       setMongoProgress((prev) => ({ ...prev, [key]: { step: 75, message: 'Guardando en base de datos...' } }));
 
@@ -57,11 +60,23 @@ export default function ScrapeExtractsPage() {
 
       setMongoProgress((prev) => ({ ...prev, [key]: { step: 100, message: '¡Completado!' } }));
       flash(`${lot.initials}: ${data.message}`);
+      setMongoOptions(null);
       savedScrollY.current = window.scrollY;
       await load();
       requestAnimationFrame(() => window.scrollTo(0, savedScrollY.current));
     } catch (e) {
-      flash(e?.response?.data?.message || `Error al cargar ${lot.initials}`);
+      const resp = e?.response?.data;
+      if (resp?.no_match) {
+        // Sin match exacto: abrir modal con las opciones que existen en Mongo.
+        setMongoOptions({
+          drawId,
+          lot,
+          message: resp.message,
+          options: resp.options || [],
+        });
+      } else {
+        flash(resp?.message || `Error al cargar ${lot.initials}`);
+      }
       setLoadingMongo((prev) => ({ ...prev, [key]: false }));
       setMongoProgress((prev) => ({ ...prev, [key]: undefined }));
     } finally {
@@ -396,6 +411,46 @@ export default function ScrapeExtractsPage() {
           </div>
         );
       })}
+
+      {mongoOptions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-gray-900 border border-yellow-500/30 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-700/50">
+              <span className="flex items-center justify-center w-9 h-9 rounded-full bg-yellow-500/15 text-yellow-400">
+                <FiAlertTriangle size={18} />
+              </span>
+              <h3 className="text-base font-semibold text-white">Sin match exacto</h3>
+            </div>
+            <div className="px-5 py-4">
+              <p className="text-sm text-gray-300 leading-relaxed">{mongoOptions.message}</p>
+              <p className="text-xs text-gray-500 mt-1">Elegí qué extracto cargar para {mongoOptions.lot.initials}:</p>
+              <div className="mt-3 space-y-2 max-h-64 overflow-y-auto">
+                {mongoOptions.options.length === 0 && (
+                  <p className="text-xs text-gray-500">No hay extractos en Mongo para esta lotería en esta fecha.</p>
+                )}
+                {mongoOptions.options.map((opt) => (
+                  <button
+                    key={opt._id}
+                    onClick={() => loadFromMongo(mongoOptions.drawId, mongoOptions.lot, opt._id)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 rounded-lg text-sm text-indigo-100 transition"
+                  >
+                    <span className="font-semibold">{opt.turno}</span>
+                    <span className="text-xs text-gray-300">{opt.hora} · {opt.count} nums</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-700/50">
+              <button
+                onClick={() => setMongoOptions(null)}
+                className="text-sm text-gray-300 hover:text-white bg-gray-700/60 hover:bg-gray-700 px-4 py-2 rounded-lg transition"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">

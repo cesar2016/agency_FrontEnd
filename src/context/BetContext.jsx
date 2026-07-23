@@ -20,6 +20,8 @@ export function BetProvider({ children }) {
   // Filtros del dashboard
   const [filterDate, setFilterDate] = useState('');
   const [filterDrawIds, setFilterDrawIds] = useState([]);
+  // Bets del dashboard
+  const [bets, setBets] = useState([]);
 
   const fetchLotteries = useCallback(async () => {
     const { data } = await api.get('/lotteries');
@@ -45,9 +47,12 @@ export function BetProvider({ children }) {
   const fetchBets = useCallback(async (params = {}) => {
     try {
       const { data } = await api.get('/bets', { params });
-      return data.data || data;
+      const betsData = data.data || data;
+      setBets(betsData);
+      return betsData;
     } catch (e) {
       console.error('Error fetching bets:', e);
+      setBets([]);
       return [];
     }
   }, []);
@@ -189,6 +194,7 @@ export function BetProvider({ children }) {
     <BetContext.Provider
       value={{
         lotteries, draws, cart,
+        bets,
         selectedByDraw, selectedDraws, selectedLotteries,
         selectedGroupsByDraw, toggleGroupInDraw,
         selectedAllByDraw, toggleAllInDraw,

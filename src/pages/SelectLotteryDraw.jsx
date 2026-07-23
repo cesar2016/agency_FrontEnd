@@ -158,7 +158,14 @@ export default function SelectLotteryDraw() {
         <p className="text-xs text-gray-400">{todayLabel()}</p>
       </div>
 
-      {drawsGrouped.map(({ draw, items }) => {
+      {drawsGrouped
+        .slice()
+        .sort((a, b) => {
+          const aHasOpen = a.items.some((it) => !isClosed(it.closingTime, now));
+          const bHasOpen = b.items.some((it) => !isClosed(it.closingTime, now));
+          return (aHasOpen === bHasOpen ? 0 : aHasOpen ? -1 : 1);
+        })
+        .map(({ draw, items }) => {
         const open = openDraws.has(draw.id);
         const drawLots = selectedByDraw[draw.id] || [];
         const openItems = items.filter((it) => !isClosed(it.closingTime, now));

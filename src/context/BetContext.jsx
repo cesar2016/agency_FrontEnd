@@ -158,6 +158,17 @@ export function BetProvider({ children }) {
 
   const clearCart = () => setCart([]);
 
+  const confirmDelete = useCallback(async () => {
+    if (!deleteId) return;
+    try {
+      await api.delete(`/bets/${deleteId}`);
+      setDeleteId(null);
+      fetchBets({ date: filterDate, draw_ids: filterDrawIds });
+    } catch (e) {
+      console.error('Error deleting bet:', e);
+    }
+  }, [deleteId, filterDate, filterDrawIds, fetchBets]);
+
   // Copiar una apuesta desde Dashboard: guarda items + redoblonas
   const copyBet = useCallback((items, redoblonas) => {
     setCopiedBet({ items, redoblonas });
@@ -233,6 +244,9 @@ return (
         page, setPage,
         pageSize,
         totalBets,
+        viewBet, setViewBet,
+        deleteId, setDeleteId,
+        confirmDelete,
       }}
     >
       {children}

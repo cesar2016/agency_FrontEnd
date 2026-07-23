@@ -15,6 +15,8 @@ export function BetProvider({ children }) {
   const [selectedAllByDraw, setSelectedAllByDraw] = useState({});
   // Bet copiada desde Dashboard para reutilizar jugadas
   const [copiedBet, setCopiedBet] = useState(null);
+  // Stats del dashboard
+  const [stats, setStats] = useState(null);
 
   const fetchLotteries = useCallback(async () => {
     const { data } = await api.get('/lotteries');
@@ -24,6 +26,27 @@ export function BetProvider({ children }) {
   const fetchDraws = useCallback(async () => {
     const { data } = await api.get('/draws');
     setDraws(data);
+  }, []);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const { data } = await api.get('/dashboard/stats');
+      setStats(data);
+    } catch (e) {
+      console.error('Error fetching stats:', e);
+      // Set empty stats to unblock spinner
+      setStats({ bets_count: 0, total_bets: 0, aciertos_count: 0, extracts_count: 0 });
+    }
+  }, []);
+
+  const fetchBets = useCallback(async (params = {}) => {
+    try {
+      const { data } = await api.get('/bets', { params });
+      return data.data || data;
+    } catch (e) {
+      console.error('Error fetching bets:', e);
+      return [];
+    }
   }, []);
 
   const toggleLotteryInDraw = useCallback((drawId, lotteryId) => {
@@ -168,9 +191,10 @@ export function BetProvider({ children }) {
         selectedAllByDraw, toggleAllInDraw,
         toggleLotteryInDraw, setAllInDraw, setManyInDraw, clearSelection,
         lotteryCountForDraw, totalMultiplier,
-        fetchLotteries, fetchDraws,
+        fetchLotteries, fetchDraws, fetchStats, fetchBets,
         addToCart, removeFromCart, clearCart, submitBet,
         copyBet, consumeCopiedBet, copiedBet,
+        stats,
       }}
     >
       {children}

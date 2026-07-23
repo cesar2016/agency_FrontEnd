@@ -126,9 +126,6 @@ export default function PlaceBetPage() {
           : 'a_los_10'
         : mapPositionToType(pos);
     addToCart({ number, position: pos, type, amount: val });
-    setNumber('');
-    setPosition('');
-    setAmount('');
     setError('');
   };
 
@@ -148,9 +145,19 @@ export default function PlaceBetPage() {
       return;
     }
     const reduced = trimmed.slice(1);
-    setNumber(reduced);
-    setPosition(basePos);
-    setAmount(baseAmount);
+    const pos = parseInt(basePos);
+    const val = parseFloat(baseAmount.replace(/\./g, ''));
+    if (!val || val <= 0) {
+      setError('Importe invalido');
+      return;
+    }
+    const type =
+      reduced.length === 1
+        ? pos === 1
+          ? 'primera'
+          : 'a_los_10'
+        : mapPositionToType(pos);
+    addToCart({ number: reduced, position: pos, type, amount: val });
     setError('');
   };
 

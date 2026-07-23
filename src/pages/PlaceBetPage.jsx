@@ -78,7 +78,7 @@ export default function PlaceBetPage() {
   const allSelectedLotteryIds = Array.from(new Set(Object.values(selectedByDraw).flat()));
   const drawNames = draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.name).join(' / ');
   const lotteryLabels = lotteries.filter((l) => allSelectedLotteryIds.includes(l.id)).map((l) => l.initials).join(', ');
-  const subtotal = cart.reduce((acc, i) => acc + i.amount, 0);
+  const subtotal = cart.reduce((acc, i) => acc + Number(i.amount), 0);
   const total = subtotal * totalMultiplier;
 
   const closingTimeFor = (drawId, lotteryId) => {

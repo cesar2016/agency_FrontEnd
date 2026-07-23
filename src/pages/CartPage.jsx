@@ -10,7 +10,7 @@ export default function CartPage() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
 
-  const subtotal = cart.reduce((acc, item) => acc + item.amount, 0);
+  const subtotal = cart.reduce((acc, item) => acc + Number(item.amount), 0);
   const total = subtotal * totalMultiplier;
   const drawNames = draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.name).join(' / ');
 

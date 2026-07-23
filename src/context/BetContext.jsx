@@ -22,6 +22,9 @@ export function BetProvider({ children }) {
   const [filterDrawIds, setFilterDrawIds] = useState([]);
   // Bets del dashboard
   const [bets, setBets] = useState([]);
+  // Modal view bet / delete
+  const [viewBet, setViewBet] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
 
   const fetchLotteries = useCallback(async () => {
     const { data } = await api.get('/lotteries');
@@ -206,6 +209,8 @@ export function BetProvider({ children }) {
         stats,
         filterDate, setFilterDate,
         filterDrawIds, setFilterDrawIds,
+        viewBet, setViewBet,
+        deleteId, setDeleteId,
       }}
     >
       {children}

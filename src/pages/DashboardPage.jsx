@@ -7,7 +7,7 @@ import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiE
 const fmt = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function DashboardPage() {
-  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, deleteId, fetchBets, fetchStats, fetchDraws, confirmDelete, clearDateFilter, copyBet } = useBet();
+  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, deleteId, fetchBets, fetchStats, fetchDraws, confirmDelete, clearDateFilter, copyBet, setViewBet, setDeleteId } = useBet();
   const navigate = useNavigate();
 
   useEffect(() => {

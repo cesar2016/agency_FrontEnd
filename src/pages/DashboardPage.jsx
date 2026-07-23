@@ -99,11 +99,19 @@ export default function DashboardPage() {
                 <tr><td colSpan={5} className="text-center py-8 text-gray-400">No hay jugadas</td></tr>
               ) : bets.map((bet) => (
                 <tr key={bet.id} className="border-b border-gray-700/30 hover:bg-gray-700/20">
-                  <td className="p-2 text-white font-mono text-xs cursor-pointer hover:text-indigo-300" 
-                      onClick={() => { copyBet(bet.items || [], bet.redoblonas || []); navigate('/'); }} 
-                      title="Copiar jugada">
-                    {bet.sequence}
-                  </td>
+<td className="p-2 text-white font-mono text-xs cursor-pointer hover:text-indigo-300" 
+    onClick={() => { 
+        try {
+            copyBet(bet.items || [], bet.redoblonas || []); 
+            navigate('/'); 
+        } catch (e) {
+            console.error('Error copiando apuesta:', e);
+            navigate('/');
+        }
+    }} 
+    title="Copiar jugada">
+    {bet.sequence}
+</td>
                   <td className="p-2 text-gray-300">{bet.user?.name}</td>
                   <td className="p-2 text-gray-300">{(bet.draws || []).map((d) => d.name).join(' / ') || bet.draw?.name}</td>
                   <td className="p-2 text-right text-white">${fmt(bet.total)}</td>

@@ -62,7 +62,7 @@ const DRAW_PRINCIPAL_GROUPS = {
 };
 
 export default function SelectLotteryDraw() {
-  const { lotteries, draws, selectedByDraw, selectedGroupsByDraw, selectedAllByDraw, toggleLotteryInDraw, setAllInDraw, setManyInDraw, toggleGroupInDraw, toggleAllInDraw, fetchLotteries, fetchDraws } = useBet();
+  const { lotteries, draws, selectedByDraw, selectedGroupsByDraw, toggleLotteryInDraw, toggleGroupInDraw, toggleAllInDraw, fetchLotteries, fetchDraws } = useBet();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
@@ -140,8 +140,6 @@ export default function SelectLotteryDraw() {
     toggleAllInDraw(drawId, openIds, !allSelected);
   };
 
-  const lotteriesInDraw = (drawId) => selectedByDraw[drawId] || [];
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -151,7 +149,7 @@ export default function SelectLotteryDraw() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="max-w-2xl mx-auto space-y-4 pb-24 relative">
       <div className="text-center">
         <h2 className="text-lg font-semibold text-white">Sorteos y Loterías</h2>
         <p className="text-xs text-gray-400">{todayLabel()}</p>
@@ -161,6 +159,7 @@ export default function SelectLotteryDraw() {
         const open = openDraws.has(draw.id);
         const drawLots = selectedByDraw[draw.id] || [];
         const openItems = items.filter((it) => !isClosed(it.closingTime));
+        const closedItems = items.filter((it) => isClosed(it.closingTime));
         const hasOpen = openItems.length > 0;
         return (
           <div key={draw.id} className={`relative bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden ${hasOpen ? '' : 'opacity-60'}`}>
@@ -220,8 +219,7 @@ export default function SelectLotteryDraw() {
                    </label>
                 </div>
                 <div className="divide-y divide-gray-700/20 max-h-80 overflow-y-auto">
-                  {items.map(({ lottery, closingTime, drawTime }) => {
-                    const closed = isClosed(closingTime);
+                  {openItems.map(({ lottery, drawTime }, _index) => {
                     const selected = drawLots.includes(lottery.id);
                     const isDragging = dragState.fromId === lottery.id;
                     return (
@@ -239,7 +237,7 @@ export default function SelectLotteryDraw() {
                         onDragEnter={(e) => {
                           e.preventDefault();
                           if (dragState.fromId && dragState.fromId !== lottery.id) {
-                            reorderLottery(draw.id, dragState.fromId, lottery.id, items.map((it) => it.lottery.id));
+                            reorderLottery(draw.id, dragState.fromId, lottery.id, openItems.map((it) => it.lottery.id));
                           }
                         }}
                         onDragEnd={() => setDragState({ drawId: null, fromId: null })}
@@ -274,6 +272,39 @@ export default function SelectLotteryDraw() {
                       </div>
                     );
                   })}
+                  {closedItems.length > 0 && (
+                    <>
+                      <div className="px-4 py-2 text-center">
+                        <span className="text-xs text-gray-500 uppercase tracking-wider">Cerrados</span>
+                      </div>
+                      <div className="divide-y divide-gray-700/20">
+                        {closedItems.map(({ lottery, drawTime }) => {
+                          const selected = drawLots.includes(lottery.id);
+                          return (
+                            <div
+                              key={lottery.id}
+                              className="flex items-center justify-between px-4 py-2.5 text-sm opacity-50 bg-gray-800/50"
+                            >
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="checkbox"
+                                  checked={selected}
+                                  disabled
+                                  className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-indigo-600 cursor-not-allowed"
+                                />
+                                <span className="font-mono font-bold text-indigo-300 w-10">{lottery.initials}</span>
+                                <span className="text-gray-200">{lottery.name}</span>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs">
+                                <span className="text-gray-500">Sorteo {drawTime}</span>
+                                <span className="flex items-center gap-1 text-red-500/80"><FiLock size={12} /> Cerrado</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -281,10 +312,11 @@ export default function SelectLotteryDraw() {
         );
       })}
 
+
       <button
         onClick={() => navigate('/bet')}
         disabled={!hasSelection}
-        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl transition shadow-lg shadow-indigo-500/20"
+        className="fixed bottom-4 left-1/2 -translate-x-1/2 w-full max-w-2xl flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl transition shadow-lg shadow-indigo-500/20 z-50"
       >
         Continuar <FiArrowRight size={18} />
       </button>

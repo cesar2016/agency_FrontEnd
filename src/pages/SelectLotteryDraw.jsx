@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
-import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 
 function isClosed(closingTime) {
   // Sin horario cargado para ese sorteo => se considera cerrada.
@@ -66,6 +66,28 @@ export default function SelectLotteryDraw() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
+  const [lotteryOrder, setLotteryOrder] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('lotteryOrder') || '{}'); } catch { return {}; }
+  });
+
+  const persistOrder = useCallback((next) => {
+    setLotteryOrder(next);
+    localStorage.setItem('lotteryOrder', JSON.stringify(next));
+  }, []);
+
+  const moveLottery = useCallback((drawId, items, fromIdx, toIdx) => {
+    if (toIdx < 0 || toIdx >= items.length) return;
+    const currentOrder = lotteryOrder[drawId] || items.map((it) => it.lottery.id);
+    const ids = [...currentOrder];
+    const fromId = items[fromIdx].lottery.id;
+    const toId = items[toIdx].lottery.id;
+    const fi = ids.indexOf(fromId);
+    const ti = ids.indexOf(toId);
+    if (fi === -1 || ti === -1) return;
+    ids.splice(fi, 1);
+    ids.splice(ti, 0, fromId);
+    persistOrder({ ...lotteryOrder, [drawId]: ids });
+  }, [lotteryOrder, persistOrder]);
 
   useEffect(() => {
     Promise.all([fetchLotteries(), fetchDraws()]).finally(() => setLoading(false));
@@ -93,11 +115,22 @@ export default function SelectLotteryDraw() {
             const sched = effectiveSchedule(l.schedules, draw.id);
             return sched ? { lottery: l, closingTime: sched.closing_time, drawTime: sched.draw_time } : null;
           })
-          .filter(Boolean)
-          .sort((a, b) => lotteryRank(a.lottery.initials) - lotteryRank(b.lottery.initials));
+          .filter(Boolean);
+        const customOrder = lotteryOrder[draw.id];
+        if (customOrder) {
+          items.sort((a, b) => {
+            const ai = customOrder.indexOf(a.lottery.id);
+            const bi = customOrder.indexOf(b.lottery.id);
+            const aIdx = ai === -1 ? 999 : ai;
+            const bIdx = bi === -1 ? 999 : bi;
+            return aIdx - bIdx;
+          });
+        } else {
+          items.sort((a, b) => lotteryRank(a.lottery.initials) - lotteryRank(b.lottery.initials));
+        }
         return { draw, items };
       });
-  }, [lotteries, draws]);
+  }, [lotteries, draws, lotteryOrder]);
 
   const toggleLottery = (lotteryId, drawId) => {
     toggleLotteryInDraw(drawId, lotteryId);
@@ -189,7 +222,7 @@ export default function SelectLotteryDraw() {
                    </label>
                 </div>
                 <div className="divide-y divide-gray-700/20 max-h-80 overflow-y-auto">
-                  {items.map(({ lottery, closingTime, drawTime }) => {
+                  {items.map(({ lottery, closingTime, drawTime }, idx) => {
                     const closed = isClosed(closingTime);
                     const selected = drawLots.includes(lottery.id);
                     return (
@@ -207,6 +240,24 @@ export default function SelectLotteryDraw() {
                             onChange={() => toggleLottery(lottery.id, draw.id)}
                             className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
                           />
+                          <div className="flex flex-col">
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveLottery(draw.id, items, idx, idx - 1); }}
+                              className="text-gray-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed p-0 leading-none"
+                            >
+                              <FiArrowUp size={11} />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === items.length - 1}
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveLottery(draw.id, items, idx, idx + 1); }}
+                              className="text-gray-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed p-0 leading-none"
+                            >
+                              <FiArrowDown size={11} />
+                            </button>
+                          </div>
                           <span className="font-mono font-bold text-indigo-300 w-10">{lottery.initials}</span>
                           <span className="text-gray-200">{lottery.name}</span>
                         </div>

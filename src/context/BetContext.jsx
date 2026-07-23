@@ -17,6 +17,9 @@ export function BetProvider({ children }) {
   const [copiedBet, setCopiedBet] = useState(null);
   // Stats del dashboard
   const [stats, setStats] = useState(null);
+  // Filtros del dashboard
+  const [filterDate, setFilterDate] = useState('');
+  const [filterDrawIds, setFilterDrawIds] = useState([]);
 
   const fetchLotteries = useCallback(async () => {
     const { data } = await api.get('/lotteries');
@@ -195,6 +198,8 @@ export function BetProvider({ children }) {
         addToCart, removeFromCart, clearCart, submitBet,
         copyBet, consumeCopiedBet, copiedBet,
         stats,
+        filterDate, setFilterDate,
+        filterDrawIds, setFilterDrawIds,
       }}
     >
       {children}

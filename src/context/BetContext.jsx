@@ -17,14 +17,27 @@ export function BetProvider({ children }) {
   const [copiedBet, setCopiedBet] = useState(null);
   // Stats del dashboard
   const [stats, setStats] = useState(null);
-  // Filtros del dashboard
-  const [filterDate, setFilterDate] = useState('');
+  // Filtros del dashboard - fecha por defecto hoy (Argentina)
+  const [filterDate, setFilterDate] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }));
   const [filterDrawIds, setFilterDrawIds] = useState([]);
   // Bets del dashboard
   const [bets, setBets] = useState([]);
   // Modal view bet / delete
   const [viewBet, setViewBet] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
+
+  const clearDateFilter = useCallback(() => {
+    setFilterDate('');
+    setFilterDrawIds([]);
+  }, []);
+
+  const setFilterDateWithFetch = useCallback((date) => {
+    setFilterDate(date);
+  }, []);
+
+  const setFilterDrawIdsWithFetch = useCallback((ids) => {
+    setFilterDrawIds(ids);
+  }, []);
 
   const fetchLotteries = useCallback(async () => {
     const { data } = await api.get('/lotteries');
@@ -193,7 +206,7 @@ export function BetProvider({ children }) {
     return data;
   };
 
-  return (
+return (
     <BetContext.Provider
       value={{
         lotteries, draws, cart,
@@ -207,10 +220,9 @@ export function BetProvider({ children }) {
         addToCart, removeFromCart, clearCart, submitBet,
         copyBet, consumeCopiedBet, copiedBet,
         stats,
-        filterDate, setFilterDate,
-        filterDrawIds, setFilterDrawIds,
-        viewBet, setViewBet,
-        deleteId, setDeleteId,
+        filterDate, setFilterDate: setFilterDateWithFetch,
+        filterDrawIds, setFilterDrawIds: setFilterDrawIdsWithFetch,
+        clearDateFilter,
       }}
     >
       {children}

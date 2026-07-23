@@ -49,7 +49,7 @@ export default function DashboardPage() {
           <input
             type="date"
             value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
+            onChange={(e) => setFilterDateWithFetch(e.target.value)}
             className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 w-full sm:w-40"
           />
           <button
@@ -77,7 +77,7 @@ export default function DashboardPage() {
                   <input
                     type="checkbox"
                     checked={selected}
-                    onChange={() => setFilterDrawIds((prev) =>
+                    onChange={() => setFilterDrawIdsWithFetch((prev) =>
                       prev.includes(d.id) ? prev.filter((id) => id !== d.id) : [...prev, d.id]
                     )}
                     className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"

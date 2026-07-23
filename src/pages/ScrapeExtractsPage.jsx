@@ -22,7 +22,7 @@ export default function ScrapeExtractsPage() {
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
   const [busy, setBusy] = useState({}); // claves: turno o "turno-loteria"
-  const [openExtract, setOpenExtract] = useState(null);
+  const [modalExtract, setModalExtract] = useState(null); // { drawId, lotteryId, extractId, label }
   const [toast, setToast] = useState(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState('');
@@ -381,7 +381,7 @@ export default function ScrapeExtractsPage() {
                               ) : null}
                               {lot.extract_id && (
                                <button
-                                 onClick={() => setOpenExtract(openExtract === lot.extract_id ? null : lot.extract_id)}
+                                 onClick={() => setModalExtract({ drawId: draw.draw_id, lotteryId: lot.lottery_id, extractId: lot.extract_id, label: `${lot.initials} — ${draw.draw_name}` })}
                                  className="flex items-center gap-1 text-xs bg-gray-700/50 hover:bg-gray-700 text-gray-200 px-2.5 py-1 rounded-lg transition"
                                >
                                  <FiGrid size={12} /> Ver
@@ -400,10 +400,7 @@ export default function ScrapeExtractsPage() {
                            </div>
                         </div>
 
-                        {openExtract === lot.extract_id && lot.extract_id && (
-                          <ExtractNumbers drawId={draw.draw_id} lotteryId={lot.lottery_id} extractId={lot.extract_id} />
-                        )}
-                      </div>
+                       </div>
                     );
                   })}
               </div>
@@ -485,46 +482,76 @@ export default function ScrapeExtractsPage() {
           </div>
         </div>
       )}
+
+      {modalExtract && (
+        <ExtractNumbersModal
+          extractId={modalExtract.extractId}
+          label={modalExtract.label}
+          onClose={() => setModalExtract(null)}
+        />
+      )}
     </div>
   );
 }
 
-function ExtractNumbers({ drawId, lotteryId, extractId: propExtractId }) {
+function ExtractNumbersModal({ extractId, label, onClose }) {
   const [nums, setNums] = useState([]);
-  const [status, setStatus] = useState(null);
-  const [extractId, setExtractId] = useState(propExtractId ?? null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    if (propExtractId) {
-      setExtractId(propExtractId);
-    }
-    api.get(`/extracts/${propExtractId}`).then((r) => {
+    setLoading(true);
+    api.get(`/extracts/${extractId}`).then((r) => {
       const ex = r.data.data ?? r.data;
       if (active && ex) {
-        setExtractId(ex.id);
-        setStatus(ex.status);
         setNums((ex.numbers || []).slice().sort((a, b) => a.position - b.position));
       }
-    });
+    }).catch(() => {}).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [propExtractId]);
+  }, [extractId]);
 
-  const hasNumbers = nums.length > 0;
+  const col1 = nums.filter((n) => n.position >= 1 && n.position <= 10);
+  const col2 = nums.filter((n) => n.position >= 11 && n.position <= 20);
 
   return (
-    <div className="mt-3 bg-gray-900/40 rounded-xl p-3">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-gray-400">{nums.length} número(s) cargado(s)</span>
-      </div>
-      <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
-        {nums.map((n) => (
-          <div key={n.id || n.position} className="rounded-lg px-2 py-1.5 text-center bg-gray-800/60">
-            <span className="text-[10px] text-gray-500 block">#{n.position}</span>
-            <span className="font-mono font-bold text-sm text-white">{n.number}</span>
-          </div>
-        ))}
-        {nums.length === 0 && <span className="text-xs text-gray-500 col-span-full">Sin números cargados.</span>}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-md bg-gray-900 border border-indigo-500/20 rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700/50">
+          <h3 className="text-sm font-semibold text-white">{label}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-white text-lg leading-none">&times;</button>
+        </div>
+        <div className="px-5 py-4">
+          {loading ? (
+            <div className="text-center text-gray-400 text-sm py-8">Cargando...</div>
+          ) : nums.length === 0 ? (
+            <div className="text-center text-gray-500 text-sm py-8">Sin números cargados.</div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-semibold">Posiciones 1–10</div>
+                <div className="space-y-1">
+                  {col1.map((n) => (
+                    <div key={n.position} className="flex items-center gap-2 bg-gray-800/60 rounded-lg px-3 py-2">
+                      <span className="text-[10px] text-gray-500 w-5 text-right">#{n.position}</span>
+                      <span className="font-mono font-bold text-white">{n.number}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-semibold">Posiciones 11–20</div>
+                <div className="space-y-1">
+                  {col2.map((n) => (
+                    <div key={n.position} className="flex items-center gap-2 bg-gray-800/60 rounded-lg px-3 py-2">
+                      <span className="text-[10px] text-gray-500 w-5 text-right">#{n.position}</span>
+                      <span className="font-mono font-bold text-white">{n.number}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

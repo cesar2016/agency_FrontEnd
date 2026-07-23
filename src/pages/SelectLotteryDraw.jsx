@@ -229,13 +229,13 @@ export default function SelectLotteryDraw() {
                    </label>
                 </div>
                 <div className="divide-y divide-gray-700/20 max-h-80 overflow-y-auto">
-                  {openItems.map(({ lottery, drawTime }, _index) => {
+                  {openItems.map(({ lottery, closingTime, drawTime }, _index) => {
                     const selected = drawLots.includes(lottery.id);
                     const isDragging = dragState.fromId === lottery.id;
                     return (
                       <div
                         key={lottery.id}
-                        draggable={!closed}
+                        draggable
                         onDragStart={(e) => {
                           e.dataTransfer.effectAllowed = 'move';
                           setDragState({ drawId: draw.id, fromId: lottery.id });
@@ -251,20 +251,15 @@ export default function SelectLotteryDraw() {
                           }
                         }}
                         onDragEnd={() => setDragState({ drawId: null, fromId: null })}
-                        className={`flex items-center justify-between px-4 py-2.5 text-sm transition ${
-                          closed ? 'opacity-50' : 'hover:bg-gray-700/30'
-                        } ${selected ? 'bg-indigo-600/10' : ''} ${isDragging ? 'opacity-30' : ''}`}
+                        className={`flex items-center justify-between px-4 py-2.5 text-sm transition hover:bg-gray-700/30 ${selected ? 'bg-indigo-600/10' : ''} ${isDragging ? 'opacity-30' : ''}`}
                       >
                         <div className="flex items-center gap-3">
-                          {!closed && (
-                            <span className="text-gray-600 cursor-grab active:cursor-grabbing touch-none">
-                              <FiMenu size={14} />
-                            </span>
-                          )}
+                          <span className="text-gray-600 cursor-grab active:cursor-grabbing touch-none">
+                            <FiMenu size={14} />
+                          </span>
                           <input
                             type="checkbox"
                             checked={selected}
-                            disabled={closed}
                             onChange={() => toggleLottery(lottery.id, draw.id)}
                             className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
                           />
@@ -273,11 +268,7 @@ export default function SelectLotteryDraw() {
                         </div>
                         <div className="flex items-center gap-3 text-xs">
                           <span className="text-gray-500">Sorteo {drawTime}</span>
-                          {closed ? (
-                            <span className="flex items-center gap-1 text-red-500/80"><FiLock size={12} /> Cerrado</span>
-                          ) : (
-                            <span className="text-yellow-400">Cierre {closingTime}</span>
-                          )}
+                          <span className="text-yellow-400">Cierre {closingTime}</span>
                         </div>
                       </div>
                     );

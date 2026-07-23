@@ -3,17 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
 import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp, FiMenu } from 'react-icons/fi';
 
-function isClosed(closingTime) {
-  // Sin horario cargado para ese sorteo => se considera cerrada.
+function isClosed(closingTime, now) {
   if (!closingTime) return true;
-  const now = new Date();
   const [h, m] = closingTime.split(':').map(Number);
   const close = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
   return now > close;
 }
 
-// Para una lotería puede haber varios sorteos en un turno (p. ej. San Juan Matutina
-// 14:30 y 15:00). Usamos el horario más tardío como el efectivo para mostrar y cerrar.
 function effectiveSchedule(schedules, drawId) {
   const matching = (schedules || []).filter((s) => s.draw_id === drawId);
   if (matching.length === 0) return null;
@@ -70,6 +66,13 @@ export default function SelectLotteryDraw() {
     try { return JSON.parse(localStorage.getItem('lotteryOrder') || '{}'); } catch { return {}; }
   });
   const [dragState, setDragState] = useState({ drawId: null, fromId: null });
+  const [now, setNow] = useState(new Date());
+
+  // Actualizar cada minuto para re-evaluar turnos cerrados en tiempo real
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const persistOrder = useCallback((next) => {
     setLotteryOrder(next);
@@ -158,8 +161,8 @@ export default function SelectLotteryDraw() {
       {drawsGrouped.map(({ draw, items }) => {
         const open = openDraws.has(draw.id);
         const drawLots = selectedByDraw[draw.id] || [];
-        const openItems = items.filter((it) => !isClosed(it.closingTime));
-        const closedItems = items.filter((it) => isClosed(it.closingTime));
+        const openItems = items.filter((it) => !isClosed(it.closingTime, now));
+        const closedItems = items.filter((it) => isClosed(it.closingTime, now));
         const hasOpen = openItems.length > 0;
         return (
           <div key={draw.id} className={`relative bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden ${hasOpen ? '' : 'opacity-60'}`}>

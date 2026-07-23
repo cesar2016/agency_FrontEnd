@@ -7,14 +7,14 @@ import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiE
 const fmt = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function DashboardPage() {
-  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, deleteId, fetchBets, fetchStats, fetchDraws, confirmDelete, clearDateFilter, copyBet, setViewBet, setDeleteId, setFilterDateWithFetch, setFilterDrawIdsWithFetch } = useBet();
+  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, deleteId, fetchBets, fetchStats, fetchDraws, confirmDelete, clearDateFilter, copyBet, setViewBet, setDeleteId, setFilterDateWithFetch, setFilterDrawIds, page, setPage, pageSize, totalBets } = useBet();
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchStats();
     fetchDraws();
     fetchBets({ date: filterDate, draw_ids: filterDrawIds });
-  }, [fetchStats, fetchDraws, fetchBets, filterDate, filterDrawIds]);
+  }, [fetchStats, fetchDraws, fetchBets, filterDate, filterDrawIds, page, pageSize]);
 
   if (!stats) {
     return <div className="flex justify-center pt-20"><FiRefreshCw className="animate-spin text-indigo-400" size={28} /></div>;
@@ -77,7 +77,7 @@ export default function DashboardPage() {
                   <input
                     type="checkbox"
                     checked={selected}
-                    onChange={() => setFilterDrawIdsWithFetch((prev) =>
+                    onChange={() => setFilterDrawIds((prev) =>
                       prev.includes(d.id) ? prev.filter((id) => id !== d.id) : [...prev, d.id]
                     )}
                     className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
@@ -105,19 +105,19 @@ export default function DashboardPage() {
                 <tr><td colSpan={5} className="text-center py-8 text-gray-400">No hay jugadas</td></tr>
               ) : bets.map((bet) => (
                 <tr key={bet.id} className="border-b border-gray-700/30 hover:bg-gray-700/20">
-<td className="p-2 text-white font-mono text-xs cursor-pointer hover:text-indigo-300" 
-    onClick={() => { 
-        try {
-            copyBet(bet.items || [], bet.redoblonas || []); 
-            navigate('/'); 
-        } catch (e) {
-            console.error('Error copiando apuesta:', e);
-            navigate('/');
-        }
-    }} 
-    title="Copiar jugada">
-    {bet.sequence}
-</td>
+                  <td className="p-2 text-white font-mono text-xs cursor-pointer hover:text-indigo-300" 
+                      onClick={() => { 
+                          try {
+                              copyBet(bet.items || [], bet.redoblonas || []); 
+                              navigate('/'); 
+                          } catch (e) {
+                              console.error('Error copiando apuesta:', e);
+                              navigate('/');
+                          }
+                      }} 
+                      title="Copiar jugada">
+                    {bet.sequence}
+                  </td>
                   <td className="p-2 text-gray-300">{bet.user?.name}</td>
                   <td className="p-2 text-gray-300">{(bet.draws || []).map((d) => d.name).join(' / ') || bet.draw?.name}</td>
                   <td className="p-2 text-right text-white">${fmt(bet.total)}</td>
@@ -136,6 +136,31 @@ export default function DashboardPage() {
             </tbody>
           </table>
         </div>
+
+        {bets.length > 0 && (
+          <div className="flex items-center justify-between mt-4 px-4 pb-4">
+            <div className="text-sm text-gray-400">
+              Mostrando {((page - 1) * pageSize) + 1} a {Math.min(page * pageSize, totalBets)} de {totalBets} jugadas
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition"
+              >
+                Anterior
+              </button>
+              <span className="px-3 text-sm text-gray-300">Página {page} de {Math.ceil(totalBets / pageSize)}</span>
+              <button
+                onClick={() => setPage(p => Math.min(Math.ceil(totalBets / pageSize), p + 1))}
+                disabled={page === Math.ceil(totalBets / pageSize)}
+                className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition"
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {deleteId && (
@@ -170,7 +195,7 @@ export default function DashboardPage() {
             <div className="p-4 font-mono text-xs space-y-2 text-gray-200">
               <p><span className="text-gray-400">Secuencia:</span> <span className="text-white">{viewBet.sequence}</span></p>
               <p><span className="text-gray-400">Pasador:</span> <span className="text-white">{viewBet.user?.name}</span></p>
-                <p><span className="text-gray-400">Sorteo:</span> <span className="text-white">{(viewBet.draws || []).map((d) => d.name).join(' / ') || viewBet.draw?.name}</span></p>
+              <p><span className="text-gray-400">Sorteo:</span> <span className="text-white">{(viewBet.draws || []).map((d) => d.name).join(' / ') || viewBet.draw?.name}</span></p>
               <p><span className="text-gray-400">Fecha:</span> <span className="text-white">{viewBet.draw_date} {viewBet.created_at ? `· ${viewBet.created_at.split(' ')[1]}` : ''}</span></p>
               <p><span className="text-gray-400">Loterias:</span> <span className="text-indigo-300">{(viewBet.lotteries || []).map((l) => l.initials).join(', ')}</span></p>
               <table className="w-full mt-2">
@@ -201,7 +226,7 @@ export default function DashboardPage() {
                         )}
                         {redos.length > 0 && (
                           <>
-                            <tr><td colSpan="3" className="text-center pt-3 pb-1 text-indigo-300 font-bold">REDOBLONA</td></tr>
+                            <tr><td colSpan="3" className="text-center text-indigo-300 font-bold py-1">REDOBLONA</td></tr>
                             <tr><td colSpan="3" className="text-center text-indigo-300 text-[10px] pb-1">Redoblona Secuencia: {viewBet.sequence}-2</td></tr>
                             {redos.map((play) => (
                               <tr key={play.id}>

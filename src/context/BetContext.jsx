@@ -22,6 +22,10 @@ export function BetProvider({ children }) {
   const [filterDrawIds, setFilterDrawIds] = useState([]);
   // Bets del dashboard
   const [bets, setBets] = useState([]);
+  // Paginación del dashboard
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(15);
+  const [totalBets, setTotalBets] = useState(0);
   // Modal view bet / delete
   const [viewBet, setViewBet] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -62,16 +66,19 @@ export function BetProvider({ children }) {
 
   const fetchBets = useCallback(async (params = {}) => {
     try {
-      const { data } = await api.get('/bets', { params });
+      const p = { ...params, page, pageSize };
+      const { data } = await api.get('/bets', { params: p });
       const betsData = data.data || data;
       setBets(betsData);
+      if (data.total) setTotalBets(data.total);
       return betsData;
     } catch (e) {
       console.error('Error fetching bets:', e);
       setBets([]);
+      setTotalBets(0);
       return [];
     }
-  }, []);
+  }, [page, pageSize]);
 
   const toggleLotteryInDraw = useCallback((drawId, lotteryId) => {
     setSelectedByDraw((prev) => {
@@ -223,6 +230,9 @@ return (
         filterDate, setFilterDate: setFilterDateWithFetch,
         filterDrawIds, setFilterDrawIds: setFilterDrawIdsWithFetch,
         clearDateFilter,
+        page, setPage,
+        pageSize,
+        totalBets,
       }}
     >
       {children}

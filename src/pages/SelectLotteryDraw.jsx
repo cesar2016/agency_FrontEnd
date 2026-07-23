@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
-import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp, FiArrowUp, FiArrowDown } from 'react-icons/fi';
+import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp, FiGripVertical } from 'react-icons/fi';
 
 function isClosed(closingTime) {
   // Sin horario cargado para ese sorteo => se considera cerrada.
@@ -69,18 +69,16 @@ export default function SelectLotteryDraw() {
   const [lotteryOrder, setLotteryOrder] = useState(() => {
     try { return JSON.parse(localStorage.getItem('lotteryOrder') || '{}'); } catch { return {}; }
   });
+  const [dragState, setDragState] = useState({ drawId: null, fromId: null });
 
   const persistOrder = useCallback((next) => {
     setLotteryOrder(next);
     localStorage.setItem('lotteryOrder', JSON.stringify(next));
   }, []);
 
-  const moveLottery = useCallback((drawId, items, fromIdx, toIdx) => {
-    if (toIdx < 0 || toIdx >= items.length) return;
-    const currentOrder = lotteryOrder[drawId] || items.map((it) => it.lottery.id);
-    const ids = [...currentOrder];
-    const fromId = items[fromIdx].lottery.id;
-    const toId = items[toIdx].lottery.id;
+  const reorderLottery = useCallback((drawId, fromId, toId, allIds) => {
+    if (fromId === toId) return;
+    const ids = (lotteryOrder[drawId] && lotteryOrder[drawId].length) ? [...lotteryOrder[drawId]] : [...allIds];
     const fi = ids.indexOf(fromId);
     const ti = ids.indexOf(toId);
     if (fi === -1 || ti === -1) return;
@@ -222,17 +220,39 @@ export default function SelectLotteryDraw() {
                    </label>
                 </div>
                 <div className="divide-y divide-gray-700/20 max-h-80 overflow-y-auto">
-                  {items.map(({ lottery, closingTime, drawTime }, idx) => {
+                  {items.map(({ lottery, closingTime, drawTime }) => {
                     const closed = isClosed(closingTime);
                     const selected = drawLots.includes(lottery.id);
+                    const isDragging = dragState.fromId === lottery.id;
                     return (
-                      <label
+                      <div
                         key={lottery.id}
-                        className={`flex items-center justify-between px-4 py-2.5 text-sm cursor-pointer transition ${
-                          closed ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-700/30'
-                        } ${selected ? 'bg-indigo-600/10' : ''}`}
+                        draggable={!closed}
+                        onDragStart={(e) => {
+                          e.dataTransfer.effectAllowed = 'move';
+                          setDragState({ drawId: draw.id, fromId: lottery.id });
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                        }}
+                        onDragEnter={(e) => {
+                          e.preventDefault();
+                          if (dragState.fromId && dragState.fromId !== lottery.id) {
+                            reorderLottery(draw.id, dragState.fromId, lottery.id, items.map((it) => it.lottery.id));
+                          }
+                        }}
+                        onDragEnd={() => setDragState({ drawId: null, fromId: null })}
+                        className={`flex items-center justify-between px-4 py-2.5 text-sm transition ${
+                          closed ? 'opacity-50' : 'hover:bg-gray-700/30'
+                        } ${selected ? 'bg-indigo-600/10' : ''} ${isDragging ? 'opacity-30' : ''}`}
                       >
                         <div className="flex items-center gap-3">
+                          {!closed && (
+                            <span className="text-gray-600 cursor-grab active:cursor-grabbing touch-none">
+                              <FiGripVertical size={14} />
+                            </span>
+                          )}
                           <input
                             type="checkbox"
                             checked={selected}
@@ -240,24 +260,6 @@ export default function SelectLotteryDraw() {
                             onChange={() => toggleLottery(lottery.id, draw.id)}
                             className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
                           />
-                          <div className="flex flex-col">
-                            <button
-                              type="button"
-                              disabled={idx === 0}
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveLottery(draw.id, items, idx, idx - 1); }}
-                              className="text-gray-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed p-0 leading-none"
-                            >
-                              <FiArrowUp size={11} />
-                            </button>
-                            <button
-                              type="button"
-                              disabled={idx === items.length - 1}
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveLottery(draw.id, items, idx, idx + 1); }}
-                              className="text-gray-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed p-0 leading-none"
-                            >
-                              <FiArrowDown size={11} />
-                            </button>
-                          </div>
                           <span className="font-mono font-bold text-indigo-300 w-10">{lottery.initials}</span>
                           <span className="text-gray-200">{lottery.name}</span>
                         </div>
@@ -269,7 +271,7 @@ export default function SelectLotteryDraw() {
                             <span className="text-yellow-400">Cierre {closingTime}</span>
                           )}
                         </div>
-                      </label>
+                      </div>
                     );
                   })}
                 </div>

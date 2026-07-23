@@ -13,6 +13,8 @@ export function BetProvider({ children }) {
   const [selectedGroupsByDraw, setSelectedGroupsByDraw] = useState({});
   // "Todas" activado explícitamente por turno: { [drawId]: true }
   const [selectedAllByDraw, setSelectedAllByDraw] = useState({});
+  // Bet copiada desde Dashboard para reutilizar jugadas
+  const [copiedBet, setCopiedBet] = useState(null);
 
   const fetchLotteries = useCallback(async () => {
     const { data } = await api.get('/lotteries');
@@ -102,6 +104,18 @@ export function BetProvider({ children }) {
 
   const clearCart = () => setCart([]);
 
+  // Copiar una apuesta desde Dashboard: guarda items + redoblonas
+  const copyBet = useCallback((items, redoblonas) => {
+    setCopiedBet({ items, redoblonas });
+  }, []);
+
+  // Consumir la apuesta copiada (la limpia después de usar)
+  const consumeCopiedBet = useCallback(() => {
+    const bet = copiedBet;
+    setCopiedBet(null);
+    return bet;
+  }, [copiedBet]);
+
   // Turnos seleccionados (los que tienen al menos una lotería)
   const selectedDraws = useMemo(
     () => Object.keys(selectedByDraw).map(Number),
@@ -156,6 +170,7 @@ export function BetProvider({ children }) {
         lotteryCountForDraw, totalMultiplier,
         fetchLotteries, fetchDraws,
         addToCart, removeFromCart, clearCart, submitBet,
+        copyBet, consumeCopiedBet, copiedBet,
       }}
     >
       {children}

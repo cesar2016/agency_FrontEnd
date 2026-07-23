@@ -24,7 +24,7 @@ function fmt(n) {
 }
 
 export default function PlaceBetPage() {
-  const { selectedByDraw, selectedDraws, lotteries, draws, cart, addToCart, removeFromCart, clearCart, submitBet, totalMultiplier, lotteryCountForDraw } = useBet();
+  const { selectedByDraw, selectedDraws, lotteries, draws, cart, addToCart, removeFromCart, clearCart, submitBet, totalMultiplier, lotteryCountForDraw, consumeCopiedBet, copiedBet } = useBet();
   const navigate = useNavigate();
 
   const [result, setResult] = useState(null);
@@ -34,6 +34,19 @@ export default function PlaceBetPage() {
       navigate('/', { replace: true });
     }
   }, [result, selectedDraws, navigate]);
+
+  // Auto-populate cart from copied bet
+  useEffect(() => {
+    if (copiedBet) {
+      const bet = consumeCopiedBet();
+      if (bet?.items?.length) {
+        bet.items.forEach(item => addToCart({ ...item, id: Date.now() + Math.random() }));
+      }
+      if (bet?.redoblonas?.length) {
+        bet.redoblonas.forEach(item => addToCart({ ...item, id: Date.now() + Math.random() }));
+      }
+    }
+  }, [copiedBet, consumeCopiedBet, addToCart]);
 
   const [number, setNumber] = useState('');
   const [position, setPosition] = useState('');

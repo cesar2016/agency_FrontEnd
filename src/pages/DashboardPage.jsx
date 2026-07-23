@@ -1,57 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { Link } from 'react-router-dom';
-import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiEye, FiTrash2, FiX } from 'react-icons/fi';
+import { useBet } from '../context/BetContext';
+import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiEye, FiTrash2, FiX, FiCopy } from 'react-icons/fi';
 
 const fmt = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState(null);
-  const [bets, setBets] = useState([]);
-  const [draws, setDraws] = useState([]);
-  // Por defecto la fecha de hoy (hora Argentina): se muestran las jugadas del dia.
-  const today = new Date().toLocaleDateString('en-CA', {
-    timeZone: 'America/Argentina/Buenos_Aires',
-  });
-  const [filterDate, setFilterDate] = useState(today);
-  const [filterDrawIds, setFilterDrawIds] = useState([]);
-  const [viewBet, setViewBet] = useState(null);
-  const [deleteId, setDeleteId] = useState(null);
-
-  const fetchBets = useCallback(async () => {
-    const params = {};
-    if (filterDate) params.date = filterDate;
-    if (filterDrawIds.length > 0) params.draw_ids = filterDrawIds;
-    const { data } = await api.get('/bets', { params });
-    setBets(data.data || data);
-  }, [filterDate, filterDrawIds]);
-
-  // Limpia el filtro de fecha para volver a mostrar TODAS las jugadas.
-  const clearDateFilter = () => setFilterDate('');
-
-  const fetchStats = useCallback(async () => {
-    const { data } = await api.get('/dashboard/stats');
-    setStats(data);
-  }, []);
-
-  useEffect(() => {
-    fetchStats();
-    api.get('/draws').then((r) => setDraws(r.data));
-  }, [fetchStats]);
-
-  useEffect(() => { fetchBets(); }, [fetchBets]);
-
-  const confirmDelete = async () => {
-    if (!deleteId) return;
-    try {
-      await api.delete(`/bets/${deleteId}`);
-      setDeleteId(null);
-      fetchBets();
-      fetchStats();
-    } catch {
-      alert('Error al eliminar');
-    }
-  };
+  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, deleteId, fetchBets, fetchStats, confirmDelete, clearDateFilter, copyBet } = useBet();
+  const navigate = useNavigate();
 
   if (!stats) {
     return <div className="flex justify-center pt-20"><FiRefreshCw className="animate-spin text-indigo-400" size={28} /></div>;
@@ -142,7 +99,11 @@ export default function DashboardPage() {
                 <tr><td colSpan={5} className="text-center py-8 text-gray-400">No hay jugadas</td></tr>
               ) : bets.map((bet) => (
                 <tr key={bet.id} className="border-b border-gray-700/30 hover:bg-gray-700/20">
-                  <td className="p-2 text-white font-mono text-xs">{bet.sequence}</td>
+                  <td className="p-2 text-white font-mono text-xs cursor-pointer hover:text-indigo-300" 
+                      onClick={() => { copyBet(bet.items || [], bet.redoblonas || []); navigate('/'); }} 
+                      title="Copiar jugada">
+                    {bet.sequence}
+                  </td>
                   <td className="p-2 text-gray-300">{bet.user?.name}</td>
                   <td className="p-2 text-gray-300">{(bet.draws || []).map((d) => d.name).join(' / ') || bet.draw?.name}</td>
                   <td className="p-2 text-right text-white">${fmt(bet.total)}</td>

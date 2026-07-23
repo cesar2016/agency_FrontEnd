@@ -58,7 +58,7 @@ const DRAW_PRINCIPAL_GROUPS = {
   'Primera':    [5, 8],
   'Matutina':   [5, 9],
   'Vespertina': [5, 8],
-  'Noctura':    [5, 9],
+  'Nocturna':    [5, 9],
 };
 
 export default function SelectLotteryDraw() {

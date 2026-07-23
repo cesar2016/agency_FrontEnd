@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
-import { FiArrowLeft, FiRefreshCw, FiGlobe, FiClock, FiSettings } from 'react-icons/fi';
+import { FiArrowLeft, FiRefreshCw, FiGlobe, FiSettings } from 'react-icons/fi';
 
 const PAGES = [
-  { path: 'lista_horarios.html', label: 'Horarios', icon: FiClock },
   { path: 'scrapear.html', label: 'Scraper', icon: FiGlobe },
   { path: 'admin.html', label: 'Admin', icon: FiSettings },
 ];

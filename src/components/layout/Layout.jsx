@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import { FiLogOut, FiDollarSign, FiTrendingUp, FiHome, FiCheckCircle, FiClock, FiMenu, FiX, FiList, FiGrid, FiChevronDown } from 'react-icons/fi';
 
 const SCRAPER_LINKS = [
-  { to: '/scraper-dashboard/lista_horarios.html', label: 'Horarios' },
   { to: '/scraper-dashboard/scrapear.html', label: 'Scraper' },
   { to: '/scraper-dashboard/admin.html', label: 'Admin' },
 ];

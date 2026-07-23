@@ -158,6 +158,9 @@ export default function PlaceBetPage() {
           : 'a_los_10'
         : mapPositionToType(pos);
     addToCart({ number: reduced, position: pos, type, amount: val });
+    setNumber(reduced);
+    setPosition(basePos);
+    setAmount(baseAmount);
     setError('');
   };
 

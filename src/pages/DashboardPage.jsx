@@ -7,8 +7,14 @@ import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiE
 const fmt = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function DashboardPage() {
-  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, deleteId, fetchBets, fetchStats, confirmDelete, clearDateFilter, copyBet } = useBet();
+  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, deleteId, fetchBets, fetchStats, fetchDraws, confirmDelete, clearDateFilter, copyBet } = useBet();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchStats();
+    fetchDraws();
+    fetchBets({ date: filterDate, draw_ids: filterDrawIds });
+  }, [fetchStats, fetchDraws, fetchBets, filterDate, filterDrawIds]);
 
   if (!stats) {
     return <div className="flex justify-center pt-20"><FiRefreshCw className="animate-spin text-indigo-400" size={28} /></div>;

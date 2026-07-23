@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
-import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp, FiGripVertical } from 'react-icons/fi';
+import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp, FiMenu } from 'react-icons/fi';
 
 function isClosed(closingTime) {
   // Sin horario cargado para ese sorteo => se considera cerrada.
@@ -250,7 +250,7 @@ export default function SelectLotteryDraw() {
                         <div className="flex items-center gap-3">
                           {!closed && (
                             <span className="text-gray-600 cursor-grab active:cursor-grabbing touch-none">
-                              <FiGripVertical size={14} />
+                              <FiMenu size={14} />
                             </span>
                           )}
                           <input

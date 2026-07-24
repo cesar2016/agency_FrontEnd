@@ -13,7 +13,7 @@ function lotteryRank(initials) {
   return i === -1 ? 999 : i;
 }
 
-const DRAW_ORDER = ['La Previa', 'Primera', 'Matutina', 'Vespertina', 'Noctura'];
+const DRAW_ORDER = ['La Previa', 'Primera', 'Matutina', 'Vespertina', 'Nocturna'];
 
 export default function HorariosPage() {
   const [sections, setSections] = useState([]);

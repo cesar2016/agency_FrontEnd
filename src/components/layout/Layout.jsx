@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { FiLogOut, FiDollarSign, FiTrendingUp, FiHome, FiCheckCircle, FiClock, FiMenu, FiX, FiList, FiGrid, FiChevronDown } from 'react-icons/fi';
+import { FiLogOut, FiDollarSign, FiTrendingUp, FiHome, FiCheckCircle, FiClock, FiMenu, FiX, FiList, FiGrid, FiChevronDown, FiUsers } from 'react-icons/fi';
 
 const SCRAPER_LINKS = [
   { to: '/scraper-dashboard/scrapear.html', label: 'Scraper' },
@@ -40,6 +40,7 @@ export default function Layout() {
       { to: '/aciertos', label: 'Aciertos', icon: FiCheckCircle },
       { to: '/extracts/scrape', label: 'Extractos', icon: FiList },
       { to: '/cash-register', label: 'Arqueo', icon: FiDollarSign },
+      { to: '/users', label: 'Usuarios', icon: FiUsers },
     ] : []),
   ];
 

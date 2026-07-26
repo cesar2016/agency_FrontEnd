@@ -14,7 +14,7 @@ function generateFakeData(name) {
   const word = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
   const digits = String(Math.floor(10 + Math.random() * 90));
   const password = word + digits;
-  return { name, whatsapp, email, username, password, password_confirmation: password };
+  return { name, whatsapp, email, username, role: 'usuario', password, password_confirmation: password };
 }
 
 export default function UsersPage() {
@@ -26,13 +26,15 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [form, setForm] = useState({ name: '', whatsapp: '', email: '', username: '', password: '', password_confirmation: '' });
+  const [form, setForm] = useState({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '' });
   const [formLoading, setFormLoading] = useState(false);
   const [generatedUsername, setGeneratedUsername] = useState('');
   const [lastCreatedUser, setLastCreatedUser] = useState(null);
   const [lastPassword, setLastPassword] = useState('');
   const [toast, setToast] = useState(null);
   const [deleteModal, setDeleteModal] = useState(null);
+  const [editingPasswordField, setEditingPasswordField] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   const nameInputRef = useRef(null);
 
   const flash = (msg) => {
@@ -62,64 +64,77 @@ export default function UsersPage() {
 
   const openCreate = () => {
     setEditingUser(null);
-    setForm({ name: '', whatsapp: '', email: '', username: '', password: '', password_confirmation: '' });
+    setForm({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '' });
     setGeneratedUsername('');
     setLastPassword('');
+    setFormErrors({});
     setShowModal(true);
   };
 
   const openEdit = (user) => {
+    const role = user.roles?.[0] || 'usuario';
     setEditingUser(user);
-    setForm({ name: user.name, whatsapp: user.whatsapp || '', email: user.email, username: user.username || '', password: '', password_confirmation: '' });
+    setForm({ name: user.name, whatsapp: user.whatsapp || '', email: user.email, username: user.username || '', role, password: '••••••', password_confirmation: '••••••' });
+    setEditingPasswordField(false);
     setGeneratedUsername('');
     setLastPassword('');
+    setFormErrors({});
     setShowModal(true);
   };
 
   const handleNameChange = (e) => {
     const name = e.target.value;
-    setForm((prev) => ({ ...prev, name }));
-    if (name.trim()) {
-      const fake = generateFakeData(name);
-      setForm(fake);
-      setGeneratedUsername(fake.username);
+    if (editingUser) {
+      setForm((prev) => ({ ...prev, name }));
     } else {
-      setForm({ name: '', whatsapp: '', email: '', username: '', password: '', password_confirmation: '' });
-      setGeneratedUsername('');
+      setForm((prev) => ({ ...prev, name }));
+      if (name.trim()) {
+        const fake = generateFakeData(name);
+        setForm(fake);
+        setGeneratedUsername(fake.username);
+      } else {
+        setForm({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '' });
+        setGeneratedUsername('');
+      }
     }
   };
 
   const errorMessages = {
-    'validation.required': (field) => `El campo ${field} es obligatorio.`,
-    'validation.email': (field) => `El campo ${field} debe ser un email válido.`,
-    'validation.string': (field) => `El campo ${field} debe ser texto.`,
-    'validation.min': (field) => `El campo ${field} debe tener al menos 6 caracteres.`,
-    'validation.confirmed': () => `Las contraseñas no coinciden.`,
-    'validation.unique': (field) => `El campo ${field} ya está en uso.`,
-    'validation.max': (field) => `El campo ${field} excede la longitud máxima.`,
+    'required': () => `Es obligatorio.`,
+    'email': () => `Debe ser un email válido.`,
+    'string': () => `Debe ser texto.`,
+    'min': () => `Debe tener al menos 6 caracteres.`,
+    'confirmed': () => `Las contraseñas no coinciden.`,
+    'unique': () => `Ya está en uso.`,
+    'max': () => `Excede la longitud máxima.`,
+    'regex': () => `Debe tener 6 caracteres: 4 letras y 2 dígitos (ej: loxo12).`,
+    'in': () => `Tiene un valor no válido.`,
+    'digits': () => `Debe contener solo números.`,
   };
 
-  function translateError(key) {
-    const parts = key.split('.');
-    const rule = parts.pop();
-    const field = parts.join('.');
-    const fn = errorMessages[rule];
-    if (!fn) return key;
-    if (rule === 'confirmed') return `${field}: Las contraseñas no coinciden.`;
-    if (rule === 'required') return `${field}: Es obligatorio.`;
-    return fn(field);
-  }
+  const clearFieldError = (field) => {
+    if (formErrors[field]) {
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormLoading(true);
+    setFormErrors({});
     try {
       if (editingUser) {
         const payload = { ...form };
-        if (!payload.password) delete payload.password;
-        if (!payload.password_confirmation) delete payload.password_confirmation;
+        if (!editingPasswordField || payload.password === '••••••') {
+          delete payload.password;
+          delete payload.password_confirmation;
+        }
         await api.put(`/users/${editingUser.id}`, payload);
-        if (payload.password) {
+        if (editingPasswordField && payload.password) {
           setLastCreatedUser(editingUser);
           setLastPassword(payload.password);
         }
@@ -130,7 +145,7 @@ export default function UsersPage() {
         setLastPassword(form.password);
         flash('Usuario creado correctamente');
       }
-      setForm({ name: '', whatsapp: '', email: '', username: '', password: '', password_confirmation: '' });
+      setForm({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '' });
       setEditingUser(null);
       setGeneratedUsername('');
       setShowModal(false);
@@ -138,15 +153,18 @@ export default function UsersPage() {
     } catch (e) {
       const data = e?.response?.data;
       if (data?.errors) {
-        const messages = Object.entries(data.errors).flatMap(([field, rules]) =>
-          rules.map((rule) => {
-            if (typeof rule === 'string' && rule.startsWith('validation.')) {
-              return translateError(rule.replace('validation.', field + '.'));
+        const parsed = {};
+        Object.entries(data.errors).forEach(([field, rules]) => {
+          parsed[field] = rules.map((rule) => {
+            if (typeof rule === 'string') {
+              const clean = rule.replace('validation.', '');
+              const fn = errorMessages[clean];
+              return fn ? fn(field) : rule;
             }
             return rule;
-          })
-        );
-        flash(messages.join(' '));
+          });
+        });
+        setFormErrors(parsed);
       } else {
         flash(data?.message || 'Error al guardar usuario');
       }
@@ -208,11 +226,11 @@ export default function UsersPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => { setShowModal(false); setEditingUser(null); setForm({ name: '', whatsapp: '', email: '', username: '', password: '', password_confirmation: '' }); }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => { setShowModal(false); setEditingUser(null); setForm({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '' }); setFormErrors({}); }}>
           <div className="bg-gray-800 border border-indigo-500/20 rounded-2xl w-full max-w-md shadow-2xl p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-semibold">{editingUser ? 'Editar usuario' : 'Crear usuario'}</h3>
-              <button onClick={() => { setShowModal(false); setEditingUser(null); }} className="text-gray-400 hover:text-white transition">
+              <button onClick={() => { setShowModal(false); setEditingUser(null); setFormErrors({}); }} className="text-gray-400 hover:text-white transition">
                 <FiX size={18} />
               </button>
             </div>
@@ -226,9 +244,10 @@ export default function UsersPage() {
                   required
                   value={form.name}
                   onChange={handleNameChange}
-                  className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+                  className={`w-full bg-gray-700/50 border rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500 ${formErrors.name ? 'border-red-500' : 'border-gray-600'}`}
                   placeholder="Ej: Cesar Sanchez"
                 />
+                {formErrors.name && <p className="text-red-400 text-xs mt-1">{formErrors.name.join('. ')}</p>}
               </div>
 
               {generatedUsername && !editingUser && (
@@ -243,26 +262,75 @@ export default function UsersPage() {
                 </div>
               )}
 
-              <input type="hidden" name="whatsapp" value={form.whatsapp} />
-              <input type="hidden" name="email" value={form.email} />
-              {editingUser && form.username && (
-                <input type="hidden" name="username" value={form.username} />
-              )}
-              <input type="hidden" name="password" value={form.password} />
-              <input type="hidden" name="password_confirmation" value={form.password_confirmation} />
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">WhatsApp</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={form.whatsapp}
+                  onChange={(e) => { const val = e.target.value.replace(/[^0-9]/g, ''); setForm((p) => ({ ...p, whatsapp: val })); clearFieldError('whatsapp'); }}
+                  className={`w-full bg-gray-700/50 border rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500 ${formErrors.whatsapp ? 'border-red-500' : 'border-gray-600'}`}
+                  placeholder="Solo números"
+                />
+                {formErrors.whatsapp && <p className="text-red-400 text-xs mt-1">{formErrors.whatsapp.join('. ')}</p>}
+              </div>
 
-              {editingUser && form.password && (
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">Nueva contraseña (dejar vacío para no cambiar)</label>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => { setForm((p) => ({ ...p, email: e.target.value })); clearFieldError('email'); }}
+                  className={`w-full bg-gray-700/50 border rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500 ${formErrors.email ? 'border-red-500' : 'border-gray-600'}`}
+                  placeholder="Ej: juan@agencia.com"
+                />
+                {formErrors.email && <p className="text-red-400 text-xs mt-1">{formErrors.email.join('. ')}</p>}
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Rol</label>
+                <select
+                  value={form.role}
+                  onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
+                  className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="usuario">Usuario</option>
+                  <option value="admin">Admin</option>
+                  <option value="super_admin">Super Admin</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Contraseña {editingUser ? '' : <span className="text-red-400">*</span>}</label>
+                {editingUser ? (
                   <input
                     type="password"
-                    value={form.password}
-                    onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-                    className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-                    placeholder="Opcional"
+                    value={editingPasswordField ? form.password : '••••••'}
+                    onFocus={() => {
+                      if (!editingPasswordField) {
+                        setEditingPasswordField(true);
+                        setForm((p) => ({ ...p, password: '', password_confirmation: '' }));
+                      }
+                    }}
+                    onChange={(e) => { setForm((p) => ({ ...p, password: e.target.value, password_confirmation: e.target.value })); clearFieldError('password'); }}
+                    className={`w-full bg-gray-700/50 border rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500 ${formErrors.password ? 'border-red-500' : 'border-gray-600'}`}
+                    placeholder={editingPasswordField ? 'Nueva contraseña' : ''}
                   />
-                </div>
-              )}
+                ) : (
+                  <input
+                    type="password"
+                    required
+                    value={form.password}
+                    onChange={(e) => { setForm((p) => ({ ...p, password: e.target.value, password_confirmation: e.target.value })); clearFieldError('password'); }}
+                    className={`w-full bg-gray-700/50 border rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500 ${formErrors.password ? 'border-red-500' : 'border-gray-600'}`}
+                    placeholder="Ej: loxo12"
+                  />
+                )}
+                {formErrors.password && <p className="text-red-400 text-xs mt-1">{formErrors.password.join('. ')}</p>}
+                <p className="text-[10px] text-gray-500 mt-1">6 caracteres: 4 letras + 2 dígitos (ej: loxo12)</p>
+              </div>
 
               <div className="flex gap-2 pt-1">
                 <button
@@ -274,7 +342,7 @@ export default function UsersPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setShowModal(false); setEditingUser(null); setForm({ name: '', whatsapp: '', email: '', username: '', password: '', password_confirmation: '' }); }}
+                  onClick={() => { setShowModal(false); setEditingUser(null); setForm({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '' }); setFormErrors({}); }}
                   className="bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2 px-4 rounded-lg text-sm transition"
                 >
                   Cancelar

@@ -3,7 +3,7 @@ import api from '../services/api';
 import { FiDollarSign, FiRefreshCw, FiCalendar } from 'react-icons/fi';
 
 export default function CashRegisterPage() {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }));
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 

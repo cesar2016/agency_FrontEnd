@@ -79,7 +79,7 @@ export default function ManualExtractPage() {
       const payload = {
         lottery_id: Number(lotteryId),
         draw_id: Number(drawId),
-        draw_date: new Date().toISOString().slice(0, 10),
+        draw_date: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }),
         numbers: numbers.map((n, i) => ({ position: i + 1, number: n })),
       };
       // El proxy MySQL de produccion es inestable y falla ~50% de las veces

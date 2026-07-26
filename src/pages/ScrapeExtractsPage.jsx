@@ -27,7 +27,7 @@ export default function ScrapeExtractsPage() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState('');
   const [bulkBusy, setBulkBusy] = useState(false);
-  const today = () => new Date().toISOString().split('T')[0];
+  const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' });
   const [selectedDate, setSelectedDate] = useState(today());
   const [loadingMongo, setLoadingMongo] = useState({}); // "drawId-lotteryId" -> true
   const [mongoProgress, setMongoProgress] = useState({}); // "drawId-lotteryId" -> { step, message }

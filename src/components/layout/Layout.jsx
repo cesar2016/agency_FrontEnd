@@ -35,8 +35,8 @@ export default function Layout() {
   const links = [
     { to: '/', label: 'Apuestas', icon: FiHome },
     { to: '/horarios', label: 'Horarios', icon: FiClock },
+    { to: '/dashboard', label: 'Dashboard', icon: FiTrendingUp },
     ...(isAdmin ? [
-      { to: '/dashboard', label: 'Dashboard', icon: FiTrendingUp },
       { to: '/aciertos', label: 'Aciertos', icon: FiCheckCircle },
       { to: '/extracts/scrape', label: 'Extractos', icon: FiList },
       { to: '/cash-register', label: 'Arqueo', icon: FiDollarSign },

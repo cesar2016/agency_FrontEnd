@@ -40,10 +40,16 @@ export default function PlaceBetPage() {
     if (copiedBet) {
       const bet = consumeCopiedBet();
       if (bet?.items?.length) {
-        bet.items.forEach(item => addToCart({ ...item, id: Date.now() + Math.random() }));
+        bet.items.forEach(item => {
+          const numLen = String(item.number).length;
+          const max = numLen === 4 ? 1000 : 10000;
+          addToCart({ ...item, amount: Math.min(item.amount, max), id: Date.now() + Math.random() });
+        });
       }
       if (bet?.redoblonas?.length) {
-        bet.redoblonas.forEach(item => addToCart({ ...item, id: Date.now() + Math.random() }));
+        bet.redoblonas.forEach(item => {
+          addToCart({ ...item, amount: Math.min(item.amount, 10000), id: Date.now() + Math.random() });
+        });
       }
     }
   }, [copiedBet, consumeCopiedBet, addToCart]);
@@ -131,6 +137,11 @@ export default function PlaceBetPage() {
       setError('Ingrese un importe valido');
       return;
     }
+    const maxSimple = number.length === 4 ? 1000 : 10000;
+    if (val > maxSimple) {
+      setError(`El importe maximo para ${number.length} cifra${number.length > 1 ? 's' : ''} es $${maxSimple.toLocaleString('es-AR')}`);
+      return;
+    }
     // 1 cifra: solo a cabeza (pos 1) o a los 10. Nunca a los 5.
     const type =
       number.length === 1
@@ -164,6 +175,11 @@ export default function PlaceBetPage() {
       setError('Importe invalido');
       return;
     }
+    const maxReduced = reduced.length === 4 ? 1000 : 10000;
+    if (val > maxReduced) {
+      setError(`El importe maximo para ${reduced.length} cifra${reduced.length > 1 ? 's' : ''} es $${maxReduced.toLocaleString('es-AR')}`);
+      return;
+    }
     const type =
       reduced.length === 1
         ? pos === 1
@@ -195,6 +211,10 @@ export default function PlaceBetPage() {
       setError('Ingrese un importe valido');
       return;
     }
+    if (val > 10000) {
+      setError('El importe maximo para Redoblona es $10.000');
+      return;
+    }
     addToCart({
       first_number: redFirst,
       second_number: redSecond,
@@ -212,6 +232,21 @@ export default function PlaceBetPage() {
     if (hasClosedSelection) {
       setError('No se pueden registrar apuestas: el horario de cierre de uno o más sorteos ya pasó.');
       return;
+    }
+    for (const item of cart) {
+      if (item.isRedoblona) {
+        if (item.amount > 10000) {
+          setError('El importe maximo para Redoblona es $10.000');
+          return;
+        }
+      } else {
+        const numLen = String(item.number).length;
+        const max = numLen === 4 ? 1000 : 10000;
+        if (item.amount > max) {
+          setError(`El importe maximo para ${numLen} cifra${numLen > 1 ? 's' : ''} es $${max.toLocaleString('es-AR')}`);
+          return;
+        }
+      }
     }
     setSubmitting(true);
     try {

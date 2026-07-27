@@ -13,6 +13,9 @@ import {
   FiCheck,
   FiX,
   FiSliders,
+  FiToggleLeft,
+  FiToggleRight,
+  FiPower,
 } from 'react-icons/fi';
 
 const LOTTERY_ORDER = [
@@ -189,6 +192,42 @@ export default function HorariosPage() {
     }
   };
 
+  const toggleScheduleActive = async (s) => {
+    setBusy(true);
+    try {
+      await api.put(`/schedules/${s.id}`, {
+        draw_time: s.draw_time,
+        closing_time: s.closing_time,
+        is_active: !s.is_active,
+      });
+      flash(`Turno ${s.draw} ${!s.is_active ? 'habilitado' : 'deshabilitado'}`);
+      await load();
+    } catch (err) {
+      const msg = err?.response?.data?.message;
+      flash(msg ? `Error: ${msg}` : 'Error al cambiar estado del turno');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleLotteryBulkActive = async (lotteryId, dayScope, currentAllActive) => {
+    setBusy(true);
+    try {
+      await api.post('/schedules/toggle-bulk', {
+        lottery_id: lotteryId,
+        day_scope: dayScope,
+        is_active: !currentAllActive,
+      });
+      flash(`Lotería ${!currentAllActive ? 'habilitada' : 'deshabilitada'} en todos los turnos`);
+      await load();
+    } catch (err) {
+      const msg = err?.response?.data?.message;
+      flash(msg ? `Error: ${msg}` : 'Error al cambiar estado de la lotería');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   // Emergency CSV refresh
   const refreshFromCsv = async () => {
     setBusy(true);
@@ -311,7 +350,7 @@ export default function HorariosPage() {
                         <div className="flex items-start gap-3">
                           <div className="flex flex-col gap-1 w-[80px] shrink-0 pt-1">
                             <div className="flex items-center gap-1.5">
-                              <span className="font-mono font-bold text-indigo-300 text-base">
+                              <span className={`font-mono font-bold text-base ${lot.is_active ? 'text-indigo-300' : 'text-gray-500 line-through'}`}>
                                 {lot.initials}
                               </span>
                               {lot.defect && (
@@ -324,17 +363,33 @@ export default function HorariosPage() {
                               )}
                             </div>
                             {isAdmin && (
-                              <button
-                                onClick={() =>
-                                  isAddingTurn
-                                    ? cancelAddingTurn()
-                                    : startAddingTurn(section.scope, lot.lottery_id)
-                                }
-                                title="Agregar turno a esta lotería"
-                                className="inline-flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-200 transition font-medium"
-                              >
-                                <FiPlus size={12} /> Turno
-                              </button>
+                              <div className="flex flex-col gap-1">
+                                <button
+                                  onClick={() => toggleLotteryBulkActive(lot.lottery_id, section.scope, lot.all_active)}
+                                  disabled={busy}
+                                  title={lot.all_active ? "Deshabilitar en todos los turnos" : "Habilitar en todos los turnos"}
+                                  className={`inline-flex items-center justify-center gap-1 text-[10px] px-1 py-0.5 rounded transition font-medium border ${
+                                    lot.all_active
+                                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20'
+                                      : lot.is_active
+                                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
+                                      : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
+                                  }`}
+                                >
+                                  {lot.all_active ? 'Activa' : lot.is_active ? 'Parcial' : 'Off'}
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    isAddingTurn
+                                      ? cancelAddingTurn()
+                                      : startAddingTurn(section.scope, lot.lottery_id)
+                                  }
+                                  title="Agregar turno a esta lotería"
+                                  className="inline-flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-200 transition font-medium"
+                                >
+                                  <FiPlus size={12} /> Turno
+                                </button>
+                              </div>
                             )}
                           </div>
 
@@ -349,6 +404,7 @@ export default function HorariosPage() {
                                 .map((s) => {
                                   const isEditing = editingScheduleId === s.id;
                                   const isDefect = !!s.defect || !s.draw_time;
+                                  const isInactive = s.is_active === false;
 
                                   if (isEditing) {
                                     return (
@@ -414,50 +470,77 @@ export default function HorariosPage() {
                                       key={s.id || s.draw}
                                       className={
                                         'group relative rounded-lg px-3 py-2 border text-sm transition ' +
-                                        (isDefect
+                                        (isInactive
+                                          ? 'border-gray-800 bg-gray-900/20 text-gray-500'
+                                          : isDefect
                                           ? 'border-red-500/40 bg-red-500/10'
                                           : 'border-gray-700/30 bg-gray-900/30 hover:border-indigo-500/30')
                                       }
                                     >
                                       <div className="flex items-center justify-between">
-                                        <span
-                                          className={
-                                            isDefect
-                                              ? 'text-red-300 font-semibold'
-                                              : 'text-gray-200 font-medium'
-                                          }
-                                        >
-                                          {s.draw}
-                                        </span>
+                                        <div className="flex items-center gap-1.5">
+                                          <span
+                                            className={
+                                              isInactive
+                                                ? 'text-gray-500 line-through'
+                                                : isDefect
+                                                ? 'text-red-300 font-semibold'
+                                                : 'text-gray-200 font-medium'
+                                            }
+                                          >
+                                            {s.draw}
+                                          </span>
+                                          {isInactive && (
+                                            <span className="text-[10px] px-1 py-0.2 rounded bg-gray-800 text-gray-400">
+                                              Off
+                                            </span>
+                                          )}
+                                        </div>
                                         <div className="flex items-center gap-1">
-                                          {isDefect && (
+                                          {isDefect && !isInactive && (
                                             <FiAlertTriangle size={13} className="text-red-400" />
                                           )}
                                           {isAdmin && s.id && (
-                                            <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                                            <div className="flex items-center gap-1">
                                               <button
-                                                onClick={() => startEditing(s)}
-                                                className="p-1 text-indigo-300 hover:text-white hover:bg-indigo-600/40 rounded transition"
-                                                title="Editar horario"
+                                                onClick={() => toggleScheduleActive(s)}
+                                                disabled={busy}
+                                                className={`p-1 rounded transition ${
+                                                  s.is_active
+                                                    ? 'text-emerald-400 hover:bg-emerald-500/20'
+                                                    : 'text-red-400 hover:bg-red-500/20'
+                                                }`}
+                                                title={s.is_active ? 'Deshabilitar turno' : 'Habilitar turno'}
                                               >
-                                                <FiEdit2 size={12} />
+                                                {s.is_active ? <FiToggleRight size={16} /> : <FiToggleLeft size={16} />}
                                               </button>
-                                              <button
-                                                onClick={() =>
-                                                  deleteSchedule(s.id, s.draw, lot.initials)
-                                                }
-                                                className="p-1 text-red-400 hover:text-red-200 hover:bg-red-500/20 rounded transition"
-                                                title="Eliminar turno"
-                                              >
-                                                <FiTrash2 size={12} />
-                                              </button>
+                                              <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                                                <button
+                                                  onClick={() => startEditing(s)}
+                                                  className="p-1 text-indigo-300 hover:text-white hover:bg-indigo-600/40 rounded transition"
+                                                  title="Editar horario"
+                                                >
+                                                  <FiEdit2 size={12} />
+                                                </button>
+                                                <button
+                                                  onClick={() =>
+                                                    deleteSchedule(s.id, s.draw, lot.initials)
+                                                  }
+                                                  className="p-1 text-red-400 hover:text-red-200 hover:bg-red-500/20 rounded transition"
+                                                  title="Eliminar turno"
+                                                >
+                                                  <FiTrash2 size={12} />
+                                                </button>
+                                              </div>
                                             </div>
                                           )}
                                         </div>
                                       </div>
 
                                       <div className="text-xs mt-1">
-                                        {isDefect ? (
+                                        {isInactive ? (
+                                          <span className="text-gray-500 italic">Deshabilitado</span>
+                                        ) : isDefect ? (
                                           <span className="text-red-300">
                                             {s.defect_note || 'Sin horario'}
                                           </span>

@@ -576,69 +576,73 @@ export default function PlaceBetPage() {
                   .map((id) => lotteries.find((l) => l.id === id)?.initials)
                   .filter(Boolean);
                 const n = lotIds.length;
-                const drawSubtotal = subtotal * n;
+                const simpleItems = cart.filter(i => !i.isRedoblona);
+                const redItems = cart.filter(i => i.isRedoblona);
+                const simpleBase = simpleItems.reduce((acc, i) => acc + Number(i.amount || 0), 0);
+                const redBase = redItems.reduce((acc, r) => acc + Number(r.amount || 0), 0);
                 return (
                   <div key={draw.id}>
                     <p className="text-center text-white font-bold text-sm mb-1">{draw.name}</p>
                     <p className="text-center text-indigo-300 font-bold mb-2">{lotInitials.join(' · ')}</p>
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-dashed border-gray-600/50 text-gray-400">
-                          <th className="text-left py-1">NUMERO</th>
-                          <th className="text-center py-1">POS</th>
-                          <th className="text-right py-1">IMPORTE</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {cart.filter(i => !i.isRedoblona).length > 0 && (
-                          <>
+                    {simpleItems.length > 0 && (
+                      <>
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-dashed border-gray-600/50 text-gray-400">
+                              <th className="text-left py-1">NUMERO</th>
+                              <th className="text-center py-1">POS</th>
+                              <th className="text-right py-1">IMPORTE</th>
+                            </tr>
+                          </thead>
+                          <tbody>
                             <tr><td colSpan="3" className="text-center text-indigo-300 font-bold py-1">Jugada Simple</td></tr>
-                            {cart.filter(i => !i.isRedoblona).map((item) => (
+                            {simpleItems.map((item) => (
                               <tr key={item.id}>
                                 <td className="py-1 text-white font-bold">{item.number}</td>
                                 <td className="py-1 text-center text-gray-400">#{item.position}</td>
                                 <td className="py-1 text-right text-white">${fmt(item.amount)}</td>
                               </tr>
                             ))}
-                          </>
-                        )}
-                        {cart.filter(i => i.isRedoblona).length > 0 && (
-                          <>
-                            <tr><td colSpan="3" className="text-center pt-3 pb-1 text-indigo-300 font-bold">REDOBLONA</td></tr>
-                            {cart.filter(i => i.isRedoblona).map((item) => (
+                          </tbody>
+                        </table>
+                        <div className="flex justify-between text-gray-300 pt-1 border-t border-dashed border-gray-600/50">
+                          <span>Jugada Simple x {n} Lot</span>
+                          <span>${fmt(simpleBase * n)}</span>
+                        </div>
+                      </>
+                    )}
+                    {redItems.length > 0 && (
+                      <>
+                        <table className="w-full mt-2">
+                          <thead>
+                            <tr className="border-b border-dashed border-gray-600/50 text-gray-400">
+                              <th className="text-left py-1">NUMERO</th>
+                              <th className="text-center py-1">RANGOS</th>
+                              <th className="text-right py-1">IMPORTE</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr><td colSpan="3" className="text-center text-indigo-300 font-bold py-1">REDOBLONA</td></tr>
+                            {redItems.map((item) => (
                               <tr key={item.id}>
                                 <td className="py-1 text-white font-bold">{String(item.first_number).padStart(2, '0')}-{String(item.second_number).padStart(2, '0')}</td>
                                 <td className="py-1 text-center text-gray-400">{String(item.first_range).padStart(2, '0')} y {String(item.second_range).padStart(2, '0')}</td>
                                 <td className="py-1 text-right text-white">${fmt(item.amount)}</td>
                               </tr>
                             ))}
-                          </>
-                        )}
-                      </tbody>
-                    </table>
-                    <div className="flex justify-between text-gray-300 pt-1 border-t border-dashed border-gray-600/50">
-                      <span>Subtotal {draw.name} × {n} Lot</span>
-                      <span>${fmt(drawSubtotal)}</span>
-                    </div>
+                          </tbody>
+                        </table>
+                        <div className="flex justify-between text-gray-300 pt-1 border-t border-dashed border-gray-600/50">
+                          <span>Redoblona x {n} Lot</span>
+                          <span>${fmt(redBase * n)}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}
-              <div className="border-t border-dashed border-indigo-500/40 pt-2 space-y-1">
-                <div className="flex justify-between text-gray-300 font-bold">
-                  <span>Sub total</span>
-                  <span>${fmt(subtotal)}</span>
-                </div>
-                {draws.filter((d) => selectedDraws.includes(d.id)).map((draw) => {
-                  const n = lotteryCountForDraw(draw.id);
-                  if (n === 0) return null;
-                  return (
-                    <div key={draw.id} className="flex justify-between text-gray-300">
-                      <span>{draw.name} × {n} Lot</span>
-                      <span>${fmt(subtotal * n)}</span>
-                    </div>
-                  );
-                })}
-                <div className="flex justify-between text-white font-bold text-base pt-1 border-t border-dashed border-gray-600/50">
+              <div className="border-t border-dashed border-indigo-500/40 pt-2">
+                <div className="flex justify-between text-white font-bold text-base pt-1">
                   <span>TOTAL</span>
                   <span className="text-indigo-300">${fmt(total)}</span>
                 </div>

@@ -15,14 +15,23 @@ export default function DashboardPage() {
     const seqCounters = {};
     return bets.flatMap((bet) => {
       const drawList = (bet.draws || []).length > 0 ? bet.draws : (bet.draw ? [bet.draw] : []);
+      const hasItems = (bet.items || []).length > 0;
+      const hasRedoblonas = (bet.redoblonas || []).length > 0;
+      const itemsBase = (bet.items || []).reduce((acc, i) => acc + Number(i.amount || 0), 0);
+      const redBase = (bet.redoblonas || []).reduce((acc, r) => acc + Number(r.amount || 0), 0);
       if (!seqCounters[bet.sequence]) seqCounters[bet.sequence] = 0;
-      return drawList.map((draw) => {
-        seqCounters[bet.sequence]++;
-        return {
-          ...bet,
-          draw,
-          displaySequence: `${bet.sequence}-${seqCounters[bet.sequence]}`,
-        };
+      return drawList.flatMap((draw) => {
+        const lotteryCount = (bet.draw_lotteries || []).filter((dl) => dl.draw_id === draw.id).length || 1;
+        const rows = [];
+        if (hasItems) {
+          seqCounters[bet.sequence]++;
+          rows.push({ ...bet, draw, displaySequence: `${bet.sequence}-${seqCounters[bet.sequence]}`, section: 'items', sectionTotal: itemsBase * lotteryCount });
+        }
+        if (hasRedoblonas) {
+          seqCounters[bet.sequence]++;
+          rows.push({ ...bet, draw, displaySequence: `${bet.sequence}-${seqCounters[bet.sequence]}`, section: 'redoblonas', sectionTotal: redBase * lotteryCount });
+        }
+        return rows;
       });
     });
   }, [bets]);
@@ -32,7 +41,7 @@ export default function DashboardPage() {
   const handleDeleteEntry = async () => {
     if (!deleteEntry) return;
     try {
-      await api.delete(`/bets/${deleteEntry.id}`);
+      await api.delete(`/bets/${deleteEntry.id}`, { params: { section: deleteEntry.section } });
       setDeleteEntry(null);
       fetchBets({ date: filterDate, draw_ids: filterDrawIds });
     } catch (e) {
@@ -150,7 +159,7 @@ export default function DashboardPage() {
                   </td>
                   <td className="p-2 text-gray-300">{entry.user?.name}</td>
                   <td className="p-2 text-gray-300">{entry.draw?.name || '-'}</td>
-                  <td className="p-2 text-right text-white">${fmt(entry.subtotal || entry.total)}</td>
+                  <td className="p-2 text-right text-white">${fmt(entry.sectionTotal)}</td>
                   <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <button onClick={() => openViewBet(entry)} className="text-indigo-400 hover:text-indigo-300 transition p-1" title="Ver boleta">
@@ -218,12 +227,12 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-indigo-300 text-xs">{deleteEntry.draw?.name || '-'}</p>
                 <div className="mt-1 space-y-0.5">
-                  {(deleteEntry.items || []).map((item, i) => (
+                  {deleteEntry.section === 'items' && (deleteEntry.items || []).map((item, i) => (
                     <p key={i} className="text-gray-400 text-xs">
                       {item.number} - #{item.type === 'primera' ? '1' : (item.type?.replace('a_los_', '') || '')} - ${fmt(item.amount)}
                     </p>
                   ))}
-                  {(deleteEntry.redoblonas || []).map((r, i) => (
+                  {deleteEntry.section === 'redoblonas' && (deleteEntry.redoblonas || []).map((r, i) => (
                     <p key={`r${i}`} className="text-gray-400 text-xs">
                       {String(r.first_number).padStart(2, '0')}-{String(r.second_number).padStart(2, '0')} - ${fmt(r.amount)}
                     </p>
@@ -278,17 +287,17 @@ export default function DashboardPage() {
                       {lotInitials.length > 0 && (
                         <p className="text-center text-indigo-300 font-bold mb-2">{lotInitials.join(' . ')}</p>
                       )}
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b border-dashed border-gray-600/50 text-gray-400">
-                            <th className="text-left py-1">NUMERO</th>
-                            <th className="text-center py-1">TIPO</th>
-                            <th className="text-right py-1">IMPORTE</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {hasItems && (
-                            <>
+                      {hasItems && (
+                        <>
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b border-dashed border-gray-600/50 text-gray-400">
+                                <th className="text-left py-1">NUMERO</th>
+                                <th className="text-center py-1">TIPO</th>
+                                <th className="text-right py-1">IMPORTE</th>
+                              </tr>
+                            </thead>
+                            <tbody>
                               <tr><td colSpan="3" className="text-center text-indigo-300 font-bold py-1">Jugada Simple Secuencia: {itemsSeq}</td></tr>
                               {items.map((play, i) => (
                                 <tr key={i}>
@@ -297,12 +306,26 @@ export default function DashboardPage() {
                                   <td className="py-1 text-right text-white">${fmt(play.amount)}</td>
                                 </tr>
                               ))}
-                            </>
-                          )}
-                          {hasRedoblonas && (
-                            <>
-                              <tr><td colSpan="3" className="text-center pt-3 pb-1 text-indigo-300 font-bold">REDOBLONA</td></tr>
-                              <tr><td colSpan="3" className="text-center text-indigo-300 text-[10px] pb-1">Redoblona Secuencia: {redSeq}</td></tr>
+                            </tbody>
+                          </table>
+                          <div className="flex justify-between text-gray-300 pt-1 border-t border-dashed border-gray-600/50">
+                            <span>Jugada Simple x {n} Lot</span>
+                            <span>${fmt((entry.items || []).reduce((acc, i) => acc + Number(i.amount || 0), 0) * n)}</span>
+                          </div>
+                        </>
+                      )}
+                      {hasRedoblonas && (
+                        <>
+                          <table className="w-full mt-2">
+                            <thead>
+                              <tr className="border-b border-dashed border-gray-600/50 text-gray-400">
+                                <th className="text-left py-1">NUMERO</th>
+                                <th className="text-center py-1">RANGOS</th>
+                                <th className="text-right py-1">IMPORTE</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr><td colSpan="3" className="text-center text-indigo-300 font-bold py-1">REDOBLONA Secuencia: {redSeq}</td></tr>
                               {redoblonas.map((r, i) => (
                                 <tr key={i}>
                                   <td className="py-1 text-white font-bold">{String(r.first_number).padStart(2, '0')}-{String(r.second_number).padStart(2, '0')}</td>
@@ -310,14 +333,14 @@ export default function DashboardPage() {
                                   <td className="py-1 text-right text-white">${fmt(r.amount)}</td>
                                 </tr>
                               ))}
-                            </>
-                          )}
-                        </tbody>
-                      </table>
-                      <div className="flex justify-between text-gray-300 pt-1 border-t border-dashed border-gray-600/50">
-                        <span>Subtotal {drawName} x {n} Lot</span>
-                        <span>${fmt(entry.subtotal)}</span>
-                      </div>
+                            </tbody>
+                          </table>
+                          <div className="flex justify-between text-gray-300 pt-1 border-t border-dashed border-gray-600/50">
+                            <span>Redoblona x {n} Lot</span>
+                            <span>${fmt((entry.redoblonas || []).reduce((acc, r) => acc + Number(r.amount || 0), 0) * n)}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   );
                 });

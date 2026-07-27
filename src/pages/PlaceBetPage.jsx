@@ -50,7 +50,7 @@ export default function PlaceBetPage() {
       }
       if (bet?.redoblonas?.length) {
         bet.redoblonas.forEach(item => {
-          addToCart({ ...item, amount: Math.min(item.amount, 10000), id: Date.now() + Math.random() });
+          addToCart({ ...item, isRedoblona: true, amount: Math.min(item.amount, 10000), id: Date.now() + Math.random() });
         });
       }
     }

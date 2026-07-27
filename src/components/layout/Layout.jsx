@@ -13,6 +13,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const roles = Array.isArray(user?.roles) ? user.roles : [];
   const isAdmin = roles.some((r) => ['admin', 'super_admin'].includes(r));
+  const isPasador = roles.includes('usuario') && !isAdmin;
   const [menuOpen, setMenuOpen] = useState(false);
   const [scraperOpen, setScraperOpen] = useState(false);
   const scraperRef = useRef(null);
@@ -42,6 +43,9 @@ export default function Layout() {
       { to: '/cash-register', label: 'Arqueo', icon: FiDollarSign },
       { to: '/comisiones', label: 'Comisiones', icon: FiPercent },
       { to: '/users', label: 'Usuarios', icon: FiUsers },
+    ] : []),
+    ...(isPasador ? [
+      { to: '/comision', label: 'Comisión', icon: FiPercent },
     ] : []),
   ];
 

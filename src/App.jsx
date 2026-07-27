@@ -13,6 +13,7 @@ import CashRegisterPage from './pages/CashRegisterPage';
 import ScraperDashboardPage from './pages/ScraperDashboardPage';
 import UsersPage from './pages/UsersPage';
 import ComisionesPage from './pages/ComisionesPage';
+import MiComisionPage from './pages/MiComisionPage';
 import Layout from './components/layout/Layout';
 
 function ProtectedRoute({ children, roles }) {
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/cash-register" element={<ProtectedRoute roles={['admin', 'super_admin']}><CashRegisterPage /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute roles={['admin', 'super_admin']}><UsersPage /></ProtectedRoute>} />
           <Route path="/comisiones" element={<ProtectedRoute roles={['admin', 'super_admin']}><ComisionesPage /></ProtectedRoute>} />
+          <Route path="/comision" element={<ProtectedRoute roles={['usuario']}><MiComisionPage /></ProtectedRoute>} />
           <Route path="/scraper-dashboard/:path?" element={<ProtectedRoute roles={['admin', 'super_admin']}><ScraperDashboardPage /></ProtectedRoute>} />
         </Route>
       </Routes>

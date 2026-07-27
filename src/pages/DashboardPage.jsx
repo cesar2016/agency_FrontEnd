@@ -145,9 +145,25 @@ export default function DashboardPage() {
               ) : expandedBets.map((entry) => (
                 <tr key={`${entry.id}-${entry.draw?.id || 0}`} className="border-b border-gray-700/30 hover:bg-gray-700/20">
                   <td className="p-2 text-white font-mono text-xs cursor-pointer hover:text-indigo-300" 
-                      onClick={() => { 
+                      onClick={async () => { 
                           try {
-                              copyBet(entry.items || [], entry.redoblonas || []); 
+                              const { data } = await api.get(`/bets/sequence/${entry.sequence}`);
+                              const entries = data.data || data;
+                              const seen = new Set();
+                              const dedupItems = [];
+                              const seenR = new Set();
+                              const dedupRedoblonas = [];
+                              for (const e of entries) {
+                                  for (const item of (e.items || [])) {
+                                      const key = `${item.number}-${item.type}`;
+                                      if (!seen.has(key)) { seen.add(key); dedupItems.push(item); }
+                                  }
+                                  for (const r of (e.redoblonas || [])) {
+                                      const key = `${r.first_number}-${r.second_number}-${r.first_range}-${r.second_range}`;
+                                      if (!seenR.has(key)) { seenR.add(key); dedupRedoblonas.push(r); }
+                                  }
+                              }
+                              copyBet(dedupItems, dedupRedoblonas); 
                               navigate('/'); 
                           } catch (e) {
                               console.error('Error copiando apuesta:', e);

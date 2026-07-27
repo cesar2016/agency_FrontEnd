@@ -148,15 +148,15 @@ export function BetProvider({ children }) {
     setManyInDraw(drawId, ids, select);
   }, [setManyInDraw]);
 
-  const addToCart = (item) => {
+  const addToCart = useCallback((item) => {
     setCart((prev) => [...prev, { ...item, id: Date.now() }]);
-  };
+  }, []);
 
-  const removeFromCart = (id) => {
+  const removeFromCart = useCallback((id) => {
     setCart((prev) => prev.filter((i) => i.id !== id));
-  };
+  }, []);
 
-  const clearCart = () => setCart([]);
+  const clearCart = useCallback(() => setCart([]), []);
 
   const openViewBet = useCallback(async (bet) => {
     try {

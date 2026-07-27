@@ -145,12 +145,11 @@ export default function DashboardPage() {
               ) : expandedBets.map((entry) => (
                 <tr key={`${entry.id}-${entry.draw?.id || 0}`} className="border-b border-gray-700/30 hover:bg-gray-700/20">
                   <td className="p-2 text-white font-mono text-xs cursor-pointer hover:text-indigo-300" 
-                      onClick={async () => { 
+                      onClick={() => { 
                           try {
-                              const { data } = await api.get(`/bets/sequence/${entry.sequence}`);
-                              const entries = data.data || data;
-                              const first = entries[0] || {};
-                              copyBet(first.items || [], first.redoblonas || []); 
+                              const items = entry.section === 'items' ? (entry.items || []) : [];
+                              const redoblonas = entry.section === 'redoblonas' ? (entry.redoblonas || []) : [];
+                              copyBet(items, redoblonas); 
                               navigate('/'); 
                           } catch (e) {
                               console.error('Error copiando apuesta:', e);

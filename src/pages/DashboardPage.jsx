@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useBet } from '../context/BetContext';
-import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiEye, FiTrash2, FiX } from 'react-icons/fi';
+import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiEye, FiTrash2, FiX, FiLock } from 'react-icons/fi';
 
 const fmt = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -167,9 +167,15 @@ export default function DashboardPage() {
                       <button onClick={() => openViewBet(entry)} className="text-indigo-400 hover:text-indigo-300 transition p-1" title="Ver boleta">
                         <FiEye size={16} />
                       </button>
-                      <button onClick={() => setDeleteEntry(entry)} className="text-red-400 hover:text-red-300 transition p-1" title="Eliminar">
-                        <FiTrash2 size={16} />
-                      </button>
+                      {entry.is_turn_closed ? (
+                        <span className="text-gray-500 p-1" title="Turno cerrado - no se puede eliminar">
+                          <FiLock size={16} />
+                        </span>
+                      ) : (
+                        <button onClick={() => setDeleteEntry(entry)} className="text-red-400 hover:text-red-300 transition p-1" title="Eliminar">
+                          <FiTrash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -37,8 +37,8 @@ export default function Layout() {
     { to: '/horarios', label: 'Horarios', icon: FiClock },
     { to: '/dashboard', label: 'Dashboard', icon: FiTrendingUp },
     { to: '/extracts/scrape', label: 'Extractos', icon: FiList },
+    { to: '/aciertos', label: 'Aciertos', icon: FiCheckCircle },
     ...(isAdmin ? [
-      { to: '/aciertos', label: 'Aciertos', icon: FiCheckCircle },
       { to: '/cash-register', label: 'Arqueo', icon: FiDollarSign },
       { to: '/users', label: 'Usuarios', icon: FiUsers },
     ] : []),

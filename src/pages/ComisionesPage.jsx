@@ -283,9 +283,28 @@ export default function ComisionesPage() {
                 setFilterQuery(selectedFilterPasador?.name || '');
               }}
               placeholder="Buscar pasador…"
-              className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 pr-8 text-white text-sm focus:outline-none focus:border-indigo-500"
+              className={`w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 ${
+                (filterUserId || filterQuery) ? 'pr-14' : 'pr-8'
+              }`}
             />
-            <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+              {(filterUserId || filterQuery) && (
+                <button
+                  type="button"
+                  title="Limpiar"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFilterUserId('');
+                    setFilterQuery('');
+                    setFilterOpen(false);
+                  }}
+                  className="p-1 text-gray-400 hover:text-white transition rounded"
+                >
+                  <FiX size={14} />
+                </button>
+              )}
+              <FiChevronDown className="text-gray-400 pointer-events-none" size={14} />
+            </div>
           </div>
           {filterOpen && (
             <div className="absolute z-40 mt-1 w-full max-h-56 overflow-y-auto bg-gray-900 border border-indigo-500/20 rounded-xl shadow-2xl">
@@ -379,11 +398,29 @@ export default function ComisionesPage() {
                       }
                     }}
                     placeholder="Buscar pasador…"
-                    className={`w-full bg-gray-700/50 border rounded-lg px-3 py-1.5 pr-8 text-white text-sm focus:outline-none focus:border-indigo-500 disabled:opacity-60 ${
+                    className={`w-full bg-gray-700/50 border rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500 disabled:opacity-60 ${
                       formErrors.user_id ? 'border-red-500' : 'border-gray-600'
-                    }`}
+                    } ${(!editing && (form.user_id || modalQuery)) ? 'pr-14' : 'pr-8'}`}
                   />
-                  <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                    {!editing && (form.user_id || modalQuery) && (
+                      <button
+                        type="button"
+                        title="Limpiar"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setForm((p) => ({ ...p, user_id: '' }));
+                          setModalQuery('');
+                          setCalc(null);
+                          setModalOpen(true);
+                        }}
+                        className="p-1 text-gray-400 hover:text-white transition rounded"
+                      >
+                        <FiX size={14} />
+                      </button>
+                    )}
+                    <FiChevronDown className="text-gray-400 pointer-events-none" size={14} />
+                  </div>
                 </div>
                 {modalOpen && !editing && (
                   <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto bg-gray-900 border border-indigo-500/20 rounded-xl shadow-2xl">

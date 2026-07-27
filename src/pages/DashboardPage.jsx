@@ -149,21 +149,8 @@ export default function DashboardPage() {
                           try {
                               const { data } = await api.get(`/bets/sequence/${entry.sequence}`);
                               const entries = data.data || data;
-                              const seen = new Set();
-                              const dedupItems = [];
-                              const seenR = new Set();
-                              const dedupRedoblonas = [];
-                              for (const e of entries) {
-                                  for (const item of (e.items || [])) {
-                                      const key = `${item.number}-${item.type}`;
-                                      if (!seen.has(key)) { seen.add(key); dedupItems.push(item); }
-                                  }
-                                  for (const r of (e.redoblonas || [])) {
-                                      const key = `${r.first_number}-${r.second_number}-${r.first_range}-${r.second_range}`;
-                                      if (!seenR.has(key)) { seenR.add(key); dedupRedoblonas.push(r); }
-                                  }
-                              }
-                              copyBet(dedupItems, dedupRedoblonas); 
+                              const first = entries[0] || {};
+                              copyBet(first.items || [], first.redoblonas || []); 
                               navigate('/'); 
                           } catch (e) {
                               console.error('Error copiando apuesta:', e);

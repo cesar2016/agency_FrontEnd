@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
 import { FiPlus, FiCheck, FiX, FiArrowLeft, FiTrash2, FiChevronDown, FiChevronUp, FiEye, FiArrowDown } from 'react-icons/fi';
@@ -26,6 +26,7 @@ function fmt(n) {
 export default function PlaceBetPage() {
   const { selectedByDraw, selectedDraws, lotteries, draws, cart, addToCart, removeFromCart, clearCart, submitBet, totalMultiplier, lotteryCountForDraw, consumeCopiedBet, copiedBet } = useBet();
   const navigate = useNavigate();
+  const copiedBetRef = useRef(null);
 
   const [result, setResult] = useState(null);
 
@@ -37,7 +38,8 @@ export default function PlaceBetPage() {
 
   // Auto-populate cart from copied bet
   useEffect(() => {
-    if (copiedBet) {
+    if (copiedBet && copiedBet !== copiedBetRef.current) {
+      copiedBetRef.current = copiedBet;
       const bet = consumeCopiedBet();
       if (bet?.items?.length) {
         bet.items.forEach(item => {

@@ -670,16 +670,16 @@ export default function PlaceBetPage() {
               <FiCheck className="text-green-400" size={24} />
             </div>
             <h3 className="text-white font-bold mb-1">Boleta Generada</h3>
-            <p className="text-indigo-300 font-mono text-sm mb-4">Secuencia: {result.sequence}</p>
+            <p className="text-indigo-300 font-mono text-sm mb-4">Secuencia: {result[0]?.sequence}</p>
             <div className="flex flex-col gap-2">
               <button
-                onClick={() => shareTicket(result.id, result.sequence)}
+                onClick={() => shareTicket(result[0]?.id, result[0]?.sequence)}
                 className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-medium py-2.5 rounded-lg text-sm transition"
               >
                 Compartir por WhatsApp
               </button>
               <button
-                onClick={() => downloadTicket(result.id)}
+                onClick={() => downloadTicket(result[0]?.id)}
                 className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg text-sm transition"
               >
                 Descargar PDF

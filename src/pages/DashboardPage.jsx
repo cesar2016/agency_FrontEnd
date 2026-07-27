@@ -2,13 +2,43 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useBet } from '../context/BetContext';
-import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiEye, FiTrash2, FiX, FiCopy } from 'react-icons/fi';
+import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiEye, FiTrash2, FiX } from 'react-icons/fi';
 
 const fmt = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function DashboardPage() {
-  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, deleteId, fetchBets, fetchStats, fetchDraws, confirmDelete, clearDateFilter, copyBet, setViewBet, setDeleteId, setFilterDateWithFetch, setFilterDrawIds, page, setPage, pageSize, totalBets } = useBet();
+  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, viewBetEntries, openViewBet, closeViewBet, fetchBets, fetchStats, fetchDraws, copyBet, clearDateFilter, setFilterDateWithFetch, setFilterDrawIds, page, setPage, pageSize, totalBets } = useBet();
   const navigate = useNavigate();
+  const [deleteEntry, setDeleteEntry] = useState(null);
+
+  const expandBetsByDraw = useCallback(() => {
+    const seqCounters = {};
+    return bets.flatMap((bet) => {
+      const drawList = (bet.draws || []).length > 0 ? bet.draws : (bet.draw ? [bet.draw] : []);
+      if (!seqCounters[bet.sequence]) seqCounters[bet.sequence] = 0;
+      return drawList.map((draw) => {
+        seqCounters[bet.sequence]++;
+        return {
+          ...bet,
+          draw,
+          displaySequence: `${bet.sequence}-${seqCounters[bet.sequence]}`,
+        };
+      });
+    });
+  }, [bets]);
+
+  const expandedBets = expandBetsByDraw();
+
+  const handleDeleteEntry = async () => {
+    if (!deleteEntry) return;
+    try {
+      await api.delete(`/bets/${deleteEntry.id}`);
+      setDeleteEntry(null);
+      fetchBets({ date: filterDate, draw_ids: filterDrawIds });
+    } catch (e) {
+      console.error('Error deleting bet:', e);
+    }
+  };
 
   useEffect(() => {
     fetchStats();
@@ -101,14 +131,14 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {bets.length === 0 ? (
+              {expandedBets.length === 0 ? (
                 <tr><td colSpan={5} className="text-center py-8 text-gray-400">No hay jugadas</td></tr>
-              ) : bets.map((bet) => (
-                <tr key={bet.id} className="border-b border-gray-700/30 hover:bg-gray-700/20">
+              ) : expandedBets.map((entry) => (
+                <tr key={`${entry.id}-${entry.draw?.id || 0}`} className="border-b border-gray-700/30 hover:bg-gray-700/20">
                   <td className="p-2 text-white font-mono text-xs cursor-pointer hover:text-indigo-300" 
                       onClick={() => { 
                           try {
-                              copyBet(bet.items || [], bet.redoblonas || []); 
+                              copyBet(entry.items || [], entry.redoblonas || []); 
                               navigate('/'); 
                           } catch (e) {
                               console.error('Error copiando apuesta:', e);
@@ -116,17 +146,17 @@ export default function DashboardPage() {
                           }
                       }} 
                       title="Copiar jugada">
-                    {bet.sequence}
+                    {entry.displaySequence}
                   </td>
-                  <td className="p-2 text-gray-300">{bet.user?.name}</td>
-                  <td className="p-2 text-gray-300">{(bet.draws || []).map((d) => d.name).join(' / ') || bet.draw?.name}</td>
-                  <td className="p-2 text-right text-white">${fmt(bet.total)}</td>
+                  <td className="p-2 text-gray-300">{entry.user?.name}</td>
+                  <td className="p-2 text-gray-300">{entry.draw?.name || '-'}</td>
+                  <td className="p-2 text-right text-white">${fmt(entry.subtotal || entry.total)}</td>
                   <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => setViewBet(bet)} className="text-indigo-400 hover:text-indigo-300 transition p-1" title="Ver boleta">
+                      <button onClick={() => openViewBet(entry)} className="text-indigo-400 hover:text-indigo-300 transition p-1" title="Ver boleta">
                         <FiEye size={16} />
                       </button>
-                      <button onClick={() => setDeleteId(bet.id)} className="text-red-400 hover:text-red-300 transition p-1" title="Eliminar">
+                      <button onClick={() => setDeleteEntry(entry)} className="text-red-400 hover:text-red-300 transition p-1" title="Eliminar">
                         <FiTrash2 size={16} />
                       </button>
                     </div>
@@ -150,7 +180,7 @@ export default function DashboardPage() {
               >
                 Anterior
               </button>
-              <span className="px-3 text-sm text-gray-300">Página {page} de {Math.ceil(totalBets / pageSize)}</span>
+              <span className="px-3 text-sm text-gray-300">Pagina {page} de {Math.ceil(totalBets / pageSize)}</span>
               <button
                 onClick={() => setPage(p => Math.min(Math.ceil(totalBets / pageSize), p + 1))}
                 disabled={page === Math.ceil(totalBets / pageSize)}
@@ -163,19 +193,52 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setDeleteId(null)}>
-          <div className="bg-gray-800 border border-red-500/30 rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FiTrash2 className="text-red-400" size={24} />
+      {deleteEntry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setDeleteEntry(null)}>
+          <div className="bg-gray-800 border border-red-500/30 rounded-2xl w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-gray-700/50 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <FiTrash2 className="text-red-400" size={18} />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-sm">Eliminar Jugada</h3>
+                  <p className="text-gray-400 text-xs font-mono">{deleteEntry.displaySequence}</p>
+                </div>
+              </div>
+              <button onClick={() => setDeleteEntry(null)} className="text-gray-400 hover:text-white transition">
+                <FiX size={18} />
+              </button>
             </div>
-            <h3 className="text-white font-bold text-lg mb-2">Eliminar Apuesta</h3>
-            <p className="text-gray-400 text-sm mb-6">¿Estás seguro de eliminar esta apuesta? Esta acción no se puede deshacer.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setDeleteId(null)} className="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2.5 rounded-lg text-sm transition">
+            <div className="p-4 space-y-2">
+              <div className="bg-gray-700/30 border border-gray-600/50 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-white font-mono text-xs">{deleteEntry.displaySequence}</span>
+                  <span className="text-white font-bold text-sm">${fmt(deleteEntry.subtotal || deleteEntry.total)}</span>
+                </div>
+                <p className="text-indigo-300 text-xs">{deleteEntry.draw?.name || '-'}</p>
+                <div className="mt-1 space-y-0.5">
+                  {(deleteEntry.items || []).map((item, i) => (
+                    <p key={i} className="text-gray-400 text-xs">
+                      {item.number} - #{item.type === 'primera' ? '1' : (item.type?.replace('a_los_', '') || '')} - ${fmt(item.amount)}
+                    </p>
+                  ))}
+                  {(deleteEntry.redoblonas || []).map((r, i) => (
+                    <p key={`r${i}`} className="text-gray-400 text-xs">
+                      {String(r.first_number).padStart(2, '0')}-{String(r.second_number).padStart(2, '0')} - ${fmt(r.amount)}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border-t border-gray-700/50 flex gap-3">
+              <button onClick={() => setDeleteEntry(null)} className="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2.5 rounded-lg text-sm transition">
                 Cancelar
               </button>
-              <button onClick={confirmDelete} className="flex-1 bg-red-600 hover:bg-red-500 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg shadow-red-500/20">
+              <button
+                onClick={handleDeleteEntry}
+                className="flex-1 bg-red-600 hover:bg-red-500 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg shadow-red-500/20"
+              >
                 Eliminar
               </button>
             </div>
@@ -184,67 +247,86 @@ export default function DashboardPage() {
       )}
 
       {viewBet && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setViewBet(null)}>
-          <div className="bg-gray-800 border border-indigo-500/20 rounded-2xl w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={closeViewBet}>
+          <div className="bg-gray-800 border border-indigo-500/20 rounded-2xl w-full max-w-sm shadow-2xl max-h-[95vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b border-gray-700/50 flex items-center justify-between">
               <h3 className="text-white font-bold">Boleta</h3>
-              <button onClick={() => setViewBet(null)} className="text-gray-400 hover:text-white transition">
+              <button onClick={closeViewBet} className="text-gray-400 hover:text-white transition">
                 <FiX size={18} />
               </button>
             </div>
-            <div className="p-4 font-mono text-xs space-y-2 text-gray-200">
+            <div className="p-4 font-mono text-xs space-y-3 text-gray-200">
               <p><span className="text-gray-400">Secuencia:</span> <span className="text-white">{viewBet.sequence}</span></p>
               <p><span className="text-gray-400">Pasador:</span> <span className="text-white">{viewBet.user?.name}</span></p>
-              <p><span className="text-gray-400">Sorteo:</span> <span className="text-white">{(viewBet.draws || []).map((d) => d.name).join(' / ') || viewBet.draw?.name}</span></p>
-              <p><span className="text-gray-400">Fecha:</span> <span className="text-white">{viewBet.draw_date} {viewBet.created_at ? `· ${viewBet.created_at.split(' ')[1]}` : ''}</span></p>
-              <p><span className="text-gray-400">Loterias:</span> <span className="text-indigo-300">{(viewBet.lotteries || []).map((l) => l.initials).join(', ')}</span></p>
-              <table className="w-full mt-2">
-                <thead>
-                  <tr className="border-b border-dashed border-gray-600/50 text-gray-400">
-                    <th className="text-left py-1">NUMERO</th>
-                    <th className="text-center py-1">POS</th>
-                    <th className="text-right py-1">IMPORTE</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    const items = (viewBet.items || []).map((i) => ({ ...i, _isRedo: false }));
-                    const redos = (viewBet.redoblonas || []).map((r) => ({ ...r, _isRedo: true, number: `${String(r.first_number).padStart(2, '0')}-${String(r.second_number).padStart(2, '0')}`, type: `${String(r.first_range).padStart(2, '0')} y ${String(r.second_range).padStart(2, '0')}` }));
-                    return (
-                      <>
-                        {items.length > 0 && (
-                          <>
-                            <tr><td colSpan="3" className="text-center text-indigo-300 font-bold py-1">Jugada Simple Secuencia: {viewBet.sequence}-1</td></tr>
-                            {items.map((play) => (
-                              <tr key={play.id}>
-                                <td className="py-1 text-white font-bold">{play.number}</td>
-                                <td className="py-1 text-center text-gray-400">{play.type === 'primera' ? '#1' : `#${play.type?.replace('a_los_', '') || ''}`}</td>
-                                <td className="py-1 text-right text-white">${fmt(play.amount)}</td>
-                              </tr>
-                            ))}
-                          </>
-                        )}
-                        {redos.length > 0 && (
-                          <>
-                            <tr><td colSpan="3" className="text-center text-indigo-300 font-bold py-1">REDOBLONA</td></tr>
-                            <tr><td colSpan="3" className="text-center text-indigo-300 text-[10px] pb-1">Redoblona Secuencia: {viewBet.sequence}-2</td></tr>
-                            {redos.map((play) => (
-                              <tr key={play.id}>
-                                <td className="py-1 text-white font-bold">{play.number}</td>
-                                <td className="py-1 text-center text-gray-400">{play.type}</td>
-                                <td className="py-1 text-right text-white">${fmt(play.amount)}</td>
-                              </tr>
-                            ))}
-                          </>
-                        )}
-                      </>
-                    );
-                  })()}
-                </tbody>
-              </table>
-              <div className="border-t border-dashed border-gray-600/50 pt-2 flex justify-between text-white font-bold">
-                <span>TOTAL</span>
-                <span className="text-indigo-300">${fmt(viewBet.total)}</span>
+              <p><span className="text-gray-400">Fecha:</span> <span className="text-white">{viewBet.draw_date} {viewBet.created_at ? ` ${viewBet.created_at.split(' ')[1]}` : ''}</span></p>
+              {(() => {
+                let seqCounter = 0;
+                return viewBetEntries.map((entry) => {
+                  const drawName = entry.draw?.name || '-';
+                  const lotInitials = (entry.draw_lotteries || []).map((dl) => dl.lottery_initials).filter(Boolean);
+                  const items = entry.items || [];
+                  const redoblonas = entry.redoblonas || [];
+                  const n = (entry.draw_lotteries || []).length || 1;
+                  const hasItems = items.length > 0;
+                  const hasRedoblonas = redoblonas.length > 0;
+                  const itemsSeq = hasItems ? `${viewBet.sequence}-${++seqCounter}` : null;
+                  const redSeq = hasRedoblonas ? `${viewBet.sequence}-${++seqCounter}` : null;
+
+                  return (
+                    <div key={`${entry.bet_id || entry.id}-${entry.draw?.id || 0}`}>
+                      <p className="text-center text-white font-bold text-sm">{drawName}</p>
+                      {lotInitials.length > 0 && (
+                        <p className="text-center text-indigo-300 font-bold mb-2">{lotInitials.join(' . ')}</p>
+                      )}
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-dashed border-gray-600/50 text-gray-400">
+                            <th className="text-left py-1">NUMERO</th>
+                            <th className="text-center py-1">TIPO</th>
+                            <th className="text-right py-1">IMPORTE</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {hasItems && (
+                            <>
+                              <tr><td colSpan="3" className="text-center text-indigo-300 font-bold py-1">Jugada Simple Secuencia: {itemsSeq}</td></tr>
+                              {items.map((play, i) => (
+                                <tr key={i}>
+                                  <td className="py-1 text-white font-bold">{play.number}</td>
+                                  <td className="py-1 text-center text-gray-400">#{play.type === 'primera' ? '1' : (play.type?.replace('a_los_', '') || '')}</td>
+                                  <td className="py-1 text-right text-white">${fmt(play.amount)}</td>
+                                </tr>
+                              ))}
+                            </>
+                          )}
+                          {hasRedoblonas && (
+                            <>
+                              <tr><td colSpan="3" className="text-center pt-3 pb-1 text-indigo-300 font-bold">REDOBLONA</td></tr>
+                              <tr><td colSpan="3" className="text-center text-indigo-300 text-[10px] pb-1">Redoblona Secuencia: {redSeq}</td></tr>
+                              {redoblonas.map((r, i) => (
+                                <tr key={i}>
+                                  <td className="py-1 text-white font-bold">{String(r.first_number).padStart(2, '0')}-{String(r.second_number).padStart(2, '0')}</td>
+                                  <td className="py-1 text-center text-gray-400">{String(r.first_range).padStart(2, '0')} y {String(r.second_range).padStart(2, '0')}</td>
+                                  <td className="py-1 text-right text-white">${fmt(r.amount)}</td>
+                                </tr>
+                              ))}
+                            </>
+                          )}
+                        </tbody>
+                      </table>
+                      <div className="flex justify-between text-gray-300 pt-1 border-t border-dashed border-gray-600/50">
+                        <span>Subtotal {drawName} x {n} Lot</span>
+                        <span>${fmt(entry.subtotal)}</span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+              <div className="border-t border-dashed border-indigo-500/40 pt-2 space-y-1">
+                <div className="flex justify-between text-white font-bold text-base pt-1">
+                  <span>TOTAL</span>
+                  <span className="text-indigo-300">${fmt(viewBet.total)}</span>
+                </div>
               </div>
             </div>
           </div>

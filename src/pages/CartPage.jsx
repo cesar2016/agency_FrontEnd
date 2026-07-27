@@ -58,16 +58,19 @@ export default function CartPage() {
   };
 
   if (result) {
+    const bets = Array.isArray(result) ? result : [result];
+    const sequence = bets[0]?.sequence;
+    const totalBet = bets.reduce((acc, b) => acc + Number(b.total), 0);
     return (
       <div className="max-w-md mx-auto mt-12 bg-gray-800/50 backdrop-blur-sm border border-green-500/20 rounded-2xl p-8 text-center">
         <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <FiCheck className="text-green-400" size={28} />
         </div>
         <h2 className="text-xl font-bold text-white mb-2">Apuesta Registrada</h2>
-        <p className="text-indigo-300 text-lg font-mono mb-1">Secuencia: {result.sequence}</p>
-        <p className="text-gray-400 text-sm mb-6">{drawNames} | Total: ${result.total}</p>
+        <p className="text-indigo-300 text-lg font-mono mb-1">Secuencia: {sequence}</p>
+        <p className="text-gray-400 text-sm mb-6">{drawNames} | Total: ${totalBet.toFixed(2)}</p>
         <div className="flex gap-3 justify-center">
-          <button onClick={() => downloadTicket(result.id)}
+          <button onClick={() => downloadTicket(bets[0]?.id)}
             className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm transition">
             <FiDownload size={16} /> Descargar Ticket
           </button>

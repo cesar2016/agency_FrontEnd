@@ -35,7 +35,7 @@ export default function App() {
           <Route path="/horarios" element={<ProtectedRoute><HorariosPage /></ProtectedRoute>} />
           <Route path="/aciertos" element={<ProtectedRoute roles={['admin', 'super_admin']}><AciertosPage /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute roles={['admin', 'super_admin', 'usuario']}><DashboardPage /></ProtectedRoute>} />
-          <Route path="/extracts/scrape" element={<ProtectedRoute roles={['admin', 'super_admin']}><ScrapeExtractsPage /></ProtectedRoute>} />
+          <Route path="/extracts/scrape" element={<ProtectedRoute roles={['admin', 'super_admin', 'usuario']}><ScrapeExtractsPage /></ProtectedRoute>} />
           <Route path="/extracts/manual" element={<ProtectedRoute roles={['admin', 'super_admin']}><ManualExtractPage /></ProtectedRoute>} />
           <Route path="/cash-register" element={<ProtectedRoute roles={['admin', 'super_admin']}><CashRegisterPage /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute roles={['admin', 'super_admin']}><UsersPage /></ProtectedRoute>} />

@@ -26,9 +26,9 @@ export function BetProvider({ children }) {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(15);
   const [totalBets, setTotalBets] = useState(0);
-  // Modal view bet / delete
+  // Modal view bet
   const [viewBet, setViewBet] = useState(null);
-  const [deleteId, setDeleteId] = useState(null);
+  const [viewBetEntries, setViewBetEntries] = useState([]);
 
   const clearDateFilter = useCallback(() => {
     setFilterDate('');
@@ -158,16 +158,23 @@ export function BetProvider({ children }) {
 
   const clearCart = () => setCart([]);
 
-  const confirmDelete = useCallback(async () => {
-    if (!deleteId) return;
+  const openViewBet = useCallback(async (bet) => {
     try {
-      await api.delete(`/bets/${deleteId}`);
-      setDeleteId(null);
-      fetchBets({ date: filterDate, draw_ids: filterDrawIds });
+      const { data } = await api.get(`/bets/sequence/${bet.sequence}`);
+      const entries = data.data || data;
+      setViewBet(bet);
+      setViewBetEntries(entries);
     } catch (e) {
-      console.error('Error deleting bet:', e);
+      console.error('Error fetching view bet:', e);
+      setViewBet(bet);
+      setViewBetEntries([]);
     }
-  }, [deleteId, filterDate, filterDrawIds, fetchBets]);
+  }, []);
+
+  const closeViewBet = useCallback(() => {
+    setViewBet(null);
+    setViewBetEntries([]);
+  }, []);
 
   // Copiar una apuesta desde Dashboard: guarda items + redoblonas
   const copyBet = useCallback((items, redoblonas) => {
@@ -244,9 +251,7 @@ return (
         page, setPage,
         pageSize,
         totalBets,
-        viewBet, setViewBet,
-        deleteId, setDeleteId,
-        confirmDelete,
+        viewBet, setViewBet, viewBetEntries, openViewBet, closeViewBet,
       }}
     >
       {children}

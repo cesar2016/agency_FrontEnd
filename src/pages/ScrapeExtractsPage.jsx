@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import {
   FiChevronDown, FiChevronUp, FiDownload, FiRefreshCw,
   FiCheckCircle, FiClock, FiGrid, FiAlertTriangle, FiTrash2, FiUpload,
@@ -18,6 +19,10 @@ function lotteryRank(initials) {
 }
 
 export default function ScrapeExtractsPage() {
+  const { user } = useAuth();
+  const userRoles = Array.isArray(user?.roles) ? user.roles : [];
+  const isAdmin = userRoles.some((r) => ['admin', 'super_admin'].includes(r));
+
   const [draws, setDraws] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
@@ -180,7 +185,11 @@ export default function ScrapeExtractsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-bold text-white">Extractos</h2>
-          <p className="text-sm text-gray-400">Cargá resultados desde MongoDB o desde texto. Eliminá grillas por turno o lotería.</p>
+          <p className="text-sm text-gray-400">
+            {isAdmin
+              ? 'Cargá resultados desde MongoDB o desde texto. Eliminá grillas por turno o lotería.'
+              : 'Consultá los extractos y números sorteados por turno y lotería.'}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <label className="text-xs text-gray-400">Fecha</label>
@@ -193,101 +202,99 @@ export default function ScrapeExtractsPage() {
         </div>
       </div>
 
-      {/* Acceso a la carga manual, de a un sorteo por vez */}
-      <div className="flex justify-end">
-        <Link
-          to="/extracts/manual"
-          className="flex items-center gap-1.5 text-sm bg-indigo-600/50 hover:bg-indigo-600/70 text-indigo-100 px-4 py-2 rounded-lg transition"
-        >
-          <FiGrid size={14} /> Carga manual
-        </Link>
-      </div>
+      {isAdmin && (
+        <div className="flex justify-end">
+          <Link
+            to="/extracts/manual"
+            className="flex items-center gap-1.5 text-sm bg-indigo-600/50 hover:bg-indigo-600/70 text-indigo-100 px-4 py-2 rounded-lg transition"
+          >
+            <FiGrid size={14} /> Carga manual
+          </Link>
+        </div>
+      )}
 
-      {/* Carga masiva desde texto de resultados */}
-      <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
-        <button
-          onClick={() => setBulkOpen((v) => !v)}
-          className="flex items-center justify-between w-full px-5 py-4 text-left hover:opacity-80 transition"
-        >
-          <span className="flex items-center gap-2 text-indigo-300 font-semibold">
-            {bulkOpen ? <FiChevronUp /> : <FiChevronDown />}
-            Cargar resultados desde texto
-          </span>
-          <span className="text-xs text-gray-500">Pegá el bloque de resultados (fecha, sorteo y loterías)</span>
-        </button>
-        {bulkOpen && (
-          <div className="border-t border-gray-700/30 p-4 space-y-3">
-            <textarea
-              value={bulkText}
-              onChange={(e) => setBulkText(e.target.value)}
-              rows={8}
-              placeholder={'📊 RESULTADOS QUINIELA 📊\n🕒 SORTEO: NOCTURNA\n📅 FECHA: 2026-07-16\n\n🎰 PROVINCIA\n01°: 8459    11°: 1964\n...'}
-              className="w-full bg-gray-900/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-indigo-500"
-            />
-             <div className="flex items-center gap-3">
-               <button
-                 onClick={async () => {
-                   if (!bulkText.trim()) return;
-                   setBulkBusy(true);
-                   try {
-                     // Carga por lotes para no superar el timeout de Railway
-                     // cuando el proxy MySQL es inestable. Cada lote reintenta
-                     // hasta 3 veces; si un lote falla se reporta y se sigue
-                     // con el siguiente (no se pierde todo el texto).
-                     const BATCH = 5;
-                     let offset = 0;
-                     let total = null;
-                     let stored = 0;
-                     let pending = [];
-                     do {
-                       let ok = false;
-                       for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
-                         try {
-                           const { data } = await api.post('/extracts/parse-bulk', {
-                             raw: bulkText, offset, limit: BATCH,
-                           });
-                           if (total === null) total = data.total;
-                           stored += data.stored;
-                           if (data.failed?.length) pending.push(...data.failed.map((f) => f.initials));
-                           offset += BATCH;
-                           ok = true;
-                         } catch (err) {
-                           if (attempt === 3) {
-                             flash('Lote fallido (reintentos agotados). Reintentá más tarde.');
-                           } else {
-                             await new Promise((r) => setTimeout(r, 800));
+      {isAdmin && (
+        <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
+          <button
+            onClick={() => setBulkOpen((v) => !v)}
+            className="flex items-center justify-between w-full px-5 py-4 text-left hover:opacity-80 transition"
+          >
+            <span className="flex items-center gap-2 text-indigo-300 font-semibold">
+              {bulkOpen ? <FiChevronUp /> : <FiChevronDown />}
+              Cargar resultados desde texto
+            </span>
+            <span className="text-xs text-gray-500">Pegá el bloque de resultados (fecha, sorteo y loterías)</span>
+          </button>
+          {bulkOpen && (
+            <div className="border-t border-gray-700/30 p-4 space-y-3">
+              <textarea
+                value={bulkText}
+                onChange={(e) => setBulkText(e.target.value)}
+                rows={8}
+                placeholder={'📊 RESULTADOS QUINIELA 📊\n🕒 SORTEO: NOCTURNA\n📅 FECHA: 2026-07-16\n\n🎰 PROVINCIA\n01°: 8459    11°: 1964\n...'}
+                className="w-full bg-gray-900/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-indigo-500"
+              />
+               <div className="flex items-center gap-3">
+                 <button
+                   onClick={async () => {
+                     if (!bulkText.trim()) return;
+                     setBulkBusy(true);
+                     try {
+                       const BATCH = 5;
+                       let offset = 0;
+                       let total = null;
+                       let stored = 0;
+                       let pending = [];
+                       do {
+                         let ok = false;
+                         for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+                           try {
+                             const { data } = await api.post('/extracts/parse-bulk', {
+                               raw: bulkText, offset, limit: BATCH,
+                             });
+                             if (total === null) total = data.total;
+                             stored += data.stored;
+                             if (data.failed?.length) pending.push(...data.failed.map((f) => f.initials));
+                             offset += BATCH;
+                             ok = true;
+                           } catch (err) {
+                             if (attempt === 3) {
+                               flash('Lote fallido (reintentos agotados). Reintentá más tarde.');
+                             } else {
+                               await new Promise((r) => setTimeout(r, 800));
+                             }
                            }
                          }
-                       }
-                       if (!ok) offset += BATCH; // evita bucle infinito si sigue fallando
-                     } while (total !== null && offset < total);
+                         if (!ok) offset += BATCH;
+                       } while (total !== null && offset < total);
 
-                     flash(`Cargados ${stored} extractos.` +
-                       (pending.length ? ` Sin guardar: ${pending.join(', ')}` : ' Completo.'));
-                     setBulkText('');
-                     setBulkOpen(false);
-                     await load();
-                   } catch (e) {
-                     flash(e?.response?.data?.message || 'Error al procesar el texto');
-                   } finally {
-                     setBulkBusy(false);
-                   }
-                 }}
-                 disabled={bulkBusy || !bulkText.trim()}
-                 className="flex items-center gap-1.5 text-sm bg-indigo-600/50 hover:bg-indigo-600/70 text-indigo-100 px-4 py-2 rounded-lg transition disabled:opacity-50"
-               >
-                 {bulkBusy ? <FiRefreshCw size={14} className="animate-spin" /> : <FiDownload size={14} />}
-                 Procesar y cargar
-               </button>
-              {bulkOpen && (
-                <span className="text-xs text-gray-500">
-                  Las loterías sin match en la base quedan marcadas como “sin match”.
-                </span>
-              )}
+                       flash(`Cargados ${stored} extractos.` +
+                         (pending.length ? ` Sin guardar: ${pending.join(', ')}` : ' Completo.'));
+                       setBulkText('');
+                       setBulkOpen(false);
+                       await load();
+                     } catch (e) {
+                       flash(e?.response?.data?.message || 'Error al procesar el texto');
+                     } finally {
+                       setBulkBusy(false);
+                     }
+                   }}
+                   disabled={bulkBusy || !bulkText.trim()}
+                   className="flex items-center gap-1.5 text-sm bg-indigo-600/50 hover:bg-indigo-600/70 text-indigo-100 px-4 py-2 rounded-lg transition disabled:opacity-50"
+                 >
+                   {bulkBusy ? <FiRefreshCw size={14} className="animate-spin" /> : <FiDownload size={14} />}
+                   Procesar y cargar
+                 </button>
+                {bulkOpen && (
+                  <span className="text-xs text-gray-500">
+                    Las loterías sin match en la base quedan marcadas como “sin match”.
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {draws.map((draw) => {
         const completos = draw.lotteries.filter((l) => l.completed).length;
@@ -304,14 +311,16 @@ export default function ScrapeExtractsPage() {
                 </span>
                 {openDraws.has(draw.draw_id) ? <FiChevronUp className="text-gray-400" /> : <FiChevronDown className="text-gray-400" />}
               </button>
-              <button
-                onClick={() => deleteTurn(draw)}
-                disabled={busy[`del-turn-${draw.draw_id}`]}
-                title="Eliminar la grilla de todas las loterías de este turno"
-                className="flex items-center justify-center text-red-300 hover:text-white hover:bg-red-600/60 bg-red-600/20 border border-red-500/30 p-2 rounded-lg transition disabled:opacity-50"
-              >
-                {busy[`del-turn-${draw.draw_id}`] ? <FiRefreshCw size={15} className="animate-spin" /> : <FiTrash2 size={15} />}
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => deleteTurn(draw)}
+                  disabled={busy[`del-turn-${draw.draw_id}`]}
+                  title="Eliminar la grilla de todas las loterías de este turno"
+                  className="flex items-center justify-center text-red-300 hover:text-white hover:bg-red-600/60 bg-red-600/20 border border-red-500/30 p-2 rounded-lg transition disabled:opacity-50"
+                >
+                  {busy[`del-turn-${draw.draw_id}`] ? <FiRefreshCw size={15} className="animate-spin" /> : <FiTrash2 size={15} />}
+                </button>
+              )}
             </div>
 
             {openDraws.has(draw.draw_id) && (
@@ -344,7 +353,7 @@ export default function ScrapeExtractsPage() {
                                   <FiClock size={13} /> sin cargar
                                 </span>
                               )}
-                              {!lot.completed ? (
+                              {isAdmin && !lot.completed ? (
                                 (() => {
                                   const mKey = `${draw.draw_id}-${lot.lottery_id}`;
                                   const prog = mongoProgress[mKey];
@@ -387,7 +396,7 @@ export default function ScrapeExtractsPage() {
                                  <FiGrid size={12} /> Ver
                                </button>
                              )}
-                              {lot.extract_id && (
+                              {isAdmin && lot.extract_id && (
                                 <button
                                   onClick={() => deleteOne(draw.draw_id, lot)}
                                   disabled={busy[key]}

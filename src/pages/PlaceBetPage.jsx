@@ -68,6 +68,17 @@ export default function PlaceBetPage() {
   const [redAmount, setRedAmount] = useState('');
   const [redModalOpen, setRedModalOpen] = useState(false);
 
+  const numberInputRef = useRef(null);
+  const redSecondInputRef = useRef(null);
+
+  // Foco inicial del modal Redoblona: siempre en el input 2° Numero.
+  useEffect(() => {
+    if (redModalOpen) {
+      const t = setTimeout(() => redSecondInputRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [redModalOpen]);
+
   const rangeLabel = { 1: 'A la cabeza', 5: 'A los 5', 10: 'A los 10', 20: 'A los 20' };
 
   // El 2° rango (Posicion) solo admite 5/10/20 y debe ser >= al 1° rango.
@@ -153,6 +164,7 @@ export default function PlaceBetPage() {
         : mapPositionToType(pos);
     addToCart({ number, position: pos, type, amount: val });
     setError('');
+    numberInputRef.current?.focus();
   };
 
   const handleAddSimpleReduced = () => {
@@ -193,6 +205,7 @@ export default function PlaceBetPage() {
     setPosition(basePos);
     setAmount(baseAmount);
     setError('');
+    numberInputRef.current?.focus();
   };
 
   const handleAddRedoblona = () => {
@@ -329,6 +342,7 @@ export default function PlaceBetPage() {
           <div>
             <label className="text-xs text-gray-400 block mb-1 text-center">Numero</label>
             <input
+              ref={numberInputRef}
               type="text"
               inputMode="numeric"
               maxLength={4}
@@ -451,6 +465,7 @@ export default function PlaceBetPage() {
               <div>
                 <label className="text-xs text-gray-400 block mb-1 text-center">2° Numero</label>
                 <input
+                  ref={redSecondInputRef}
                   type="text"
                   inputMode="numeric"
                   maxLength={2}

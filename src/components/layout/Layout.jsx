@@ -13,6 +13,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const roles = Array.isArray(user?.roles) ? user.roles : [];
   const isAdmin = roles.some((r) => ['admin', 'super_admin'].includes(r));
+  const isSuperAdmin = roles.includes('super_admin');
   const isPasador = roles.includes('usuario') && !isAdmin;
   const [menuOpen, setMenuOpen] = useState(false);
   const [scraperOpen, setScraperOpen] = useState(false);
@@ -74,7 +75,7 @@ export default function Layout() {
                 </Link>
               )
             )}
-            {isAdmin && (
+            {isSuperAdmin && (
               <div className="relative" ref={scraperRef}>
                 <button
                   onClick={() => setScraperOpen((v) => !v)}
@@ -121,7 +122,7 @@ export default function Layout() {
                 </Link>
               )
             )}
-            {isAdmin && (
+            {isSuperAdmin && (
               <div className="pt-2 mt-2 border-t border-gray-700/50">
                 <span className="text-xs text-gray-500 px-2 block mb-1">Dashboard Python</span>
                 {SCRAPER_LINKS.map((sl) => (

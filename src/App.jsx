@@ -43,7 +43,7 @@ export default function App() {
           <Route path="/users" element={<ProtectedRoute roles={['admin', 'super_admin']}><UsersPage /></ProtectedRoute>} />
           <Route path="/comisiones" element={<ProtectedRoute roles={['admin', 'super_admin']}><ComisionesPage /></ProtectedRoute>} />
           <Route path="/comision" element={<ProtectedRoute roles={['usuario']}><MiComisionPage /></ProtectedRoute>} />
-          <Route path="/scraper-dashboard/:path?" element={<ProtectedRoute roles={['admin', 'super_admin']}><ScraperDashboardPage /></ProtectedRoute>} />
+          <Route path="/scraper-dashboard/:path?" element={<ProtectedRoute roles={['super_admin']}><ScraperDashboardPage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </div>

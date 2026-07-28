@@ -128,7 +128,7 @@ export default function ComisionesPage() {
           ...p,
           entrega: data.data.comision_existente
             ? String(data.data.entrega)
-            : p.entrega === '' ? '' : p.entrega,
+            : String(Math.round((Number(data.data.total_ventas || 0) - Number(data.data.comision || 0)) * 100) / 100),
         }));
       }
     } catch (e) {
@@ -190,7 +190,8 @@ export default function ComisionesPage() {
   const saldoPreview = useMemo(() => {
     if (!calc) return null;
     const entrega = Number(form.entrega || 0);
-    return Math.round((Number(calc.comision) - entrega) * 100) / 100;
+    const aRendir = Number(calc.total_ventas) - Number(calc.comision);
+    return Math.round((aRendir - entrega) * 100) / 100;
   }, [calc, form.entrega]);
 
   const handleSubmit = async (e) => {
@@ -484,6 +485,12 @@ export default function ComisionesPage() {
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-400">Comisión (30%)</span>
                       <span className="text-indigo-300 font-medium">${money(calc.comision)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm pt-2 border-t border-gray-700/50 mt-2">
+                      <span className="text-gray-300 font-medium">A rendir al admin</span>
+                      <span className="text-amber-400 font-bold">
+                        ${money(Number(calc.total_ventas) - Number(calc.comision))}
+                      </span>
                     </div>
                     {calc.comision_existente && !editing && (
                       <p className="text-[11px] text-amber-400/90 pt-1">

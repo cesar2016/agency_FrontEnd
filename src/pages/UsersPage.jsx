@@ -22,6 +22,11 @@ export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const currentRoles = Array.isArray(currentUser?.roles) ? currentUser.roles : [];
   const isAdmin = currentRoles.includes('admin') || currentRoles.includes('super_admin');
+  const isSuperAdmin = currentRoles.includes('super_admin');
+  // Regla: super_admin asigna admin/usuario; admin solo puede asignar usuario.
+  const assignableRoles = isSuperAdmin ? ['usuario', 'admin'] : ['usuario'];
+  // Si el usuario editado tiene un rol que no puedo asignar, se muestra tal cual (sin cambiarlo).
+  const shownRoles = assignableRoles.includes(form.role) ? assignableRoles : [form.role];
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -300,11 +305,12 @@ export default function UsersPage() {
                 <select
                   value={form.role}
                   onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
-                  className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+                  disabled={shownRoles.length === 1}
+                  className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500 disabled:opacity-60"
                 >
-                  <option value="usuario">Usuario</option>
-                  <option value="admin">Admin</option>
-                  <option value="super_admin">Super Admin</option>
+                  {shownRoles.map((r) => (
+                    <option key={r} value={r}>{r === 'usuario' ? 'Usuario' : r === 'admin' ? 'Admin' : 'Super Admin'}</option>
+                  ))}
                 </select>
               </div>
 

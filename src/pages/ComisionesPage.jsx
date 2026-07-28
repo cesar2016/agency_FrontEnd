@@ -128,7 +128,7 @@ export default function ComisionesPage() {
           ...p,
           entrega: data.data.comision_existente
             ? String(data.data.entrega)
-            : String(Math.round((Number(data.data.total_ventas || 0) - Number(data.data.comision || 0)) * 100) / 100),
+            : String(Math.round((Number(data.data.total_ventas || 0) - Number(data.data.comision || 0) - Number(data.data.premios || 0)) * 100) / 100),
         }));
       }
     } catch (e) {
@@ -163,6 +163,7 @@ export default function ComisionesPage() {
     setCalc({
       total_ventas: row.total_ventas,
       comision: row.comision,
+      premios: row.premios,
       entrega: row.entrega,
       saldo: row.saldo,
       comision_existente: row,
@@ -190,7 +191,7 @@ export default function ComisionesPage() {
   const saldoPreview = useMemo(() => {
     if (!calc) return null;
     const entrega = Number(form.entrega || 0);
-    const aRendir = Number(calc.total_ventas) - Number(calc.comision);
+    const aRendir = Number(calc.total_ventas) - Number(calc.comision) - Number(calc.premios || 0);
     return Math.round((aRendir - entrega) * 100) / 100;
   }, [calc, form.entrega]);
 
@@ -486,10 +487,14 @@ export default function ComisionesPage() {
                       <span className="text-gray-400">Comisión (30%)</span>
                       <span className="text-indigo-300 font-medium">${money(calc.comision)}</span>
                     </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Premios</span>
+                      <span className="text-emerald-400 font-medium">${money(calc.premios)}</span>
+                    </div>
                     <div className="flex justify-between text-sm pt-2 border-t border-gray-700/50 mt-2">
                       <span className="text-gray-300 font-medium">A rendir al admin</span>
-                      <span className="text-amber-400 font-bold">
-                        ${money(Number(calc.total_ventas) - Number(calc.comision))}
+                      <span className={`font-bold ${(Number(calc.total_ventas) - Number(calc.comision) - Number(calc.premios || 0)) >= 0 ? 'text-amber-400' : 'text-rose-400'}`}>
+                        ${money(Number(calc.total_ventas) - Number(calc.comision) - Number(calc.premios || 0))}
                       </span>
                     </div>
                     {calc.comision_existente && !editing && (
@@ -513,7 +518,6 @@ export default function ComisionesPage() {
                   ref={entregaRef}
                   type="number"
                   step="0.01"
-                  min="0"
                   required
                   value={form.entrega}
                   onChange={(e) => {
@@ -599,6 +603,7 @@ export default function ComisionesPage() {
                   <th className="text-left p-3">Fecha</th>
                   <th className="text-right p-3">Total ventas</th>
                   <th className="text-right p-3">Comisión</th>
+                  <th className="text-right p-3">Premios</th>
                   <th className="text-right p-3">Entrega</th>
                   <th className="text-right p-3">Saldo</th>
                   <th className="text-center p-3">Acciones</th>
@@ -607,7 +612,7 @@ export default function ComisionesPage() {
               <tbody>
                 {comisiones.length === 0 ? (
                   <tr>
-                    <td colSpan={filterUserId ? 6 : 7} className="text-center py-8 text-gray-400">
+                    <td colSpan={filterUserId ? 7 : 8} className="text-center py-8 text-gray-400">
                       No hay comisiones registradas
                     </td>
                   </tr>
@@ -625,6 +630,7 @@ export default function ComisionesPage() {
                       <td className="p-3 text-gray-300 whitespace-nowrap">{formatFecha(c.fecha)}</td>
                       <td className="p-3 text-right text-white">${money(c.total_ventas)}</td>
                       <td className="p-3 text-right text-indigo-300">${money(c.comision)}</td>
+                      <td className="p-3 text-right text-emerald-400">${money(c.premios)}</td>
                       <td className="p-3 text-right text-gray-200">${money(c.entrega)}</td>
                       <td className={`p-3 text-right font-medium ${
                         Number(c.saldo) > 0 ? 'text-amber-400' : Number(c.saldo) < 0 ? 'text-red-400' : 'text-green-400'

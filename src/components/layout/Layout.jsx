@@ -6,6 +6,7 @@ import { FiLogOut, FiDollarSign, FiTrendingUp, FiHome, FiCheckCircle, FiClock, F
 const SCRAPER_LINKS = [
   { to: '/scraper-dashboard/scrapear.html', label: 'Scraper' },
   { to: '/scraper-dashboard/admin.html', label: 'Admin' },
+  { to: '/horarios', label: 'Horarios' },
 ];
 
 export default function Layout() {
@@ -36,7 +37,6 @@ export default function Layout() {
 
   const links = [
     { to: '/', label: 'Apuestas', icon: FiHome },
-    { to: '/horarios', label: 'Horarios', icon: FiClock },
     { to: '/dashboard', label: 'Dashboard', icon: FiTrendingUp },
     { to: '/extracts/scrape', label: 'Extractos', icon: FiList },
     { to: '/aciertos', label: 'Aciertos', icon: FiCheckCircle },

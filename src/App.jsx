@@ -34,7 +34,7 @@ export default function App() {
           <Route path="/" element={<ProtectedRoute><SelectLotteryDraw /></ProtectedRoute>} />
           <Route path="/bet" element={<ProtectedRoute><PlaceBetPage /></ProtectedRoute>} />
 
-          <Route path="/horarios" element={<ProtectedRoute><HorariosPage /></ProtectedRoute>} />
+          <Route path="/horarios" element={<ProtectedRoute roles={['super_admin']}><HorariosPage /></ProtectedRoute>} />
           <Route path="/aciertos" element={<ProtectedRoute><AciertosPage /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute roles={['admin', 'super_admin', 'usuario']}><DashboardPage /></ProtectedRoute>} />
           <Route path="/extracts/scrape" element={<ProtectedRoute roles={['admin', 'super_admin', 'usuario']}><ScrapeExtractsPage /></ProtectedRoute>} />

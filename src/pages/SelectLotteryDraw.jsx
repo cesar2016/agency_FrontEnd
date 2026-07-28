@@ -65,6 +65,10 @@ export default function SelectLotteryDraw() {
   const [lotteryOrder, setLotteryOrder] = useState(() => {
     try { return JSON.parse(localStorage.getItem('lotteryOrder') || '{}'); } catch { return {}; }
   });
+  const [drawOrder, setDrawOrder] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('drawOrder') || '[]'); } catch { return []; }
+  });
+  const [drawDragId, setDrawDragId] = useState(null);
   const [dragState, setDragState] = useState({ drawId: null, fromId: null });
   const [now, setNow] = useState(new Date());
 
@@ -89,6 +93,24 @@ export default function SelectLotteryDraw() {
     ids.splice(ti, 0, fromId);
     persistOrder({ ...lotteryOrder, [drawId]: ids });
   }, [lotteryOrder, persistOrder]);
+
+  // Orden kanban de las cards padres (turnos)
+  const persistDrawOrder = useCallback((next) => {
+    setDrawOrder(next);
+    localStorage.setItem('drawOrder', JSON.stringify(next));
+  }, []);
+
+  const reorderDraw = useCallback((fromId, toId, allIds) => {
+    if (fromId === toId) return;
+    const base = drawOrder.length ? drawOrder.filter((id) => allIds.includes(id)) : [];
+    const ids = [...base, ...allIds.filter((id) => !base.includes(id))];
+    const fi = ids.indexOf(fromId);
+    const ti = ids.indexOf(toId);
+    if (fi === -1 || ti === -1) return;
+    ids.splice(fi, 1);
+    ids.splice(ti, 0, fromId);
+    persistDrawOrder(ids);
+  }, [drawOrder, persistDrawOrder]);
 
   useEffect(() => {
     Promise.all([fetchLotteries(), fetchDraws()]).finally(() => setLoading(false));
@@ -156,11 +178,26 @@ export default function SelectLotteryDraw() {
       <div className="text-center">
         <h2 className="text-lg font-semibold text-white">Sorteos y Loterías</h2>
         <p className="text-xs text-gray-400">{todayLabel()}</p>
+        {drawOrder.length > 0 && (
+          <button
+            onClick={() => persistDrawOrder([])}
+            className="mt-1 text-xs text-indigo-400 hover:text-indigo-300 underline transition"
+          >
+            Restablecer orden de turnos
+          </button>
+        )}
       </div>
 
       {drawsGrouped
         .slice()
         .sort((a, b) => {
+          if (drawOrder.length) {
+            const ai = drawOrder.indexOf(a.draw.id);
+            const bi = drawOrder.indexOf(b.draw.id);
+            const aIdx = ai === -1 ? 999 : ai;
+            const bIdx = bi === -1 ? 999 : bi;
+            if (aIdx !== bIdx) return aIdx - bIdx;
+          }
           const aHasOpen = a.items.some((it) => !isClosed(it.closingTime, now));
           const bHasOpen = b.items.some((it) => !isClosed(it.closingTime, now));
           return (aHasOpen === bHasOpen ? 0 : aHasOpen ? -1 : 1);
@@ -172,14 +209,35 @@ export default function SelectLotteryDraw() {
         const closedItems = items.filter((it) => isClosed(it.closingTime, now));
         const hasOpen = openItems.length > 0;
         return (
-          <div key={draw.id} className={`relative bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden ${hasOpen ? '' : 'opacity-60'}`}>
+          <div
+            key={draw.id}
+            className={`relative bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden ${hasOpen ? '' : 'opacity-60'} ${drawDragId === draw.id ? 'opacity-30 ring-2 ring-indigo-500' : ''}`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+            }}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              if (drawDragId !== null && drawDragId !== draw.id) {
+                reorderDraw(drawDragId, draw.id, drawsGrouped.map((d) => d.draw.id));
+              }
+            }}
+          >
             {!hasOpen && (
               <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-1">
                 <FiLock className="text-red-500" size={26} />
                 <span className="text-xs font-semibold text-red-500">Cerrado</span>
               </div>
             )}
-            <div className="flex items-center justify-between p-4">
+            <div
+              className="flex items-center justify-between p-4 cursor-grab active:cursor-grabbing"
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = 'move';
+                setDrawDragId(draw.id);
+              }}
+              onDragEnd={() => setDrawDragId(null)}
+            >
               <button
                 onClick={() => toggleOpen(draw.id)}
                 className="flex items-center gap-2 text-left"
@@ -188,6 +246,7 @@ export default function SelectLotteryDraw() {
                 <span className="text-white font-semibold text-base">{draw.name}</span>
                 <span className="text-xs text-gray-500 bg-gray-700/50 px-2 py-0.5 rounded-full">{items.length}</span>
               </button>
+              <FiMenu className="text-gray-600" size={16} />
             </div>
 
             {open && (

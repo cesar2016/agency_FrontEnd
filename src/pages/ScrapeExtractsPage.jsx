@@ -4,7 +4,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
   FiChevronDown, FiChevronUp, FiDownload, FiRefreshCw,
-  FiCheckCircle, FiClock, FiGrid, FiAlertTriangle, FiTrash2, FiUpload,
+  FiCheckCircle, FiClock, FiGrid, FiAlertTriangle, FiTrash2, FiUpload, FiMenu,
 } from 'react-icons/fi';
 
 const LOTTERY_ORDER = [
@@ -26,6 +26,27 @@ export default function ScrapeExtractsPage() {
   const [draws, setDraws] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
+  const [drawOrder, setDrawOrder] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('drawOrder') || '[]'); } catch { return []; }
+  });
+  const [drawDragId, setDrawDragId] = useState(null);
+
+  const persistDrawOrder = useCallback((next) => {
+    setDrawOrder(next);
+    localStorage.setItem('drawOrder', JSON.stringify(next));
+  }, []);
+
+  const reorderDraw = useCallback((fromId, toId, allIds) => {
+    if (fromId === toId) return;
+    const base = drawOrder.length ? drawOrder.filter((id) => allIds.includes(id)) : [];
+    const ids = [...base, ...allIds.filter((id) => !base.includes(id))];
+    const fi = ids.indexOf(fromId);
+    const ti = ids.indexOf(toId);
+    if (fi === -1 || ti === -1) return;
+    ids.splice(fi, 1);
+    ids.splice(ti, 0, fromId);
+    persistDrawOrder(ids);
+  }, [drawOrder, persistDrawOrder]);
   const [busy, setBusy] = useState({}); // claves: turno o "turno-loteria"
   const [modalExtract, setModalExtract] = useState(null); // { drawId, lotteryId, extractId, label }
   const [toast, setToast] = useState(null);
@@ -190,6 +211,14 @@ export default function ScrapeExtractsPage() {
               ? 'Cargá resultados desde MongoDB o desde texto. Eliminá grillas por turno o lotería.'
               : 'Consultá los extractos y números sorteados por turno y lotería.'}
           </p>
+          {drawOrder.length > 0 && (
+            <button
+              onClick={() => persistDrawOrder([])}
+              className="mt-1 text-xs text-indigo-400 hover:text-indigo-300 underline transition"
+            >
+              Restablecer orden de turnos
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <label className="text-xs text-gray-400">Fecha</label>
@@ -296,11 +325,39 @@ export default function ScrapeExtractsPage() {
         </div>
       )}
 
-      {draws.map((draw) => {
+      {[...draws]
+        .sort((a, b) => {
+          if (!drawOrder.length) return 0;
+          const ai = drawOrder.indexOf(a.draw_id);
+          const bi = drawOrder.indexOf(b.draw_id);
+          return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+        })
+        .map((draw) => {
         const completos = draw.lotteries.filter((l) => l.completed).length;
         return (
-          <div key={draw.draw_id} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4">
+          <div
+            key={draw.draw_id}
+            className={`bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden ${drawDragId === draw.draw_id ? 'opacity-30 ring-2 ring-indigo-500' : ''}`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+            }}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              if (drawDragId !== null && drawDragId !== draw.draw_id) {
+                reorderDraw(drawDragId, draw.draw_id, draws.map((d) => d.draw_id));
+              }
+            }}
+          >
+            <div
+              className="flex items-center justify-between px-5 py-4 cursor-grab active:cursor-grabbing"
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = 'move';
+                setDrawDragId(draw.draw_id);
+              }}
+              onDragEnd={() => setDrawDragId(null)}
+            >
               <button
                 onClick={() => toggleOpen(draw.draw_id)}
                 className="flex items-center gap-3 text-left hover:opacity-80 transition"
@@ -311,16 +368,19 @@ export default function ScrapeExtractsPage() {
                 </span>
                 {openDraws.has(draw.draw_id) ? <FiChevronUp className="text-gray-400" /> : <FiChevronDown className="text-gray-400" />}
               </button>
-              {isAdmin && (
-                <button
-                  onClick={() => deleteTurn(draw)}
-                  disabled={busy[`del-turn-${draw.draw_id}`]}
-                  title="Eliminar la grilla de todas las loterías de este turno"
-                  className="flex items-center justify-center text-red-300 hover:text-white hover:bg-red-600/60 bg-red-600/20 border border-red-500/30 p-2 rounded-lg transition disabled:opacity-50"
-                >
-                  {busy[`del-turn-${draw.draw_id}`] ? <FiRefreshCw size={15} className="animate-spin" /> : <FiTrash2 size={15} />}
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {isAdmin && (
+                  <button
+                    onClick={() => deleteTurn(draw)}
+                    disabled={busy[`del-turn-${draw.draw_id}`]}
+                    title="Eliminar la grilla de todas las loterías de este turno"
+                    className="flex items-center justify-center text-red-300 hover:text-white hover:bg-red-600/60 bg-red-600/20 border border-red-500/30 p-2 rounded-lg transition disabled:opacity-50"
+                  >
+                    {busy[`del-turn-${draw.draw_id}`] ? <FiRefreshCw size={15} className="animate-spin" /> : <FiTrash2 size={15} />}
+                  </button>
+                )}
+                <FiMenu className="text-gray-600" size={16} />
+              </div>
             </div>
 
             {openDraws.has(draw.draw_id) && (

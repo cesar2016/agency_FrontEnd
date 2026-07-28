@@ -203,7 +203,7 @@ export default function ScrapeExtractsPage() {
         </div>
       )}
 
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-white">Extractos</h2>
           <p className="text-sm text-gray-400">
@@ -220,7 +220,7 @@ export default function ScrapeExtractsPage() {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <label className="text-xs text-gray-400">Fecha</label>
           <input
             type="date"
@@ -252,7 +252,7 @@ export default function ScrapeExtractsPage() {
               {bulkOpen ? <FiChevronUp /> : <FiChevronDown />}
               Cargar resultados desde texto
             </span>
-            <span className="text-xs text-gray-500">Pegá el bloque de resultados (fecha, sorteo y loterías)</span>
+            <span className="text-xs text-gray-500 hidden sm:inline">Pegá el bloque de resultados (fecha, sorteo y loterías)</span>
           </button>
           {bulkOpen && (
             <div className="border-t border-gray-700/30 p-4 space-y-3">
@@ -360,10 +360,10 @@ export default function ScrapeExtractsPage() {
             >
               <button
                 onClick={() => toggleOpen(draw.draw_id)}
-                className="flex items-center gap-3 text-left hover:opacity-80 transition"
+                className="flex items-center gap-2 sm:gap-3 text-left hover:opacity-80 transition min-w-0"
               >
-                <span className="text-indigo-400 font-bold text-lg">{draw.draw_name}</span>
-                <span className="text-xs text-gray-500 bg-gray-700/50 px-2 py-0.5 rounded-full">
+                <span className="text-indigo-400 font-bold text-base sm:text-lg shrink-0">{draw.draw_name}</span>
+                <span className="text-xs text-gray-500 bg-gray-700/50 px-2 py-0.5 rounded-full hidden sm:inline">
                   {completos}/{draw.lotteries.length} completos
                 </span>
                 {openDraws.has(draw.draw_id) ? <FiChevronUp className="text-gray-400" /> : <FiChevronDown className="text-gray-400" />}
@@ -390,37 +390,37 @@ export default function ScrapeExtractsPage() {
                   .map((lot) => {
                     const key = `del-${draw.draw_id}-${lot.lottery_id}`;
                     return (
-                      <div key={lot.lottery_id} className="px-5 py-3">
-                        <div className="flex items-center justify-between">
-                           <div className="flex items-center gap-2">
-                             <span className="font-mono font-bold text-indigo-300 w-8">{lot.initials}</span>
-                             <span className="text-gray-200 text-sm">{lot.name}</span>
+                      <div key={lot.lottery_id} className="px-4 sm:px-5 py-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                           <div className="flex items-center gap-2 min-w-0">
+                             <span className="font-mono font-bold text-indigo-300 w-8 shrink-0">{lot.initials}</span>
+                             <span className="text-gray-200 text-sm truncate">{lot.name}</span>
                              {lot.defect ? (
-                               <span className="flex items-center gap-1 text-xs text-red-300 bg-red-500/15 border border-red-500/40 px-2 py-0.5 rounded-full" title={lot.defect_note || 'Sin horario'}>
+                               <span className="flex items-center gap-1 text-xs text-red-300 bg-red-500/15 border border-red-500/40 px-2 py-0.5 rounded-full shrink-0" title={lot.defect_note || 'Sin horario'}>
                                  <FiAlertTriangle size={11} /> defect{lot.defect_note ? `: ${lot.defect_note}` : ''}
                                </span>
                              ) : (
-                               <span className="text-xs text-gray-500">Sorteo {lot.draw_time} · Cierre {lot.closing_time}</span>
+                               <span className="text-xs text-gray-500 hidden sm:inline">Sorteo {lot.draw_time} · Cierre {lot.closing_time}</span>
                              )}
                            </div>
-                           <div className="flex items-center gap-2">
-                             {lot.completed ? (
-                               <span className="flex items-center gap-1 text-xs text-green-300 bg-green-500/15 px-2 py-1 rounded-full">
-                                 <FiCheckCircle size={13} /> {lot.count} cargado{lot.count === 1 ? '' : 's'}
-                               </span>
-                              ) : (
-                                <span className="flex items-center gap-1 text-xs text-yellow-300 bg-yellow-500/15 px-2 py-1 rounded-full">
-                                  <FiClock size={13} /> sin cargar
+                           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                              {lot.completed ? (
+                                <span className="flex items-center gap-1 text-xs text-green-300 bg-green-500/15 px-2 py-1 rounded-full">
+                                  <FiCheckCircle size={13} /> {lot.count} cargado{lot.count === 1 ? '' : 's'}
                                 </span>
-                              )}
+                               ) : (
+                                 <span className="flex items-center gap-1 text-xs text-yellow-300 bg-yellow-500/15 px-2 py-1 rounded-full">
+                                   <FiClock size={13} /> sin cargar
+                                 </span>
+                               )}
                               {isAdmin && !lot.completed ? (
                                 (() => {
                                   const mKey = `${draw.draw_id}-${lot.lottery_id}`;
                                   const prog = mongoProgress[mKey];
                                   if (loadingMongo[mKey] && prog) {
                                     return (
-                                      <div className="flex items-center gap-2 min-w-[140px]">
-                                        <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden w-20">
                                           <div
                                             className="h-full bg-indigo-500 rounded-full transition-all duration-500"
                                             style={{ width: `${prog.step}%` }}
@@ -455,7 +455,7 @@ export default function ScrapeExtractsPage() {
                                >
                                  <FiGrid size={12} /> Ver
                                </button>
-                             )}
+                              )}
                               {isAdmin && lot.extract_id && (
                                 <button
                                   onClick={() => deleteOne(draw.draw_id, lot)}
@@ -469,7 +469,13 @@ export default function ScrapeExtractsPage() {
                            </div>
                         </div>
 
-                       </div>
+                        {/* Horarios visible solo en mobile debajo del nombre */}
+                        {!lot.defect && (
+                          <span className="text-xs text-gray-500 sm:hidden mt-1 ml-10">
+                            Sorteo {lot.draw_time} · Cierre {lot.closing_time}
+                          </span>
+                        )}
+                      </div>
                     );
                   })}
               </div>

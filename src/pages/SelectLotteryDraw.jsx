@@ -251,8 +251,8 @@ export default function SelectLotteryDraw() {
 
             {open && (
               <div className="border-t border-gray-700/30">
-                <div className="flex items-center justify-between gap-3 px-4 py-2 bg-gray-700/20">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3 px-4 py-2 bg-gray-700/20">
+                  <div className="flex flex-wrap items-center gap-3">
                     {(DRAW_PRINCIPAL_GROUPS[draw.name] || []).map((g) => {
                       const groupIds = openItems
                         .filter((it) => PRINCIPAL_GROUPS[g].includes(it.lottery.initials))
@@ -310,7 +310,7 @@ export default function SelectLotteryDraw() {
                           }
                         }}
                         onDragEnd={() => setDragState({ drawId: null, fromId: null })}
-                        className={`flex items-center justify-between px-4 py-2.5 text-sm transition hover:bg-gray-700/30 ${selected ? 'bg-indigo-600/10' : ''} ${isDragging ? 'opacity-30' : ''}`}
+                        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-2.5 text-sm transition hover:bg-gray-700/30 ${selected ? 'bg-indigo-600/10' : ''} ${isDragging ? 'opacity-30' : ''}`}
                       >
                         <div className="flex items-center gap-3">
                           <span className="text-gray-600 cursor-grab active:cursor-grabbing touch-none">
@@ -325,7 +325,7 @@ export default function SelectLotteryDraw() {
                           <span className="font-mono font-bold text-indigo-300 w-10">{lottery.initials}</span>
                           <span className="text-gray-200">{lottery.name}</span>
                         </div>
-                        <div className="flex items-center gap-3 text-xs">
+                        <div className="flex items-center gap-3 text-xs pl-10 sm:pl-0">
                           <span className="text-gray-500">Sorteo {drawTime}</span>
                           <span className="text-yellow-400">Cierre {closingTime}</span>
                         </div>
@@ -343,7 +343,7 @@ export default function SelectLotteryDraw() {
                           return (
                             <div
                               key={lottery.id}
-                              className="flex items-center justify-between px-4 py-2.5 text-sm opacity-50 bg-gray-800/50"
+                              className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-2.5 text-sm opacity-50 bg-gray-800/50"
                             >
                               <div className="flex items-center gap-3">
                                 <input
@@ -355,7 +355,7 @@ export default function SelectLotteryDraw() {
                                 <span className="font-mono font-bold text-indigo-300 w-10">{lottery.initials}</span>
                                 <span className="text-gray-200">{lottery.name}</span>
                               </div>
-                              <div className="flex items-center gap-3 text-xs">
+                              <div className="flex items-center gap-3 text-xs pl-10 sm:pl-0">
                                 <span className="text-gray-500">Sorteo {drawTime}</span>
                                 <span className="flex items-center gap-1 text-red-500/80"><FiLock size={12} /> Cerrado</span>
                               </div>

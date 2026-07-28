@@ -177,12 +177,14 @@ export default function PlaceBetPage() {
       setError('No hay ninguna jugada para replicar');
       return;
     }
-    const trimmed = baseNumber.replace(/^\s*0+/, '') || baseNumber;
-    if (trimmed.length <= 2) {
+    // Reducir sobre el numero tal cual se ingreso: 0003 -> 003 -> 03.
+    // No strippear ceros a la izquierda: son parte de la jugada.
+    const raw = baseNumber.trim();
+    if (raw.length <= 2) {
       setError('La jugada ya tiene el minimo de 2 cifras');
       return;
     }
-    const reduced = trimmed.slice(1);
+    const reduced = raw.slice(1);
     const pos = parseInt(basePos);
     const val = parseFloat(baseAmount.replace(/\./g, ''));
     if (!val || val <= 0) {

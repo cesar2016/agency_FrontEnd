@@ -2,6 +2,8 @@ import { useState } from 'react';
 import api from '../services/api';
 import { FiDollarSign, FiRefreshCw, FiCalendar } from 'react-icons/fi';
 
+const fmt = (v) => Number(v || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 export default function CashRegisterPage() {
   const [date, setDate] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }));
   const [data, setData] = useState(null);
@@ -49,18 +51,18 @@ export default function CashRegisterPage() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-300">Total Apuestas</span>
-              <span className="text-white font-bold text-lg">${Number(data.total_apuestas).toFixed(2)}</span>
+              <span className="text-white font-bold text-lg">${fmt(data.total_apuestas)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-300">Total Premios</span>
-              <span className="text-red-400 font-bold text-lg">-${Number(data.total_premios).toFixed(2)}</span>
+              <span className="text-red-400 font-bold text-lg">-${fmt(data.total_premios)}</span>
             </div>
             <div className="border-t border-gray-700/50 pt-3">
               <div className="flex justify-between items-center">
                 <span className="text-white font-semibold text-lg">Total Recaudado</span>
                 <span className={`font-bold text-2xl ${data.total_recaudado >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   <FiDollarSign className="inline" size={20} />
-                  {Number(data.total_recaudado).toFixed(2)}
+                  {data.total_recaudado < 0 ? '-' : ''}{fmt(Math.abs(data.total_recaudado))}
                 </span>
               </div>
             </div>

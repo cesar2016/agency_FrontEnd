@@ -25,14 +25,14 @@ export default function UsersPage() {
   const isSuperAdmin = currentRoles.includes('super_admin');
   // Regla: super_admin asigna admin/usuario; admin solo puede asignar usuario.
   const assignableRoles = isSuperAdmin ? ['usuario', 'admin'] : ['usuario'];
-  // Si el usuario editado tiene un rol que no puedo asignar, se muestra tal cual (sin cambiarlo).
-  const shownRoles = assignableRoles.includes(form.role) ? assignableRoles : [form.role];
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [form, setForm] = useState({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '' });
+  // Si el usuario editado tiene un rol que no puedo asignar, se muestra tal cual (sin cambiarlo).
+  const shownRoles = assignableRoles.includes(form.role) ? assignableRoles : [form.role];
   const [formLoading, setFormLoading] = useState(false);
   const [generatedUsername, setGeneratedUsername] = useState('');
   const [lastCreatedUser, setLastCreatedUser] = useState(null);

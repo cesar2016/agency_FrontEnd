@@ -135,13 +135,14 @@ export default function DashboardPage() {
                 <th className="text-left p-2">Secuencia</th>
                 <th className="text-left p-2">Pasador</th>
                 <th className="text-left p-2">Sorteo</th>
+                <th className="text-left p-2">Hora</th>
                 <th className="text-right p-2">Total</th>
                 <th className="text-center p-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {expandedBets.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-8 text-gray-400">No hay jugadas</td></tr>
+                <tr><td colSpan={6} className="text-center py-8 text-gray-400">No hay jugadas</td></tr>
               ) : expandedBets.map((entry) => (
                 <tr key={`${entry.id}-${entry.draw?.id || 0}`} className="border-b border-gray-700/30 hover:bg-gray-700/20">
                   <td className="p-2 text-white font-mono text-xs cursor-pointer hover:text-indigo-300" 
@@ -161,6 +162,7 @@ export default function DashboardPage() {
                   </td>
                   <td className="p-2 text-gray-300">{entry.user?.name}</td>
                   <td className="p-2 text-gray-300">{entry.draw?.name || '-'}</td>
+                  <td className="p-2 text-gray-400 font-mono text-xs">{entry.created_at ? entry.created_at.split(' ')[1]?.slice(0, 5) : '-'}</td>
                   <td className="p-2 text-right text-white">${fmt(entry.sectionTotal)}</td>
                   <td className="p-2 text-center">
                     <div className="flex items-center justify-center gap-2">

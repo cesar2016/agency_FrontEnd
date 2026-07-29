@@ -3,14 +3,15 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { FiRefreshCw, FiRotateCcw } from 'react-icons/fi';
 
+// Premios por terminación de cifras (ejemplo base $100). Paga todos los días.
 const prizeTable = [
-  { ubicacion: 1,  cuatro_cifras: 175000, tres_cifras: 30000, dos_cifras: 3500 },
-  { ubicacion: 2,  cuatro_cifras: 87500,  tres_cifras: 15000, dos_cifras: 1750 },
-  { ubicacion: 3,  cuatro_cifras: 58300,  tres_cifras: 10000, dos_cifras: 1165 },
-  { ubicacion: 4,  cuatro_cifras: 43750,  tres_cifras: 7500,  dos_cifras: 875 },
-  { ubicacion: 5,  cuatro_cifras: 35000,  tres_cifras: 6000,  dos_cifras: 700 },
-  { ubicacion: 10, cuatro_cifras: 17500,  tres_cifras: 3000,  dos_cifras: 350 },
-  { ubicacion: 20, cuatro_cifras: 8750,   tres_cifras: 1500,  dos_cifras: 175 },
+  { ubicacion: 1,  cuatro_cifras: 350000, tres_cifras: 60000, dos_cifras: 7000 },
+  { ubicacion: 2,  cuatro_cifras: 175000, tres_cifras: 30000, dos_cifras: 3500 },
+  { ubicacion: 3,  cuatro_cifras: 116667, tres_cifras: 20000, dos_cifras: 2333 },
+  { ubicacion: 4,  cuatro_cifras: 87500,  tres_cifras: 15000, dos_cifras: 1750 },
+  { ubicacion: 5,  cuatro_cifras: 70000,  tres_cifras: 12000, dos_cifras: 1400 },
+  { ubicacion: 10, cuatro_cifras: 35000,  tres_cifras: 6000,  dos_cifras: 700 },
+  { ubicacion: 20, cuatro_cifras: 17500,  tres_cifras: 3000,  dos_cifras: 350 },
 ];
 
 // Pagos por apuesta a 1 cifra segun el puesto (veces el importe jugado).
@@ -126,13 +127,13 @@ export default function AciertosPage() {
       {showTable && (
         <>
           <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-x-auto">
-            <div className="px-4 py-2 text-sm font-semibold text-white border-b border-gray-700/30">Loterías (terminación por cifras)</div>
+            <div className="px-4 py-2 text-sm font-semibold text-white border-b border-gray-700/30">Loterías (terminación por cifras) — Paga todos los días</div>
             <table className="w-full text-xs">
               <thead className="bg-gray-700/50">
                 <tr className="text-gray-300">
                   <th className="p-2 text-left">Ubic</th>
                   <th className="p-2 text-right">4 cifras</th>
-                  <th className="p-2 text-right">3 cifras (Lu-Sa)</th>
+                  <th className="p-2 text-right">3 cifras</th>
                   <th className="p-2 text-right">2 cifras</th>
                 </tr>
               </thead>
@@ -147,6 +148,9 @@ export default function AciertosPage() {
                 ))}
               </tbody>
             </table>
+            <div className="px-4 py-1.5 text-[10px] text-gray-500 border-t border-gray-700/30">
+              Valores de ejemplo para apuesta de $100. Se premian las últimas cifras del número ganador en la posición indicada.
+            </div>
           </div>
 
           <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-x-auto">

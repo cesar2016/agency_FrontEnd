@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
 import api from '../services/api';
 
 const BetContext = createContext(null);
@@ -148,8 +148,11 @@ export function BetProvider({ children }) {
     setManyInDraw(drawId, ids, select);
   }, [setManyInDraw]);
 
+  const cartIdCounter = useRef(0);
+
   const addToCart = useCallback((item) => {
-    setCart((prev) => [...prev, { ...item, id: Date.now() }]);
+    cartIdCounter.current += 1;
+    setCart((prev) => [...prev, { ...item, id: Date.now() + '-' + cartIdCounter.current }]);
   }, []);
 
   const removeFromCart = useCallback((id) => {

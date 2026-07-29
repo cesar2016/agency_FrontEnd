@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CajaModal from '../components/CajaModal';
-import { FiRefreshCw, FiUserPlus, FiX, FiShare2, FiEdit, FiTrash2, FiToggleRight, FiToggleLeft, FiDollarSign } from 'react-icons/fi';
+import { FiRefreshCw, FiUserPlus, FiX, FiShare2, FiEdit, FiTrash2, FiToggleRight, FiToggleLeft, FiDollarSign, FiEye, FiEyeOff } from 'react-icons/fi';
 
 function generateFakeData(name) {
   const firstWord = name.trim().split(/\s+/)[0] || '';
@@ -41,6 +41,7 @@ export default function UsersPage() {
   const [deleteModal, setDeleteModal] = useState(null);
   const [editingPasswordField, setEditingPasswordField] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
   const nameInputRef = useRef(null);
 
   const [cajaUser, setCajaUser] = useState(null);
@@ -79,6 +80,7 @@ export default function UsersPage() {
     setGeneratedUsername('');
     setLastPassword('');
     setFormErrors({});
+    setShowPassword(false);
     setShowModal(true);
   };
 
@@ -90,6 +92,7 @@ export default function UsersPage() {
     setGeneratedUsername('');
     setLastPassword('');
     setFormErrors({});
+    setShowPassword(false);
     setShowModal(true);
   };
 
@@ -159,6 +162,7 @@ export default function UsersPage() {
       setForm({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '' });
       setEditingUser(null);
       setGeneratedUsername('');
+      setShowPassword(false);
       setShowModal(false);
       load();
     } catch (e) {
@@ -316,30 +320,40 @@ export default function UsersPage() {
 
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Contraseña {editingUser ? '' : <span className="text-red-400">*</span>}</label>
-                {editingUser ? (
-                  <input
-                    type="password"
-                    value={editingPasswordField ? form.password : '••••••'}
-                    onFocus={() => {
-                      if (!editingPasswordField) {
-                        setEditingPasswordField(true);
-                        setForm((p) => ({ ...p, password: '', password_confirmation: '' }));
-                      }
-                    }}
-                    onChange={(e) => { setForm((p) => ({ ...p, password: e.target.value, password_confirmation: e.target.value })); clearFieldError('password'); }}
-                    className={`w-full bg-gray-700/50 border rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500 ${formErrors.password ? 'border-red-500' : 'border-gray-600'}`}
-                    placeholder={editingPasswordField ? 'Nueva contraseña' : ''}
-                  />
-                ) : (
-                  <input
-                    type="password"
-                    required
-                    value={form.password}
-                    onChange={(e) => { setForm((p) => ({ ...p, password: e.target.value, password_confirmation: e.target.value })); clearFieldError('password'); }}
-                    className={`w-full bg-gray-700/50 border rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500 ${formErrors.password ? 'border-red-500' : 'border-gray-600'}`}
-                    placeholder="Ej: loxo12"
-                  />
-                )}
+                <div className="relative">
+                  {editingUser ? (
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={editingPasswordField ? form.password : '••••••'}
+                      onFocus={() => {
+                        if (!editingPasswordField) {
+                          setEditingPasswordField(true);
+                          setForm((p) => ({ ...p, password: '', password_confirmation: '' }));
+                        }
+                      }}
+                      onChange={(e) => { setForm((p) => ({ ...p, password: e.target.value, password_confirmation: e.target.value })); clearFieldError('password'); }}
+                      className={`w-full bg-gray-700/50 border rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500 pr-10 ${formErrors.password ? 'border-red-500' : 'border-gray-600'}`}
+                      placeholder={editingPasswordField ? 'Nueva contraseña' : ''}
+                    />
+                  ) : (
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={form.password}
+                      onChange={(e) => { setForm((p) => ({ ...p, password: e.target.value, password_confirmation: e.target.value })); clearFieldError('password'); }}
+                      className={`w-full bg-gray-700/50 border rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500 pr-10 ${formErrors.password ? 'border-red-500' : 'border-gray-600'}`}
+                      placeholder="Ej: loxo12"
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition"
+                    title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  >
+                    {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                  </button>
+                </div>
                 {formErrors.password && <p className="text-red-400 text-xs mt-1">{formErrors.password.join('. ')}</p>}
                 <p className="text-[10px] text-gray-500 mt-1">6 caracteres: 4 letras + 2 dígitos (ej: loxo12)</p>
               </div>

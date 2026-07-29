@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useBet } from '../context/BetContext';
+import { useAuth } from '../context/AuthContext';
 import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiEye, FiTrash2, FiX, FiLock } from 'react-icons/fi';
 
 const fmt = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -10,6 +11,8 @@ export default function DashboardPage() {
   const { stats, bets, draws, filterDate, filterDrawIds, viewBet, viewBetEntries, openViewBet, closeViewBet, fetchBets, fetchStats, fetchDraws, copyBet, clearDateFilter, setFilterDateWithFetch, setFilterDrawIds, page, setPage, pageSize, totalBets } = useBet();
   const navigate = useNavigate();
   const [deleteEntry, setDeleteEntry] = useState(null);
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.roles?.includes('admin') || currentUser?.roles?.includes('super_admin');
 
   const expandBetsByDraw = useCallback(() => {
     const seqCounters = {};
@@ -169,7 +172,7 @@ export default function DashboardPage() {
                       <button onClick={() => openViewBet(entry)} className="text-indigo-400 hover:text-indigo-300 transition p-1" title="Ver boleta">
                         <FiEye size={16} />
                       </button>
-                      {entry.is_turn_closed ? (
+                      {(!isAdmin && entry.is_turn_closed) ? (
                         <span className="text-gray-500 p-1" title="Turno cerrado - no se puede eliminar">
                           <FiLock size={16} />
                         </span>

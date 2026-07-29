@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CajaModal from '../components/CajaModal';

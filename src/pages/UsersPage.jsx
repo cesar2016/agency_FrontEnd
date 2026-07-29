@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CajaModal from '../components/CajaModal';
-import { FiRefreshCw, FiUserPlus, FiX, FiShare2, FiEdit, FiTrash2, FiToggleRight, FiToggleLeft, FiDollarSign, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiRefreshCw, FiUserPlus, FiX, FiShare2, FiEdit, FiTrash2, FiToggleRight, FiToggleLeft, FiDollarSign, FiEye, FiEyeOff, FiSearch, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 function generateFakeData(name) {
   const firstWord = name.trim().split(/\s+/)[0] || '';
@@ -45,6 +45,32 @@ export default function UsersPage() {
   const nameInputRef = useRef(null);
 
   const [cajaUser, setCajaUser] = useState(null);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const filteredUsers = useMemo(() => {
+    let list = users;
+    if (searchTerm) {
+      const qs = searchTerm.toLowerCase();
+      list = list.filter(u => 
+        (u.name || '').toLowerCase().includes(qs) ||
+        (u.username || '').toLowerCase().includes(qs) ||
+        (u.email || '').toLowerCase().includes(qs) ||
+        (u.whatsapp || '').includes(qs) ||
+        (u.parent_name || '').toLowerCase().includes(qs)
+      );
+    }
+    return list;
+  }, [users, searchTerm]);
+
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(start, start + itemsPerPage);
+  }, [filteredUsers, currentPage]);
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage) || 1;
 
   const flash = (msg) => {
     setToast(msg);
@@ -426,6 +452,21 @@ export default function UsersPage() {
         <div className="flex justify-center pt-20"><FiRefreshCw className="animate-spin text-indigo-400" size={28} /></div>
       ) : (
         <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
+          <div className="p-4 border-b border-gray-700/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="relative w-full sm:max-w-xs">
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar nombre, username, whatsapp..."
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                className="w-full pl-10 pr-4 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
+            <div className="text-sm text-gray-400 font-medium">
+              Mostrando {filteredUsers.length} usuario{filteredUsers.length !== 1 && 's'}
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -441,9 +482,9 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.length === 0 ? (
+                {paginatedUsers.length === 0 ? (
                   <tr><td colSpan={isSuperAdmin ? 8 : 7} className="text-center py-8 text-gray-400">No hay usuarios</td></tr>
-                ) : users.map((u) => (
+                ) : paginatedUsers.map((u) => (
                   <tr key={u.id} className={`border-b border-gray-700/30 hover:bg-gray-700/20 ${u.is_active ? '' : 'opacity-40'}`}>
                     <td className="p-3 text-white">{u.name}</td>
                     <td className="p-3 text-gray-300 font-mono text-xs">{u.username}</td>
@@ -488,6 +529,35 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-gray-700/50 flex items-center justify-between">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center gap-1 text-sm text-gray-300 hover:text-white disabled:opacity-30 transition font-medium"
+              >
+                <FiChevronLeft size={16} /> Anterior
+              </button>
+              <div className="flex gap-1 flex-wrap justify-center max-w-[200px] sm:max-w-none">
+                {Array.from({length: totalPages}, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-8 h-8 rounded-lg text-sm font-bold transition flex items-center justify-center ${currentPage === page ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'hover:bg-gray-700 text-gray-400 hover:text-white'}`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-1 text-sm text-gray-300 hover:text-white disabled:opacity-30 transition font-medium"
+              >
+                Siguiente <FiChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       )}
 

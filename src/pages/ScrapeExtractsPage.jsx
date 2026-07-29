@@ -30,6 +30,10 @@ export default function ScrapeExtractsPage() {
     try { return JSON.parse(localStorage.getItem('drawOrder') || '[]'); } catch { return []; }
   });
   const [drawDragId, setDrawDragId] = useState(null);
+  const [lotteryOrder, setLotteryOrder] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('lotteryOrder') || '{}'); } catch { return {}; }
+  });
+  const [lotteryDragState, setLotteryDragState] = useState({ drawId: null, fromId: null });
 
   const persistDrawOrder = useCallback((next) => {
     setDrawOrder(next);
@@ -47,6 +51,23 @@ export default function ScrapeExtractsPage() {
     ids.splice(ti, 0, fromId);
     persistDrawOrder(ids);
   }, [drawOrder, persistDrawOrder]);
+
+  const persistLotteryOrder = useCallback((next) => {
+    setLotteryOrder(next);
+    localStorage.setItem('lotteryOrder', JSON.stringify(next));
+  }, []);
+
+  const reorderLottery = useCallback((drawId, fromId, toId, allIds) => {
+    if (fromId === toId) return;
+    const ids = (lotteryOrder[drawId] && lotteryOrder[drawId].length) ? [...lotteryOrder[drawId]] : [...allIds];
+    const fi = ids.indexOf(fromId);
+    const ti = ids.indexOf(toId);
+    if (fi === -1 || ti === -1) return;
+    ids.splice(fi, 1);
+    ids.splice(ti, 0, fromId);
+    persistLotteryOrder({ ...lotteryOrder, [drawId]: ids });
+  }, [lotteryOrder, persistLotteryOrder]);
+
   const [busy, setBusy] = useState({}); // claves: turno o "turno-loteria"
   const [modalExtract, setModalExtract] = useState(null); // { drawId, lotteryId, extractId, label }
   const [toast, setToast] = useState(null);
@@ -363,7 +384,7 @@ export default function ScrapeExtractsPage() {
                 className="flex items-center gap-2 sm:gap-3 text-left hover:opacity-80 transition min-w-0"
               >
                 <span className="text-indigo-400 font-bold text-base sm:text-lg shrink-0">{draw.draw_name}</span>
-                <span className="text-xs text-gray-500 bg-gray-700/50 px-2 py-0.5 rounded-full hidden sm:inline">
+                <span className="text-xs text-gray-500 bg-gray-700/50 px-2 py-0.5 rounded-full">
                   {completos}/{draw.lotteries.length} completos
                 </span>
                 {openDraws.has(draw.draw_id) ? <FiChevronUp className="text-gray-400" /> : <FiChevronDown className="text-gray-400" />}
@@ -386,13 +407,44 @@ export default function ScrapeExtractsPage() {
             {openDraws.has(draw.draw_id) && (
               <div className="border-t border-gray-700/30 divide-y divide-gray-700/20">
                 {[...draw.lotteries]
-                  .sort((a, b) => lotteryRank(a.initials) - lotteryRank(b.initials))
+                  .sort((a, b) => {
+                    const custom = lotteryOrder[draw.draw_id];
+                    if (custom) {
+                      const ai = custom.indexOf(a.lottery_id);
+                      const bi = custom.indexOf(b.lottery_id);
+                      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+                    }
+                    return lotteryRank(a.initials) - lotteryRank(b.initials);
+                  })
                   .map((lot) => {
                     const key = `del-${draw.draw_id}-${lot.lottery_id}`;
+                    const isDragging = lotteryDragState.fromId === lot.lottery_id;
                     return (
-                      <div key={lot.lottery_id} className="px-4 sm:px-5 py-3">
+                      <div
+                        key={lot.lottery_id}
+                        className={`px-4 sm:px-5 py-3 transition ${isDragging ? 'opacity-30' : ''}`}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.effectAllowed = 'move';
+                          setLotteryDragState({ drawId: draw.draw_id, fromId: lot.lottery_id });
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                        }}
+                        onDragEnter={(e) => {
+                          e.preventDefault();
+                          if (lotteryDragState.fromId && lotteryDragState.fromId !== lot.lottery_id) {
+                            reorderLottery(draw.draw_id, lotteryDragState.fromId, lot.lottery_id, draw.lotteries.map((l) => l.lottery_id));
+                          }
+                        }}
+                        onDragEnd={() => setLotteryDragState({ drawId: null, fromId: null })}
+                      >
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                            <div className="flex items-center gap-2 min-w-0">
+                             <span className="text-gray-600 cursor-grab active:cursor-grabbing touch-none shrink-0">
+                               <FiMenu size={14} />
+                             </span>
                              <span className="font-mono font-bold text-indigo-300 w-8 shrink-0">{lot.initials}</span>
                              <span className="text-gray-200 text-sm truncate">{lot.name}</span>
                              {lot.defect ? (

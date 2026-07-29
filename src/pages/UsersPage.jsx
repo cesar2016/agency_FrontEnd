@@ -435,13 +435,14 @@ export default function UsersPage() {
                   <th className="text-left p-3">Whatsapp</th>
                   <th className="text-left p-3">Email</th>
                   <th className="text-left p-3">Rol</th>
+                  {isSuperAdmin && <th className="text-left p-3">Creado por</th>}
                   <th className="text-center p-3">Activo</th>
                   <th className="text-center p-3">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {users.length === 0 ? (
-                  <tr><td colSpan={7} className="text-center py-8 text-gray-400">No hay usuarios</td></tr>
+                  <tr><td colSpan={isSuperAdmin ? 8 : 7} className="text-center py-8 text-gray-400">No hay usuarios</td></tr>
                 ) : users.map((u) => (
                   <tr key={u.id} className={`border-b border-gray-700/30 hover:bg-gray-700/20 ${u.is_active ? '' : 'opacity-40'}`}>
                     <td className="p-3 text-white">{u.name}</td>
@@ -453,6 +454,11 @@ export default function UsersPage() {
                         {u.roles?.join(', ') || 'usuario'}
                       </span>
                     </td>
+                    {isSuperAdmin && (
+                      <td className="p-3 text-gray-400 text-xs font-medium">
+                        {u.parent_name || '—'}
+                      </td>
+                    )}
                     <td className="p-3 text-center cursor-pointer" onClick={() => handleToggle(u.id)} title={u.is_active ? 'Desactivar' : 'Activar'}>
                       {u.is_active
                         ? <FiToggleRight className="text-green-400 mx-auto" size={20} />

@@ -69,6 +69,11 @@ api.interceptors.request.use((config) => {
     const map = readCache();
     const entry = map[cacheKey(config.url, config.params)];
     if (entry && Date.now() - entry.t < CACHE_TTL) {
+      // Se marca la respuesta como servida del cache para que el interceptor
+      // de respuesta NO la vuelva a guardar: al reescribir la entrada le
+      // renovaba el TTL, asi que un dato viejo se quedaba pegado para siempre
+      // mientras siguieras usando la app (nunca cumplia los 5 minutos).
+      config.desdeCache = true;
       config.adapter = () =>
         Promise.resolve({
           data: entry.data,
@@ -85,7 +90,7 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => {
-    if (cacheable(response.config)) {
+    if (cacheable(response.config) && !response.config.desdeCache) {
       const map = readCache();
       map[cacheKey(response.config.url, response.config.params)] = { t: Date.now(), data: response.data };
       writeCache(map);
@@ -101,7 +106,9 @@ api.interceptors.response.use(
     // endpoint para no quedar atrapados con una respuesta vieja/rota.
     if (error?.config && (error.config.method || 'get').toLowerCase() === 'get' && error.config.url) {
       const map = readCache();
-      delete map[cacheKey(error.config.url)];
+      // Con los params: sin ellos se borraba una clave que no existia y la
+      // entrada rota de /bets?date=X quedaba igual en el cache.
+      delete map[cacheKey(error.config.url, error.config.params)];
       writeCache(map);
     }
     // Si el token expira o es invalido (ej. base de datos reiniciada), redirigir.

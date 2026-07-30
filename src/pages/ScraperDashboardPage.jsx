@@ -73,7 +73,7 @@ export default function ScraperDashboardPage() {
             throw err;
           });
         };
-      <\/script></head>`
+      </script></head>`
     );
   }, [html, token, apiBase]);
 

@@ -146,8 +146,8 @@ export default function DashboardPage() {
             <tbody>
               {expandedBets.length === 0 ? (
                 <tr><td colSpan={6} className="text-center py-8 text-gray-400">No hay jugadas</td></tr>
-              ) : expandedBets.map((entry) => (
-                <tr key={`${entry.id}-${entry.draw?.id || 0}`} className="border-b border-gray-700/30 hover:bg-gray-700/20">
+              ) : expandedBets.map((entry, index) => (
+                <tr key={`${entry.id}-${entry.draw?.id || 0}-${entry.section || index}`} className="border-b border-gray-700/30 hover:bg-gray-700/20">
                   <td className="p-2 text-white font-mono text-xs cursor-pointer hover:text-indigo-300" 
                       onClick={() => { 
                           try {
@@ -278,7 +278,7 @@ export default function DashboardPage() {
               </button>
             </div>
             <div className="p-4 font-mono text-xs space-y-3 text-gray-200">
-              <p><span className="text-gray-400">Secuencia:</span> <span className="text-white">{viewBet.sequence}</span></p>
+              <p><span className="text-gray-400">Secuencia:</span> <span className="text-white">{viewBet.displaySequence || viewBet.sequence}</span></p>
               <p><span className="text-gray-400">Pasador:</span> <span className="text-white">{viewBet.user?.name}</span></p>
               <p><span className="text-gray-400">Fecha:</span> <span className="text-white">{viewBet.draw_date} {viewBet.created_at ? ` ${viewBet.created_at.split(' ')[1]}` : ''}</span></p>
               {(() => {
@@ -289,10 +289,10 @@ export default function DashboardPage() {
                   const items = entry.items || [];
                   const redoblonas = entry.redoblonas || [];
                   const n = (entry.draw_lotteries || []).length || 1;
-                  const hasItems = items.length > 0;
-                  const hasRedoblonas = redoblonas.length > 0;
-                  const itemsSeq = hasItems ? `${viewBet.sequence}-${++seqCounter}` : null;
-                  const redSeq = hasRedoblonas ? `${viewBet.sequence}-${++seqCounter}` : null;
+                  const hasItems = items.length > 0 && (!viewBet.section || viewBet.section === 'items');
+                  const hasRedoblonas = redoblonas.length > 0 && (!viewBet.section || viewBet.section === 'redoblonas');
+                  const itemsSeq = hasItems ? viewBet.displaySequence : null;
+                  const redSeq = hasRedoblonas ? viewBet.displaySequence : null;
 
                   return (
                     <div key={`${entry.bet_id || entry.id}-${entry.draw?.id || 0}`}>
@@ -361,7 +361,7 @@ export default function DashboardPage() {
               <div className="border-t border-dashed border-indigo-500/40 pt-2 space-y-1">
                 <div className="flex justify-between text-white font-bold text-base pt-1">
                   <span>TOTAL</span>
-                  <span className="text-indigo-300">${fmt(viewBet.total)}</span>
+                  <span className="text-indigo-300">${fmt(viewBet.sectionTotal || viewBet.total)}</span>
                 </div>
               </div>
             </div>

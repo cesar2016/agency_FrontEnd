@@ -163,7 +163,10 @@ export function BetProvider({ children }) {
       const { data } = await api.get(`/bets/sequence/${bet.sequence}`);
       const entries = data.data || data;
       setViewBet(bet);
-      setViewBetEntries(entries);
+      // Filtrar para mostrar unicamente el sorteo (draw) asociado a la fila que se clickeó,
+      // en vez de todo el grupo de esa secuencia.
+      const filteredEntries = entries.filter((e) => e.bet_id === bet.id && e.draw?.id === bet.draw?.id);
+      setViewBetEntries(filteredEntries);
     } catch (e) {
       console.error('Error fetching view bet:', e);
       setViewBet(bet);

@@ -47,6 +47,7 @@ export default function AciertosPage() {
   const { user } = useAuth();
   const roles = Array.isArray(user?.roles) ? user.roles : [];
   const isAdmin = roles.some((r) => ['admin', 'super_admin'].includes(r));
+  const isSuperAdmin = roles.includes('super_admin');
 
   const [aciertos, setAciertos] = useState({});
   const [loading, setLoading] = useState(true);
@@ -104,7 +105,7 @@ export default function AciertosPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-white">Aciertos</h2>
         <div className="flex items-center gap-3">
-          {isAdmin && (
+          {isSuperAdmin && (
             <button
               onClick={handleRecalc}
               disabled={recalc.running}

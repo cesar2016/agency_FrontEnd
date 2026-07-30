@@ -21,7 +21,7 @@ function lotteryRank(initials) {
 export default function ScrapeExtractsPage() {
   const { user } = useAuth();
   const userRoles = Array.isArray(user?.roles) ? user.roles : [];
-  const isAdmin = userRoles.some((r) => ['admin', 'super_admin'].includes(r));
+  const isSuperAdmin = userRoles.includes('super_admin');
 
   const [draws, setDraws] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -228,7 +228,7 @@ export default function ScrapeExtractsPage() {
         <div>
           <h2 className="text-xl font-bold text-white">Extractos</h2>
           <p className="text-sm text-gray-400">
-            {isAdmin
+            {isSuperAdmin
               ? 'Cargá resultados desde MongoDB o desde texto. Eliminá grillas por turno o lotería.'
               : 'Consultá los extractos y números sorteados por turno y lotería.'}
           </p>
@@ -252,7 +252,7 @@ export default function ScrapeExtractsPage() {
         </div>
       </div>
 
-      {isAdmin && (
+      {isSuperAdmin && (
         <div className="flex justify-end">
           <Link
             to="/extracts/manual"
@@ -263,7 +263,7 @@ export default function ScrapeExtractsPage() {
         </div>
       )}
 
-      {isAdmin && (
+      {isSuperAdmin && (
         <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl overflow-hidden">
           <button
             onClick={() => setBulkOpen((v) => !v)}
@@ -390,7 +390,7 @@ export default function ScrapeExtractsPage() {
                 {openDraws.has(draw.draw_id) ? <FiChevronUp className="text-gray-400" /> : <FiChevronDown className="text-gray-400" />}
               </button>
               <div className="flex items-center gap-2">
-                {isAdmin && (
+                {isSuperAdmin && (
                   <button
                     onClick={() => deleteTurn(draw)}
                     disabled={busy[`del-turn-${draw.draw_id}`]}
@@ -465,7 +465,7 @@ export default function ScrapeExtractsPage() {
                                    <FiClock size={13} /> sin cargar
                                  </span>
                                )}
-                              {isAdmin && !lot.completed ? (
+                              {isSuperAdmin && !lot.completed ? (
                                 (() => {
                                   const mKey = `${draw.draw_id}-${lot.lottery_id}`;
                                   const prog = mongoProgress[mKey];
@@ -508,7 +508,7 @@ export default function ScrapeExtractsPage() {
                                  <FiGrid size={12} /> Ver
                                </button>
                               )}
-                              {isAdmin && lot.extract_id && (
+                              {isSuperAdmin && lot.extract_id && (
                                 <button
                                   onClick={() => deleteOne(draw.draw_id, lot)}
                                   disabled={busy[key]}

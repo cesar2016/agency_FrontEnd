@@ -54,12 +54,12 @@ export default function AciertosPage() {
   const [showTable, setShowTable] = useState(false);
   const [recalc, setRecalc] = useState({ open: false, running: false, processed: 0, total: 0, done: false, error: null });
 
-  const today = new Date().toLocaleDateString('en-CA', {
+  const [filterDate, setFilterDate] = useState(() => new Date().toLocaleDateString('en-CA', {
     timeZone: 'America/Argentina/Buenos_Aires',
-  });
+  }));
 
   const loadAciertos = (bust = true) => {
-    const params = { date: today };
+    const params = { date: filterDate };
     // Al recalcular, evitamos el cache de 5 min para reflejar el nuevo calculo.
     if (bust) params._t = Date.now();
     api.get('/aciertos', { params }).then((r) => {
@@ -68,19 +68,17 @@ export default function AciertosPage() {
   };
 
   useEffect(() => {
-    // Solo los aciertos del dia de hoy (hora Argentina).
     loadAciertos();
     setLoading(false);
-  }, []);
+  }, [filterDate]);
 
   const handleRecalc = async () => {
     setRecalc({ open: true, running: true, processed: 0, total: 0, done: false, error: null });
     const limit = 8;
     let offset = 0;
     try {
-      // Procesamos en lotes para no superar el timeout del backend/proxy.
       while (true) {
-        const { data } = await api.post('/scrutiny/recalc', { date: today, offset, limit });
+        const { data } = await api.post('/scrutiny/recalc', { date: filterDate, offset, limit });
         setRecalc((p) => ({
           ...p,
           processed: p.processed + data.processed,
@@ -102,8 +100,16 @@ export default function AciertosPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white">Aciertos</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-bold text-white">Aciertos</h2>
+          <input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="bg-gray-800/40 border border-indigo-500/20 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+          />
+        </div>
         <div className="flex items-center gap-3">
           {isSuperAdmin && (
             <button

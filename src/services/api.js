@@ -9,7 +9,7 @@ const api = axios.create({
 });
 
 // Cache ligero de respuestas GET en sessionStorage para no recargar datos
-// que no cambian al navegar entre secciones (loterias, horarios, me, draws).
+// que no cambian al navegar entre secciones (loterias, horarios, draws).
 // Reduce el delay perceptivo en produccion (la BD remota tarda ~0.8s por query).
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 const GET_CACHE_KEY = 'api_get_cache_v5';
@@ -30,6 +30,24 @@ function writeCache(map) {
   }
 }
 
+// Endpoints que NUNCA se cachean:
+// - `/me` son la identidad y los ROLES del usuario. Es autorizacion, no datos
+//   de pantalla: la UI muestra u oculta botones segun el rol, asi que servirlo
+//   de cache hacia que un cambio de rol tardara hasta 5 minutos en verse (con
+//   el token ya renovado, el backend aceptaba la accion pero el boton no
+//   estaba). Igual para una baja de usuario.
+// - los detalles de extractos y el dashboard tienen que reflejar datos frescos.
+const SIN_CACHE_EXACTO = ['/me'];
+const SIN_CACHE_PREFIJO = ['/extracts/', '/externos/dashboard/'];
+
+function cacheable(config) {
+  const url = config.url || '';
+  if (!url || (config.method || 'get').toLowerCase() !== 'get') return false;
+  if (SIN_CACHE_EXACTO.includes(url)) return false;
+
+  return !SIN_CACHE_PREFIJO.some((prefijo) => url.startsWith(prefijo));
+}
+
 function cacheKey(url, params) {
   // Incluir los params en la clave: sino, /bets?date=X y /bets?draw_ids=Y
   // compartirian el mismo cache y los filtros no se reflejarian.
@@ -47,12 +65,9 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   // Para GET, devolver cache fresco si existe (sin tocar la red).
-  // No cacheamos los detalles de extractos (/extracts/{id}) ni el dashboard
-  // (/externos/dashboard/) porque deben reflejar datos frescos en todo momento.
-  const url = config.url || '';
-  if ((config.method || 'get').toLowerCase() === 'get' && url && !url.startsWith('/extracts/') && !url.startsWith('/externos/dashboard/')) {
+  if (cacheable(config)) {
     const map = readCache();
-    const entry = map[cacheKey(url, config.params)];
+    const entry = map[cacheKey(config.url, config.params)];
     if (entry && Date.now() - entry.t < CACHE_TTL) {
       config.adapter = () =>
         Promise.resolve({
@@ -70,11 +85,9 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => {
-    const url = response.config.url || '';
-    // No cacheamos detalles de extractos ni dashboard; el resto de GETs sí.
-    if ((response.config.method || 'get').toLowerCase() === 'get' && url && !url.startsWith('/extracts/') && !url.startsWith('/externos/dashboard/')) {
+    if (cacheable(response.config)) {
       const map = readCache();
-      map[cacheKey(url, response.config.params)] = { t: Date.now(), data: response.data };
+      map[cacheKey(response.config.url, response.config.params)] = { t: Date.now(), data: response.data };
       writeCache(map);
     }
     // Las mutaciones invalidan el cache de GET para refrescar al recargar.

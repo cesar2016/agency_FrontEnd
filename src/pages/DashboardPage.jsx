@@ -178,7 +178,6 @@ export default function DashboardPage() {
                 <tr key={`${entry.id}-${entry.draw?.id || 0}-${entry.section || index}`} className={`border-b border-gray-700/30 hover:bg-gray-700/20 ${entry.isDeleted ? 'bg-red-900/40 opacity-75' : ''}`}>
                   <td className={`p-2 font-mono text-xs cursor-pointer hover:text-indigo-300 ${entry.isDeleted ? 'text-red-300 line-through' : 'text-white'}`}
                       onClick={() => { 
-                          if(entry.isDeleted) return;
                           try {
                               const items = entry.section === 'items' ? (entry.items || []) : [];
                               const redoblonas = entry.section === 'redoblonas' ? (entry.redoblonas || []) : [];

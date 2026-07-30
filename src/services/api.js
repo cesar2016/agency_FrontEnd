@@ -91,6 +91,12 @@ api.interceptors.response.use(
       delete map[cacheKey(error.config.url)];
       writeCache(map);
     }
+    // Si el token expira o es invalido (ej. base de datos reiniciada), redirigir.
+    // Ignoramos el 401 si viene del propio /login para no entorpecer los mensajes.
+    if (error.response?.status === 401 && !error.config.url?.endsWith('/login')) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
     return Promise.reject(error);
   }
 );

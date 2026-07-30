@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   FiChevronDown, FiChevronUp, FiDownload, FiRefreshCw,
   FiCheckCircle, FiClock, FiGrid, FiAlertTriangle, FiTrash2, FiUpload, FiMenu,
+  FiDownloadCloud,
 } from 'react-icons/fi';
 
 const LOTTERY_ORDER = [
@@ -134,6 +135,38 @@ export default function ScrapeExtractsPage() {
     }
   };
 
+  // Importa la grilla desde la API JSON de loterias (fuente primaria).
+  // Solo se ofrece para las loterias que la API cubre (`api_cubierta`); el
+  // resto se sigue cargando desde Mongo o a mano.
+  const importFromApi = async (drawId, lot) => {
+    const key = `api-${drawId}-${lot.lottery_id}`;
+    setBusy((b) => ({ ...b, [key]: true }));
+    try {
+      const { data } = await api.post('/extracts/import-api', {
+        lottery_id: lot.lottery_id,
+        draw_id: drawId,
+        date: selectedDate,
+      });
+      // Se chequea por initials y no por la cantidad: al pedir SALR/FSAQ la API
+      // responde con toda la loteria madre, asi que `cargados` puede traer
+      // grillas de otras filas.
+      if ((data.cargados || []).some((c) => c.initials === lot.initials)) {
+        flash(`${lot.initials}: grilla cargada desde la API.`);
+      } else {
+        // La API contesto pero no dejo una grilla completa: el motivo (grilla
+        // parcial, sin sorteo cercano, fecha distinta) es mas util que un "0".
+        flash(`${lot.initials}: ${data.rechazados?.[0]?.motivo || 'la API todavia no tiene la grilla completa.'}`);
+      }
+      savedScrollY.current = window.scrollY;
+      await load();
+      requestAnimationFrame(() => window.scrollTo(0, savedScrollY.current));
+    } catch (e) {
+      flash(e?.response?.data?.message || `Error al importar ${lot.initials} desde la API`);
+    } finally {
+      setBusy((b) => ({ ...b, [key]: false }));
+    }
+  };
+
   const load = useCallback(async (date) => {
     const d = date || selectedDate;
     setLoading(true);
@@ -229,7 +262,7 @@ export default function ScrapeExtractsPage() {
           <h2 className="text-xl font-bold text-white">Extractos</h2>
           <p className="text-sm text-gray-400">
             {isSuperAdmin
-              ? 'Cargá resultados desde MongoDB o desde texto. Eliminá grillas por turno o lotería.'
+              ? 'Cargá resultados desde la API, desde MongoDB o desde texto. Eliminá grillas por turno o lotería.'
               : 'Consultá los extractos y números sorteados por turno y lotería.'}
           </p>
           {drawOrder.length > 0 && (
@@ -465,6 +498,18 @@ export default function ScrapeExtractsPage() {
                                    <FiClock size={13} /> sin cargar
                                  </span>
                                )}
+                              {isSuperAdmin && !lot.completed && lot.api_cubierta && (
+                                <button
+                                  onClick={() => importFromApi(draw.draw_id, lot)}
+                                  disabled={busy[`api-${draw.draw_id}-${lot.lottery_id}`]}
+                                  title="Importar esta grilla desde la API de loterías"
+                                  className="flex items-center gap-1 text-xs bg-emerald-600/40 hover:bg-emerald-600/60 text-emerald-100 px-2.5 py-1 rounded-lg transition disabled:opacity-50"
+                                >
+                                  {busy[`api-${draw.draw_id}-${lot.lottery_id}`]
+                                    ? <FiRefreshCw size={12} className="animate-spin" />
+                                    : <FiDownloadCloud size={12} />} API
+                                </button>
+                              )}
                               {isSuperAdmin && !lot.completed ? (
                                 (() => {
                                   const mKey = `${draw.draw_id}-${lot.lottery_id}`;

@@ -11,6 +11,7 @@ export default function DashboardPage() {
   const { stats, bets, draws, filterDate, filterDrawIds, viewBet, viewBetEntries, openViewBet, closeViewBet, fetchBets, fetchStats, fetchDraws, copyBet, clearDateFilter, setFilterDateWithFetch, setFilterDrawIds, page, setPage, pageSize, totalBets } = useBet();
   const navigate = useNavigate();
   const [deleteEntry, setDeleteEntry] = useState(null);
+  const [globalFilter, setGlobalFilter] = useState('');
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.roles?.includes('admin') || currentUser?.roles?.includes('super_admin');
 
@@ -28,11 +29,13 @@ export default function DashboardPage() {
         const rows = [];
         if (hasItems) {
           seqCounters[bet.sequence]++;
-          rows.push({ ...bet, draw, displaySequence: `${bet.sequence}-${seqCounters[bet.sequence]}`, section: 'items', sectionTotal: itemsBase * lotteryCount });
+          const isDeleted = bet.deleted_at || (bet.items && bet.items.every(i => i.deleted_at));
+          rows.push({ ...bet, draw, displaySequence: `${bet.sequence}-${seqCounters[bet.sequence]}`, section: 'items', sectionTotal: itemsBase * lotteryCount, isDeleted });
         }
         if (hasRedoblonas) {
           seqCounters[bet.sequence]++;
-          rows.push({ ...bet, draw, displaySequence: `${bet.sequence}-${seqCounters[bet.sequence]}`, section: 'redoblonas', sectionTotal: redBase * lotteryCount });
+          const isDeleted = bet.deleted_at || (bet.redoblonas && bet.redoblonas.every(i => i.deleted_at));
+          rows.push({ ...bet, draw, displaySequence: `${bet.sequence}-${seqCounters[bet.sequence]}`, section: 'redoblonas', sectionTotal: redBase * lotteryCount, isDeleted });
         }
         return rows;
       });
@@ -40,6 +43,20 @@ export default function DashboardPage() {
   }, [bets]);
 
   const expandedBets = expandBetsByDraw();
+  
+  const displayedBets = expandedBets.filter(entry => {
+    if (!globalFilter) return true;
+    const search = globalFilter.toLowerCase();
+    const searchableString = `
+      ${entry.displaySequence} 
+      ${entry.user?.name || ''} 
+      ${entry.draw?.name || ''} 
+      ${entry.created_at ? entry.created_at.split(' ')[1]?.slice(0, 5) : ''} 
+      ${fmt(entry.sectionTotal)}
+      ${entry.section}
+    `.toLowerCase();
+    return searchableString.includes(search);
+  });
 
   const handleDeleteEntry = async () => {
     if (!deleteEntry) return;
@@ -87,47 +104,58 @@ export default function DashboardPage() {
       <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl p-4">
         <h3 className="text-white font-semibold mb-3">Ultimas Jugadas</h3>
 
-        <div className="flex flex-col sm:flex-row gap-2 mb-4">
-          <input
-            type="date"
-            value={filterDate}
-            onChange={(e) => setFilterDateWithFetch(e.target.value)}
-            className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 w-full sm:w-40"
-          />
-          <button
-            onClick={clearDateFilter}
-            className={`text-xs px-3 py-2 rounded-lg border transition whitespace-nowrap ${
-              filterDate === ''
-                ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-200'
-                : 'bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500'
-            }`}
-          >
-            Todas
-          </button>
-          <div className="flex flex-wrap gap-2">
-            {draws.map((d) => {
-              const selected = filterDrawIds.includes(d.id);
-              return (
-                <label
-                  key={d.id}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition ${
-                    selected
-                      ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-200'
-                      : 'bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selected}
-                    onChange={() => setFilterDrawIds((prev) =>
-                      prev.includes(d.id) ? prev.filter((id) => id !== d.id) : [...prev, d.id]
-                    )}
-                    className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  {d.name}
-                </label>
-              );
-            })}
+        <div className="flex flex-col sm:flex-row justify-between gap-2 mb-4">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDateWithFetch(e.target.value)}
+              className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 w-full sm:w-40"
+            />
+            <button
+              onClick={clearDateFilter}
+              className={`text-xs px-3 py-2 rounded-lg border transition whitespace-nowrap ${
+                filterDate === ''
+                  ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-200'
+                  : 'bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500'
+              }`}
+            >
+              Todas
+            </button>
+            <div className="flex flex-wrap gap-2">
+              {draws.map((d) => {
+                const selected = filterDrawIds.includes(d.id);
+                return (
+                  <label
+                    key={d.id}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition ${
+                      selected
+                        ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-200'
+                        : 'bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => setFilterDrawIds((prev) =>
+                        prev.includes(d.id) ? prev.filter((id) => id !== d.id) : [...prev, d.id]
+                      )}
+                      className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    {d.name}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+          <div>
+            <input
+              type="text"
+              placeholder="🔍 Buscar..."
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 w-full sm:w-48"
+            />
           </div>
         </div>
 
@@ -144,12 +172,13 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {expandedBets.length === 0 ? (
+              {displayedBets.length === 0 ? (
                 <tr><td colSpan={6} className="text-center py-8 text-gray-400">No hay jugadas</td></tr>
-              ) : expandedBets.map((entry, index) => (
-                <tr key={`${entry.id}-${entry.draw?.id || 0}-${entry.section || index}`} className="border-b border-gray-700/30 hover:bg-gray-700/20">
-                  <td className="p-2 text-white font-mono text-xs cursor-pointer hover:text-indigo-300" 
+              ) : displayedBets.map((entry, index) => (
+                <tr key={`${entry.id}-${entry.draw?.id || 0}-${entry.section || index}`} className={`border-b border-gray-700/30 hover:bg-gray-700/20 ${entry.isDeleted ? 'bg-red-900/40 opacity-75' : ''}`}>
+                  <td className={`p-2 font-mono text-xs cursor-pointer hover:text-indigo-300 ${entry.isDeleted ? 'text-red-300 line-through' : 'text-white'}`}
                       onClick={() => { 
+                          if(entry.isDeleted) return;
                           try {
                               const items = entry.section === 'items' ? (entry.items || []) : [];
                               const redoblonas = entry.section === 'redoblonas' ? (entry.redoblonas || []) : [];
@@ -172,7 +201,11 @@ export default function DashboardPage() {
                       <button onClick={() => openViewBet(entry)} className="text-indigo-400 hover:text-indigo-300 transition p-1" title="Ver boleta">
                         <FiEye size={16} />
                       </button>
-                      {(!isAdmin && entry.is_turn_closed) ? (
+                      {entry.isDeleted ? (
+                        <span className="text-red-400 p-1" title="Boleta eliminada">
+                          <FiX size={16} />
+                        </span>
+                      ) : (!isAdmin && entry.is_turn_closed) ? (
                         <span className="text-gray-500 p-1" title="Turno cerrado - no se puede eliminar">
                           <FiLock size={16} />
                         </span>

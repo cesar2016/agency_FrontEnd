@@ -52,6 +52,7 @@ export default function HorariosPage() {
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState(null);
   const [filter, setFilter] = useState('all'); // all | daily | saturday | sunday
+  const [search, setSearch] = useState('');
   const [showCsvOption, setShowCsvOption] = useState(false);
 
   // State for inline editing of existing schedule
@@ -281,7 +282,7 @@ export default function HorariosPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           {[
             { k: 'all', label: 'Todos' },
@@ -303,15 +304,34 @@ export default function HorariosPage() {
             </button>
           ))}
         </div>
+        <input
+          type="text"
+          placeholder="🔍 Buscar lotería, turno, horario..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 w-full sm:w-64"
+        />
       </div>
 
       <div className="space-y-6">
         {sections
           .filter((s) => filter === 'all' || s.scope === filter)
           .map((section) => {
-            const sorted = [...section.lotteries].sort(
-              (a, b) => lotteryRank(a.initials) - lotteryRank(b.initials)
-            );
+            const searchLower = search.toLowerCase();
+            const filtered = [...section.lotteries]
+              .filter((lot) => {
+                if (!searchLower) return true;
+                const nameMatch = lot.initials?.toLowerCase().includes(searchLower)
+                  || lot.name?.toLowerCase().includes(searchLower);
+                const scheduleMatch = lot.schedules?.some((s) =>
+                  s.draw?.toLowerCase().includes(searchLower)
+                  || s.draw_time?.toLowerCase().includes(searchLower)
+                  || s.closing_time?.toLowerCase().includes(searchLower)
+                );
+                return nameMatch || scheduleMatch;
+              })
+              .sort((a, b) => lotteryRank(a.initials) - lotteryRank(b.initials));
+            if (filtered.length === 0 && search) return null;
             return (
               <div
                 key={section.scope}
@@ -336,7 +356,7 @@ export default function HorariosPage() {
                   <span>Turnos</span>
                 </div>
                 <div className="divide-y divide-gray-700/20">
-                  {sorted.map((lot) => {
+                  {filtered.map((lot) => {
                     const isAddingTurn = addingTurnKey === `${section.scope}-${lot.lottery_id}`;
                     // Find draws not assigned to this lottery in this section
                     const assignedDrawIds = lot.schedules.map((s) => s.draw_id).filter(Boolean);

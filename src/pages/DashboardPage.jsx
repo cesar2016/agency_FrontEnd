@@ -117,52 +117,53 @@ export default function DashboardPage() {
       <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl p-4">
         <h3 className="text-white font-semibold mb-3">Ultimas Jugadas</h3>
 
-        <div className="flex flex-col sm:flex-row justify-between gap-2 mb-4">
-          <div className="flex flex-col sm:flex-row gap-2">
+        {/* Fila 1: Date + Search */}
+        <div className="flex gap-2 mb-2">
+          <input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 flex-1 sm:flex-none sm:w-40"
+          />
+          <input
+            type="text"
+            placeholder="🔍 Buscar..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 flex-1 sm:flex-none sm:w-48"
+          />
+        </div>
+
+        {/* Fila 2: Eliminadas + PageSize + Todas */}
+        <div className="flex gap-2 mb-4">
+          <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs cursor-pointer transition bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500 whitespace-nowrap">
             <input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 w-full sm:w-40"
+              type="checkbox"
+              checked={showDeleted}
+              onChange={(e) => setShowDeleted(e.target.checked)}
+              className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-red-600 focus:ring-red-500"
             />
-            <button
-              onClick={clearDateFilter}
-              className={`text-xs px-3 py-2 rounded-lg border transition whitespace-nowrap ${
-                filterDate === ''
-                  ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-200'
-                  : 'bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500'
-              }`}
-            >
-              Todas
-            </button>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="text"
-              placeholder="🔍 Buscar..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 w-full sm:w-48"
-            />
-            <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs cursor-pointer transition bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500 whitespace-nowrap">
-              <input
-                type="checkbox"
-                checked={showDeleted}
-                onChange={(e) => setShowDeleted(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-red-600 focus:ring-red-500"
-              />
-              Solo eliminadas
-            </label>
-            <select
-              value={pageSize}
-              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-              className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-            >
-              {[5, 10, 20, 30, 50, 100].map((n) => (
-                <option key={n} value={n}>{n} / pág</option>
-              ))}
-            </select>
-          </div>
+            Solo eliminadas
+          </label>
+          <select
+            value={pageSize}
+            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+            className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+          >
+            {[5, 10, 20, 30, 50, 100].map((n) => (
+              <option key={n} value={n}>{n} / pág</option>
+            ))}
+          </select>
+          <button
+            onClick={clearDateFilter}
+            className={`text-xs px-3 py-2 rounded-lg border transition whitespace-nowrap ${
+              filterDate === ''
+                ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-200'
+                : 'bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500'
+            }`}
+          >
+            Todas
+          </button>
         </div>
 
         <div className="overflow-x-auto">

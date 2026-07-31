@@ -8,7 +8,7 @@ import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiE
 const fmt = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function DashboardPage() {
-  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, viewBetEntries, openViewBet, closeViewBet, fetchBets, fetchStats, fetchDraws, copyBet, clearDateFilter, setFilterDateWithFetch, setFilterDrawIds, page, setPage, pageSize, setPageSize, totalBets } = useBet();
+  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, viewBetEntries, openViewBet, closeViewBet, fetchBets, fetchStats, fetchDraws, copyBet, clearDateFilter, setFilterDate, setFilterDrawIds, page, setPage, pageSize, setPageSize, totalBets } = useBet();
   const navigate = useNavigate();
   const [deleteEntry, setDeleteEntry] = useState(null);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -123,7 +123,7 @@ export default function DashboardPage() {
             <input
               type="date"
               value={filterDate}
-              onChange={(e) => setFilterDateWithFetch(e.target.value)}
+              onChange={(e) => setFilterDate(e.target.value)}
               className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 w-full sm:w-40"
             />
             <button

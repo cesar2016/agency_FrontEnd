@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useBet } from '../context/BetContext';
 import { useAuth } from '../context/AuthContext';
-import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiEye, FiTrash2, FiX, FiLock } from 'react-icons/fi';
+import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiEye, FiTrash2, FiX, FiLock, FiChevronDown, FiChevronRight } from 'react-icons/fi';
 
 const fmt = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -12,6 +12,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [deleteEntry, setDeleteEntry] = useState(null);
   const [globalFilter, setGlobalFilter] = useState('');
+  const [statsOpen, setStatsOpen] = useState(false);
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.roles?.includes('admin') || currentUser?.roles?.includes('super_admin');
 
@@ -88,16 +89,27 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {cards.map((card) => (
-          <div key={card.label} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-xl p-4 text-center">
-            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${card.color} flex items-center justify-center mx-auto mb-3`}>
-              <card.icon className="text-white" size={18} />
-            </div>
-            <p className="text-2xl font-bold text-white">{card.value}</p>
-            <p className="text-xs text-gray-400 mt-1">{card.label}</p>
+      <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-xl overflow-hidden">
+        <button
+          onClick={() => setStatsOpen((v) => !v)}
+          className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-700/20 transition"
+        >
+          <span className="text-sm font-medium text-gray-300">Resumen del día</span>
+          {statsOpen ? <FiChevronDown size={16} className="text-gray-400" /> : <FiChevronRight size={16} className="text-gray-400" />}
+        </button>
+        {statsOpen && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 pt-0">
+            {cards.map((card) => (
+              <div key={card.label} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-xl p-4 text-center">
+                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${card.color} flex items-center justify-center mx-auto mb-3`}>
+                  <card.icon className="text-white" size={18} />
+                </div>
+                <p className="text-2xl font-bold text-white">{card.value}</p>
+                <p className="text-xs text-gray-400 mt-1">{card.label}</p>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
 

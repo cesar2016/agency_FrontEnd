@@ -514,7 +514,7 @@ export default function HorariosPage() {
                                               >
                                                 {s.is_active ? <FiToggleRight size={16} /> : <FiToggleLeft size={16} />}
                                               </button>
-                                              <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                                              <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 sm:transition-opacity">
                                                 <button
                                                   onClick={() => startEditing(s)}
                                                   className="p-1 text-indigo-300 hover:text-white hover:bg-indigo-600/40 rounded transition"

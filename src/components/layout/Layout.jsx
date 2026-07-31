@@ -52,7 +52,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <nav className="bg-gray-900/80 backdrop-blur-sm border-b border-indigo-500/20 px-4 py-3 flex items-center justify-between">
+      <nav className="relative z-10 bg-gray-900/80 backdrop-blur-sm border-b border-indigo-500/20 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2 md:gap-6">
           <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-gray-300 hover:text-white transition p-1 -ml-1">
             {menuOpen ? <FiX size={22} /> : <FiMenu size={22} />}

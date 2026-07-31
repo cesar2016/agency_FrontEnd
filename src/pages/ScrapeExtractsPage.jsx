@@ -487,6 +487,11 @@ export default function ScrapeExtractsPage() {
                              ) : (
                                <span className="text-xs text-gray-500 hidden sm:inline">Sorteo {lot.draw_time} · Cierre {lot.closing_time}</span>
                              )}
+                             {lot.cabeza && (
+                               <span className="hidden sm:flex items-center justify-center min-w-[3rem] px-2 py-0.5 text-sm font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-md font-mono tracking-widest leading-none ml-2 shadow-[0_0_8px_rgba(234,179,8,0.2)]">
+                                 {lot.cabeza}
+                               </span>
+                             )}
                            </div>
                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                               {lot.completed ? (
@@ -568,9 +573,16 @@ export default function ScrapeExtractsPage() {
 
                         {/* Horarios visible solo en mobile debajo del nombre */}
                         {!lot.defect && (
-                          <span className="text-xs text-gray-500 sm:hidden mt-1 ml-10">
-                            Sorteo {lot.draw_time} · Cierre {lot.closing_time}
-                          </span>
+                          <div className="flex items-center gap-2 mt-1 ml-10 sm:hidden">
+                            <span className="text-xs text-gray-500">
+                              Sorteo {lot.draw_time} · Cierre {lot.closing_time}
+                            </span>
+                            {lot.cabeza && (
+                              <span className="flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded font-mono tracking-wider shadow-[0_0_8px_rgba(234,179,8,0.2)]">
+                                {lot.cabeza}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     );

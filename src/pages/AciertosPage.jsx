@@ -59,17 +59,18 @@ export default function AciertosPage() {
   }));
 
   const loadAciertos = (bust = true) => {
+    setLoading(true);
     const params = { date: filterDate };
     // Al recalcular, evitamos el cache de 5 min para reflejar el nuevo calculo.
     if (bust) params._t = Date.now();
     api.get('/aciertos', { params }).then((r) => {
       setAciertos(r.data);
-    });
+      setLoading(false);
+    }).catch(() => setLoading(false));
   };
 
   useEffect(() => {
     loadAciertos();
-    setLoading(false);
   }, [filterDate]);
 
   const handleRecalc = async () => {

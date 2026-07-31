@@ -8,11 +8,12 @@ import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiE
 const fmt = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function DashboardPage() {
-  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, viewBetEntries, openViewBet, closeViewBet, fetchBets, fetchStats, fetchDraws, copyBet, clearDateFilter, setFilterDateWithFetch, setFilterDrawIds, page, setPage, pageSize, totalBets } = useBet();
+  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, viewBetEntries, openViewBet, closeViewBet, fetchBets, fetchStats, fetchDraws, copyBet, clearDateFilter, setFilterDateWithFetch, setFilterDrawIds, page, setPage, pageSize, setPageSize, totalBets } = useBet();
   const navigate = useNavigate();
   const [deleteEntry, setDeleteEntry] = useState(null);
   const [globalFilter, setGlobalFilter] = useState('');
   const [statsOpen, setStatsOpen] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(false);
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.roles?.includes('admin') || currentUser?.roles?.includes('super_admin');
 
@@ -46,6 +47,7 @@ export default function DashboardPage() {
   const expandedBets = expandBetsByDraw();
   
   const displayedBets = expandedBets.filter(entry => {
+    if (showDeleted && !entry.isDeleted) return false;
     if (!globalFilter) return true;
     const search = globalFilter.toLowerCase();
     const searchableString = `
@@ -160,7 +162,7 @@ export default function DashboardPage() {
               })}
             </div>
           </div>
-          <div>
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               placeholder="🔍 Buscar..."
@@ -168,6 +170,24 @@ export default function DashboardPage() {
               onChange={(e) => setGlobalFilter(e.target.value)}
               className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 w-full sm:w-48"
             />
+            <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs cursor-pointer transition bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500 whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={showDeleted}
+                onChange={(e) => setShowDeleted(e.target.checked)}
+                className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-red-600 focus:ring-red-500"
+              />
+              Solo eliminadas
+            </label>
+            <select
+              value={pageSize}
+              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+              className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+            >
+              {[5, 10, 20, 30, 50, 100].map((n) => (
+                <option key={n} value={n}>{n} / pág</option>
+              ))}
+            </select>
           </div>
         </div>
 

@@ -24,7 +24,7 @@ export function BetProvider({ children }) {
   const [bets, setBets] = useState([]);
   // Paginación del dashboard
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(15);
+  const [pageSize, setPageSize] = useState(15);
   const [totalBets, setTotalBets] = useState(0);
   // Modal view bet
   const [viewBet, setViewBet] = useState(null);
@@ -252,7 +252,7 @@ return (
         filterDrawIds, setFilterDrawIds: setFilterDrawIdsWithFetch,
         clearDateFilter,
         page, setPage,
-        pageSize,
+        pageSize, setPageSize,
         totalBets,
         viewBet, setViewBet, viewBetEntries, openViewBet, closeViewBet,
       }}

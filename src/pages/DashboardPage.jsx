@@ -134,8 +134,8 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Fila 2: Eliminadas + PageSize + Todas */}
-        <div className="flex gap-2 mb-4">
+        {/* Fila 2: Eliminadas + PageSize + Todas — flotados a la derecha */}
+        <div className="flex justify-end gap-2 mb-4">
           <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs cursor-pointer transition bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500 whitespace-nowrap">
             <input
               type="checkbox"

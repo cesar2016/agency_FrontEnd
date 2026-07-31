@@ -8,7 +8,7 @@ import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiE
 const fmt = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function DashboardPage() {
-  const { stats, bets, draws, filterDate, filterDrawIds, viewBet, viewBetEntries, openViewBet, closeViewBet, fetchBets, fetchStats, fetchDraws, copyBet, clearDateFilter, setFilterDate, setFilterDrawIds, page, setPage, pageSize, setPageSize, totalBets } = useBet();
+  const { stats, bets, filterDate, viewBet, viewBetEntries, openViewBet, closeViewBet, fetchBets, fetchStats, copyBet, clearDateFilter, setFilterDate, page, setPage, pageSize, setPageSize, totalBets } = useBet();
   const navigate = useNavigate();
   const [deleteEntry, setDeleteEntry] = useState(null);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -74,9 +74,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchStats();
-    fetchDraws();
-    fetchBets({ date: filterDate, draw_ids: filterDrawIds });
-  }, [fetchStats, fetchDraws, fetchBets, filterDate, filterDrawIds, page, pageSize]);
+    fetchBets({ date: filterDate });
+  }, [fetchStats, fetchBets, filterDate, page, pageSize]);
 
   if (!stats) {
     return <div className="flex justify-center pt-20"><FiRefreshCw className="animate-spin text-indigo-400" size={28} /></div>;
@@ -136,31 +135,6 @@ export default function DashboardPage() {
             >
               Todas
             </button>
-            <div className="flex flex-wrap gap-2">
-              {draws.map((d) => {
-                const selected = filterDrawIds.includes(d.id);
-                return (
-                  <label
-                    key={d.id}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition ${
-                      selected
-                        ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-200'
-                        : 'bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selected}
-                      onChange={() => setFilterDrawIds((prev) =>
-                        prev.includes(d.id) ? prev.filter((id) => id !== d.id) : [...prev, d.id]
-                      )}
-                      className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    {d.name}
-                  </label>
-                );
-              })}
-            </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <input

@@ -552,7 +552,7 @@ export default function ScrapeExtractsPage() {
                               ) : null}
                               {lot.extract_id && (
                                <button
-                                 onClick={() => setModalExtract({ drawId: draw.draw_id, lotteryId: lot.lottery_id, extractId: lot.extract_id, label: `${lot.initials} — ${draw.draw_name}` })}
+                                 onClick={() => setModalExtract({ drawId: draw.draw_id, lotteryId: lot.lottery_id, extractId: lot.extract_id, label: `${lot.initials} — ${draw.draw_name}`, time: lot.draw_time })}
                                  className="flex items-center gap-1 text-xs bg-gray-700/50 hover:bg-gray-700 text-gray-200 px-2.5 py-1 rounded-lg transition"
                                >
                                  <FiGrid size={12} /> Ver
@@ -671,6 +671,7 @@ export default function ScrapeExtractsPage() {
         <ExtractNumbersModal
           extractId={modalExtract.extractId}
           label={modalExtract.label}
+          time={modalExtract.time}
           onClose={() => setModalExtract(null)}
         />
       )}
@@ -678,7 +679,7 @@ export default function ScrapeExtractsPage() {
   );
 }
 
-function ExtractNumbersModal({ extractId, label, onClose }) {
+function ExtractNumbersModal({ extractId, label, time, onClose }) {
   const [nums, setNums] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -701,7 +702,10 @@ function ExtractNumbersModal({ extractId, label, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="w-full max-w-md bg-gray-900 border border-indigo-500/20 rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700/50">
-          <h3 className="text-sm font-semibold text-white">{label}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-white">{label}</h3>
+            {time && <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded border border-gray-700 font-mono">{time}</span>}
+          </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-lg leading-none">&times;</button>
         </div>
         <div className="px-5 py-4">

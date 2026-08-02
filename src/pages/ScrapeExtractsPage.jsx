@@ -155,7 +155,12 @@ export default function ScrapeExtractsPage() {
       } else {
         // La API contesto pero no dejo una grilla completa: el motivo (grilla
         // parcial, sin sorteo cercano, fecha distinta) es mas util que un "0".
-        flash(`${lot.initials}: ${data.rechazados?.[0]?.motivo || 'la API todavia no tiene la grilla completa.'}`);
+        const motivo = data.rechazados?.[0]?.motivo || '';
+        if (/TOKEN_NO_CONFIGURADO|TOKEN_FALTANTE|TOKEN_INVALIDO/.test(motivo)) {
+          flash(`${lot.initials}: la API no esta configurada. Falta el token en el backend (LOTERIA_API_TOKEN).`);
+        } else {
+          flash(`${lot.initials}: ${motivo || 'la API todavia no tiene la grilla completa.'}`);
+        }
       }
       savedScrollY.current = window.scrollY;
       await load();

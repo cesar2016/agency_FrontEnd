@@ -112,8 +112,9 @@ export default function UsersPage() {
 
   const openEdit = (user) => {
     const role = user.roles?.[0] || 'usuario';
+    const clave = user.password || '••••••';
     setEditingUser(user);
-    setForm({ name: user.name, whatsapp: user.whatsapp || '', email: user.email, username: user.username || '', role, password: '••••••', password_confirmation: '••••••' });
+    setForm({ name: user.name, whatsapp: user.whatsapp || '', email: user.email, username: user.username || '', role, password: clave, password_confirmation: clave });
     setEditingPasswordField(false);
     setGeneratedUsername('');
     setLastPassword('');
@@ -350,7 +351,7 @@ export default function UsersPage() {
                   {editingUser ? (
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      value={editingPasswordField ? form.password : '••••••'}
+                      value={form.password}
                       onFocus={() => {
                         if (!editingPasswordField) {
                           setEditingPasswordField(true);

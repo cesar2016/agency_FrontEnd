@@ -14,7 +14,6 @@ export default function DashboardPage() {
   const [globalFilter, setGlobalFilter] = useState('');
   const [statsOpen, setStatsOpen] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
-  const [showAdmins, setShowAdmins] = useState(false);
   const [showUsers, setShowUsers] = useState(true);
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.roles?.includes('admin') || currentUser?.roles?.includes('super_admin');
@@ -49,12 +48,7 @@ export default function DashboardPage() {
 
   const expandedBets = expandBetsByDraw();
 
-  const mineParam = isSuperAdmin
-    ? (showAdmins && showUsers ? 'both'
-      : showAdmins ? 'admins'
-      : showUsers ? 'usuarios'
-      : 'all')
-    : undefined;
+  const mineParam = isSuperAdmin ? (showUsers ? 'usuarios' : 'all') : undefined;
   
   const displayedBets = expandedBets.filter(entry => {
     if (showDeleted && !entry.isDeleted) return false;
@@ -132,22 +126,13 @@ export default function DashboardPage() {
             <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs cursor-pointer transition bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500 whitespace-nowrap">
               <input
                 type="checkbox"
-                checked={showAdmins}
-                onChange={(e) => setShowAdmins(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500"
-              />
-              Ver mis admin
-            </label>
-            <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs cursor-pointer transition bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500 whitespace-nowrap">
-              <input
-                type="checkbox"
                 checked={showUsers}
                 onChange={(e) => setShowUsers(e.target.checked)}
                 className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500"
               />
               Ver mis usuarios (pasadores)
             </label>
-            <span className="text-xs text-gray-500">Desmarcar ambos = ver todos</span>
+            <span className="text-xs text-gray-500">Desmarcar = ver todos</span>
           </div>
         )}
 

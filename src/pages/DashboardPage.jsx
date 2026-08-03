@@ -48,26 +48,16 @@ export default function DashboardPage() {
   }, [bets]);
 
   const expandedBets = expandBetsByDraw();
+
+  const mineParam = isSuperAdmin
+    ? (showAdmins && showUsers ? 'both'
+      : showAdmins ? 'admins'
+      : showUsers ? 'usuarios'
+      : 'all')
+    : undefined;
   
   const displayedBets = expandedBets.filter(entry => {
     if (showDeleted && !entry.isDeleted) return false;
-    if (isSuperAdmin) {
-      const isSelf = entry.user?.id === currentUser.id;
-      if (!isSelf) {
-        const userRoles = entry.user?.roles || [];
-        const isMyAdmin = entry.user?.created_by === currentUser.id && userRoles.includes('admin');
-        const isMyUser = entry.user?.created_by === currentUser.id && userRoles.includes('usuario');
-        if (showAdmins && showUsers) {
-          if (!isMyAdmin && !isMyUser) return false;
-        } else if (showAdmins) {
-          if (!isMyAdmin) return false;
-        } else if (showUsers) {
-          if (!isMyUser) return false;
-        } else {
-          return false;
-        }
-      }
-    }
     if (!globalFilter) return true;
     const search = globalFilter.toLowerCase();
     const searchableString = `
@@ -86,7 +76,7 @@ export default function DashboardPage() {
     try {
       await api.delete(`/bets/${deleteEntry.id}`, { params: { section: deleteEntry.section } });
       setDeleteEntry(null);
-      fetchBets({ date: filterDate, draw_ids: filterDrawIds });
+      fetchBets({ date: filterDate, draw_ids: filterDrawIds, mine: mineParam });
     } catch (e) {
       console.error('Error deleting bet:', e);
     }
@@ -94,8 +84,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchStats();
-    fetchBets({ date: filterDate });
-  }, [fetchStats, fetchBets, filterDate, page, pageSize]);
+    fetchBets({ date: filterDate, mine: mineParam });
+  }, [fetchStats, fetchBets, filterDate, page, pageSize, mineParam]);
 
   if (!stats) {
     return <div className="flex justify-center pt-20"><FiRefreshCw className="animate-spin text-indigo-400" size={28} /></div>;
@@ -138,7 +128,7 @@ export default function DashboardPage() {
         <h3 className="text-white font-semibold mb-3">Ultimas Jugadas</h3>
 
         {isSuperAdmin && (
-          <div className="flex flex-wrap gap-3 mb-4">
+          <div className="flex flex-wrap items-center gap-3 mb-4">
             <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs cursor-pointer transition bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500 whitespace-nowrap">
               <input
                 type="checkbox"
@@ -157,6 +147,7 @@ export default function DashboardPage() {
               />
               Ver mis usuarios (pasadores)
             </label>
+            <span className="text-xs text-gray-500">Desmarcar ambos = ver todos</span>
           </div>
         )}
 

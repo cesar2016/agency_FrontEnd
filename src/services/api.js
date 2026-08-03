@@ -38,7 +38,7 @@ function writeCache(map) {
 //   estaba). Igual para una baja de usuario.
 // - los detalles de extractos y el dashboard tienen que reflejar datos frescos.
 const SIN_CACHE_EXACTO = ['/me'];
-const SIN_CACHE_PREFIJO = ['/extracts/', '/externos/dashboard/'];
+const SIN_CACHE_PREFIJO = ['/extracts/', '/externos/dashboard/', '/bets'];
 
 function cacheable(config) {
   const url = config.url || '';

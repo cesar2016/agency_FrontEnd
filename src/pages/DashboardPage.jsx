@@ -14,10 +14,8 @@ export default function DashboardPage() {
   const [globalFilter, setGlobalFilter] = useState('');
   const [statsOpen, setStatsOpen] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
-  const [showUsers, setShowUsers] = useState(true);
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.roles?.includes('admin') || currentUser?.roles?.includes('super_admin');
-  const isSuperAdmin = currentUser?.roles?.includes('super_admin');
 
   const expandBetsByDraw = useCallback(() => {
     const seqCounters = {};
@@ -48,8 +46,6 @@ export default function DashboardPage() {
 
   const expandedBets = expandBetsByDraw();
 
-  const mineParam = isSuperAdmin ? (showUsers ? 'usuarios' : 'all') : undefined;
-  
   const displayedBets = expandedBets.filter(entry => {
     if (showDeleted && !entry.isDeleted) return false;
     if (!globalFilter) return true;
@@ -70,7 +66,7 @@ export default function DashboardPage() {
     try {
       await api.delete(`/bets/${deleteEntry.id}`, { params: { section: deleteEntry.section } });
       setDeleteEntry(null);
-      fetchBets({ date: filterDate, draw_ids: filterDrawIds, mine: mineParam });
+      fetchBets({ date: filterDate });
     } catch (e) {
       console.error('Error deleting bet:', e);
     }
@@ -78,8 +74,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchStats();
-    fetchBets({ date: filterDate, mine: mineParam });
-  }, [fetchStats, fetchBets, filterDate, page, pageSize, mineParam]);
+    fetchBets({ date: filterDate });
+  }, [fetchStats, fetchBets, filterDate, page, pageSize]);
 
   if (!stats) {
     return <div className="flex justify-center pt-20"><FiRefreshCw className="animate-spin text-indigo-400" size={28} /></div>;
@@ -120,21 +116,6 @@ export default function DashboardPage() {
 
       <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl p-4">
         <h3 className="text-white font-semibold mb-3">Ultimas Jugadas</h3>
-
-        {isSuperAdmin && (
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs cursor-pointer transition bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500 whitespace-nowrap">
-              <input
-                type="checkbox"
-                checked={showUsers}
-                onChange={(e) => setShowUsers(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500"
-              />
-              Ver mis usuarios (pasadores)
-            </label>
-            <span className="text-xs text-gray-500">Desmarcar = ver todos</span>
-          </div>
-        )}
 
         {/* Fila única: izquierda (date+search) / derecha (eliminadas+pageSize+Todas) */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">

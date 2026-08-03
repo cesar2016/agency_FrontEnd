@@ -14,8 +14,11 @@ export default function DashboardPage() {
   const [globalFilter, setGlobalFilter] = useState('');
   const [statsOpen, setStatsOpen] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
+  const [showAdmins, setShowAdmins] = useState(false);
+  const [showUsers, setShowUsers] = useState(true);
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.roles?.includes('admin') || currentUser?.roles?.includes('super_admin');
+  const isSuperAdmin = currentUser?.roles?.includes('super_admin');
 
   const expandBetsByDraw = useCallback(() => {
     const seqCounters = {};
@@ -48,6 +51,20 @@ export default function DashboardPage() {
   
   const displayedBets = expandedBets.filter(entry => {
     if (showDeleted && !entry.isDeleted) return false;
+    if (isSuperAdmin) {
+      const userRoles = entry.user?.roles || [];
+      const isMyAdmin = entry.user?.created_by === currentUser.id && userRoles.includes('admin');
+      const isMyUser = entry.user?.created_by === currentUser.id && userRoles.includes('usuario');
+      if (showAdmins && showUsers) {
+        if (!isMyAdmin && !isMyUser) return false;
+      } else if (showAdmins) {
+        if (!isMyAdmin) return false;
+      } else if (showUsers) {
+        if (!isMyUser) return false;
+      } else {
+        return false;
+      }
+    }
     if (!globalFilter) return true;
     const search = globalFilter.toLowerCase();
     const searchableString = `
@@ -116,6 +133,29 @@ export default function DashboardPage() {
 
       <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-2xl p-4">
         <h3 className="text-white font-semibold mb-3">Ultimas Jugadas</h3>
+
+        {isSuperAdmin && (
+          <div className="flex flex-wrap gap-3 mb-4">
+            <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs cursor-pointer transition bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500 whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={showAdmins}
+                onChange={(e) => setShowAdmins(e.target.checked)}
+                className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500"
+              />
+              Ver mis admin
+            </label>
+            <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs cursor-pointer transition bg-gray-700/30 border-gray-600/50 text-gray-400 hover:border-gray-500 whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={showUsers}
+                onChange={(e) => setShowUsers(e.target.checked)}
+                className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-indigo-500 focus:ring-indigo-500"
+              />
+              Ver mis usuarios (pasadores)
+            </label>
+          </div>
+        )}
 
         {/* Fila única: izquierda (date+search) / derecha (eliminadas+pageSize+Todas) */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">

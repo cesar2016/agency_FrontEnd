@@ -52,17 +52,20 @@ export default function DashboardPage() {
   const displayedBets = expandedBets.filter(entry => {
     if (showDeleted && !entry.isDeleted) return false;
     if (isSuperAdmin) {
-      const userRoles = entry.user?.roles || [];
-      const isMyAdmin = entry.user?.created_by === currentUser.id && userRoles.includes('admin');
-      const isMyUser = entry.user?.created_by === currentUser.id && userRoles.includes('usuario');
-      if (showAdmins && showUsers) {
-        if (!isMyAdmin && !isMyUser) return false;
-      } else if (showAdmins) {
-        if (!isMyAdmin) return false;
-      } else if (showUsers) {
-        if (!isMyUser) return false;
-      } else {
-        return false;
+      const isSelf = entry.user?.id === currentUser.id;
+      if (!isSelf) {
+        const userRoles = entry.user?.roles || [];
+        const isMyAdmin = entry.user?.created_by === currentUser.id && userRoles.includes('admin');
+        const isMyUser = entry.user?.created_by === currentUser.id && userRoles.includes('usuario');
+        if (showAdmins && showUsers) {
+          if (!isMyAdmin && !isMyUser) return false;
+        } else if (showAdmins) {
+          if (!isMyAdmin) return false;
+        } else if (showUsers) {
+          if (!isMyUser) return false;
+        } else {
+          return false;
+        }
       }
     }
     if (!globalFilter) return true;

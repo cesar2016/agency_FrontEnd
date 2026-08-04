@@ -4,8 +4,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
   FiChevronDown, FiChevronUp, FiDownload, FiRefreshCw,
-  FiCheckCircle, FiClock, FiGrid, FiAlertTriangle, FiTrash2, FiUpload, FiMenu,
-  FiDownloadCloud,
+  FiCheckCircle, FiClock, FiGrid, FiAlertTriangle, FiTrash2, FiMenu,
 } from 'react-icons/fi';
 
 const LOTTERY_ORDER = [
@@ -80,6 +79,7 @@ export default function ScrapeExtractsPage() {
   const [loadingMongo, setLoadingMongo] = useState({}); // "drawId-lotteryId" -> true
   const [mongoProgress, setMongoProgress] = useState({}); // "drawId-lotteryId" -> { step, message }
   const [mongoOptions, setMongoOptions] = useState(null); // { drawId, lot, targetHora, message, options }
+  const [mongoCabezas, setMongoCabezas] = useState({}); // "drawId-lotteryId" -> { match_cabeza, cabezas }
   const savedScrollY = useRef(0);
 
   const flash = (msg) => {
@@ -115,13 +115,31 @@ export default function ScrapeExtractsPage() {
     } catch (e) {
       const resp = e?.response?.data;
       if (resp?.no_match) {
-        // Sin match exacto: abrir modal con las opciones que existen en Mongo.
-        setMongoOptions({
-          drawId,
-          lot,
-          message: resp.message,
-          options: resp.options || [],
-        });
+        // Sin match exacto: abrir modal solo si realmente hay una diferencia
+        // entre turno y hora del schedule esperado (no solo diferencias normales).
+        const draw = draws.find((d) => d.draw_id === drawId);
+        const schedule = draw?.lotteries.find((l) => l.lottery_id === lot.lottery_id);
+        const targetHora = schedule?.draw_time;
+        let shouldShowModal = false;
+        if (resp.options?.length) {
+          shouldShowModal = true;
+          for (const opt of resp.options) {
+            if (opt.turno !== lot.name || opt.hora !== targetHora) {
+              shouldShowModal = true;
+              break;
+            }
+          }
+        }
+        if (shouldShowModal) {
+          setMongoOptions({
+            drawId,
+            lot,
+            message: resp.message,
+            options: resp.options || [],
+          });
+        } else {
+          flash('El horario del extracto de MongoDB no coincide con el schedule actual. No se cargó.');
+        }
       } else {
         flash(resp?.message || `Error al cargar ${lot.initials}`);
       }
@@ -135,42 +153,91 @@ export default function ScrapeExtractsPage() {
     }
   };
 
+  const insertAllFromMongo = async (draw) => {
+    const lots = draw.lotteries.filter((lot) => {
+      if (lot.completed) return false;
+      const mKey = `${draw.draw_id}-${lot.lottery_id}`;
+      return !!mongoCabezas[mKey];
+    });
+    if (lots.length === 0) {
+      flash('No hay loterías con cabezas en Mongo para este turno.');
+      return;
+    }
+    const key = `insert-all-${draw.draw_id}`;
+    setBusy((b) => ({ ...b, [key]: true }));
+    let ok = 0;
+    let fail = 0;
+    for (let i = 0; i < lots.length; i++) {
+      const lot = lots[i];
+      const mKey = `${draw.draw_id}-${lot.lottery_id}`;
+      setLoadingMongo((prev) => ({ ...prev, [mKey]: true }));
+      setMongoProgress((prev) => ({ ...prev, [mKey]: { step: Math.round(((i) / lots.length) * 100), message: `${i + 1}/${lots.length} — ${lot.initials}...` } }));
+      try {
+        await api.post('/extracts/load-from-mongo', {
+          lottery_id: lot.lottery_id,
+          draw_id: draw.draw_id,
+          date: selectedDate,
+        });
+        ok++;
+      } catch {
+        fail++;
+      } finally {
+        setLoadingMongo((prev) => ({ ...prev, [mKey]: false }));
+        setMongoProgress((prev) => ({ ...prev, [mKey]: undefined }));
+      }
+    }
+    flash(`Turno ${draw.draw_name}: ${ok} cargados, ${fail} fallidos.`);
+    savedScrollY.current = window.scrollY;
+    await load();
+    requestAnimationFrame(() => window.scrollTo(0, savedScrollY.current));
+    setBusy((b) => ({ ...b, [key]: false }));
+  };
+
   // Importa la grilla desde la API JSON de loterias (fuente primaria).
   // Solo se ofrece para las loterias que la API cubre (`api_cubierta`); el
   // resto se sigue cargando desde Mongo o a mano.
-  const importFromApi = async (drawId, lot) => {
-    const key = `api-${drawId}-${lot.lottery_id}`;
-    setBusy((b) => ({ ...b, [key]: true }));
+  // Importación desde API deshabilitada temporalmente — la API de almacendedatos está desactivada
+  // const importFromApi = async (drawId, lot) => {
+  //   const key = `api-${drawId}-${lot.lottery_id}`;
+  //   setBusy((b) => ({ ...b, [key]: true }));
+  //   try {
+  //     const { data } = await api.post('/extracts/import-api', {
+  //       lottery_id: lot.lottery_id,
+  //       draw_id: drawId,
+  //       date: selectedDate,
+  //     });
+  //     if ((data.cargados || []).some((c) => c.initials === lot.initials)) {
+  //       flash(`${lot.initials}: grilla cargada desde la API.`);
+  //     } else {
+  //       const motivo = data.rechazados?.[0]?.motivo || '';
+  //       if (/TOKEN_NO_CONFIGURADO|TOKEN_FALTANTE|TOKEN_INVALIDO/.test(motivo)) {
+  //         flash(`${lot.initials}: la API no esta configurada. Falta el token en el backend (LOTERIA_API_TOKEN).`);
+  //       } else {
+  //         flash(`${lot.initials}: ${motivo || 'la API todavia no tiene la grilla completa.'}`);
+  //       }
+  //     }
+  //     savedScrollY.current = window.scrollY;
+  //     await load();
+  //     requestAnimationFrame(() => window.scrollTo(0, savedScrollY.current));
+  //   } catch (e) {
+  //     flash(e?.response?.data?.message || `Error al importar ${lot.initials} desde la API`);
+  //   } finally {
+  //     setBusy((b) => ({ ...b, [key]: false }));
+  //   }
+  // };
+
+  // Preview del botón "Cargar desde Mongo": cabezas (posición 1) de los
+  // extractos que MongoDB tiene para la fecha elegida. El botón solo se
+  // muestra cuando hay cabezas disponibles. Falla silencioso: si Mongo no
+  // responde, no se renderiza nada.
+  const loadCabezas = useCallback(async (d) => {
     try {
-      const { data } = await api.post('/extracts/import-api', {
-        lottery_id: lot.lottery_id,
-        draw_id: drawId,
-        date: selectedDate,
-      });
-      // Se chequea por initials y no por la cantidad: al pedir SALR/FSAQ la API
-      // responde con toda la loteria madre, asi que `cargados` puede traer
-      // grillas de otras filas.
-      if ((data.cargados || []).some((c) => c.initials === lot.initials)) {
-        flash(`${lot.initials}: grilla cargada desde la API.`);
-      } else {
-        // La API contesto pero no dejo una grilla completa: el motivo (grilla
-        // parcial, sin sorteo cercano, fecha distinta) es mas util que un "0".
-        const motivo = data.rechazados?.[0]?.motivo || '';
-        if (/TOKEN_NO_CONFIGURADO|TOKEN_FALTANTE|TOKEN_INVALIDO/.test(motivo)) {
-          flash(`${lot.initials}: la API no esta configurada. Falta el token en el backend (LOTERIA_API_TOKEN).`);
-        } else {
-          flash(`${lot.initials}: ${motivo || 'la API todavia no tiene la grilla completa.'}`);
-        }
-      }
-      savedScrollY.current = window.scrollY;
-      await load();
-      requestAnimationFrame(() => window.scrollTo(0, savedScrollY.current));
-    } catch (e) {
-      flash(e?.response?.data?.message || `Error al importar ${lot.initials} desde la API`);
-    } finally {
-      setBusy((b) => ({ ...b, [key]: false }));
+      const { data } = await api.get('/extracts/mongo-cabezas', { params: { date: d } });
+      setMongoCabezas(data?.data || {});
+    } catch {
+      setMongoCabezas({});
     }
-  };
+  }, []);
 
   const load = useCallback(async (date) => {
     const d = date || selectedDate;
@@ -184,7 +251,8 @@ export default function ScrapeExtractsPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate]);
+    loadCabezas(d);
+  }, [selectedDate, loadCabezas]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -429,14 +497,35 @@ export default function ScrapeExtractsPage() {
               </button>
               <div className="flex items-center gap-2">
                 {isSuperAdmin && (
-                  <button
-                    onClick={() => deleteTurn(draw)}
-                    disabled={busy[`del-turn-${draw.draw_id}`]}
-                    title="Eliminar la grilla de todas las loterías de este turno"
-                    className="flex items-center justify-center text-red-300 hover:text-white hover:bg-red-600/60 bg-red-600/20 border border-red-500/30 p-2 rounded-lg transition disabled:opacity-50"
-                  >
-                    {busy[`del-turn-${draw.draw_id}`] ? <FiRefreshCw size={15} className="animate-spin" /> : <FiTrash2 size={15} />}
-                  </button>
+                  <>
+                    {(() => {
+                      // Solo habilitar "Insert All" si al menos una lotería del turno ya pasó su hora + 20 min
+                      const hasPassedTime = draw.lotteries.some((lot) => {
+                        const drawTime = lot.draw_time ? new Date(`${selectedDate}T${lot.draw_time}:00-03:00`) : null;
+                        const now = new Date();
+                        return drawTime && (now.getTime() - drawTime.getTime() >= 20 * 60 * 1000);
+                      });
+                      if (!hasPassedTime) return null;
+                      return (
+                        <button
+                          onClick={() => insertAllFromMongo(draw)}
+                          disabled={busy[`insert-all-${draw.draw_id}`]}
+                          title="Cargar todas las loterías de este turno desde Mongo a MySQL"
+                          className="flex items-center justify-center text-emerald-300 hover:text-white hover:bg-emerald-600/60 bg-emerald-600/20 border border-emerald-500/30 p-2 rounded-lg transition disabled:opacity-50"
+                        >
+                          {busy[`insert-all-${draw.draw_id}`] ? <FiRefreshCw size={15} className="animate-spin" /> : <FiDownload size={15} />}
+                        </button>
+                      );
+                    })()}
+                    <button
+                      onClick={() => deleteTurn(draw)}
+                      disabled={busy[`del-turn-${draw.draw_id}`]}
+                      title="Eliminar la grilla de todas las loterías de este turno"
+                      className="flex items-center justify-center text-red-300 hover:text-white hover:bg-red-600/60 bg-red-600/20 border border-red-500/30 p-2 rounded-lg transition disabled:opacity-50"
+                    >
+                      {busy[`del-turn-${draw.draw_id}`] ? <FiRefreshCw size={15} className="animate-spin" /> : <FiTrash2 size={15} />}
+                    </button>
+                  </>
                 )}
                 <FiMenu className="text-gray-600" size={16} />
               </div>
@@ -508,6 +597,7 @@ export default function ScrapeExtractsPage() {
                                    <FiClock size={13} /> sin cargar
                                  </span>
                                )}
+                              {/* Botón API deshabilitado temporalmente — la API de almacendedatos está desactivada
                               {isSuperAdmin && !lot.completed && lot.api_cubierta && (
                                 <button
                                   onClick={() => importFromApi(draw.draw_id, lot)}
@@ -520,6 +610,7 @@ export default function ScrapeExtractsPage() {
                                     : <FiDownloadCloud size={12} />} API
                                 </button>
                               )}
+                              */}
                               {isSuperAdmin && !lot.completed ? (
                                 (() => {
                                   const mKey = `${draw.draw_id}-${lot.lottery_id}`;
@@ -545,12 +636,27 @@ export default function ScrapeExtractsPage() {
                                       </div>
                                     );
                                   }
+                                  const cab = mongoCabezas[mKey];
+                                  const preview = cab ? (cab.match_cabeza ?? cab.cabezas.join('|')) : null;
+                                  if (!preview) return null;
+                                  
+                                  // Solo mostrar la cabeza si el sorteo ya pasó (draw_time + 20 min)
+                                  const drawTime = lot.draw_time ? new Date(`${selectedDate}T${lot.draw_time}:00-03:00`) : null;
+                                  const now = new Date();
+                                  const delayMs = 20 * 60 * 1000; // 20 min
+                                  const canShowHead = drawTime && (now.getTime() - drawTime.getTime() >= delayMs);
+                                  if (!canShowHead) return null;
+                                  
                                   return (
                                     <button
                                       onClick={() => loadFromMongo(draw.draw_id, lot)}
-                                      className="flex items-center gap-1 text-xs bg-indigo-600/50 hover:bg-indigo-600/70 text-indigo-100 px-2.5 py-1 rounded-lg transition"
+                                      title={cab.match_cabeza
+                                        ? `Cabeza ${preview} en MongoDB — cargar`
+                                        : `Cabezas en MongoDB: ${preview} — click para elegir turno`}
+                                      className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition bg-yellow-600/40 hover:bg-yellow-600/60 text-yellow-100 border border-yellow-500/30"
                                     >
-                                      <FiUpload size={12} /> Cargar
+                                      <span className="font-mono font-bold tracking-widest">{preview}</span>
+                                      <FiChevronUp size={13} />
                                     </button>
                                   );
                                 })()

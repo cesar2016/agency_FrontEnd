@@ -499,32 +499,29 @@ export default function ScrapeExtractsPage() {
                 {isSuperAdmin && (
                   <>
                     {(() => {
-                      // Solo habilitar "Insert All" si al menos una lotería del turno ya pasó su hora + 20 min
-                      const hasPassedTime = draw.lotteries.some((lot) => {
-                        const drawTime = lot.draw_time ? new Date(`${selectedDate}T${lot.draw_time}:00-03:00`) : null;
-                        const now = new Date();
-                        return drawTime && (now.getTime() - drawTime.getTime() >= 20 * 60 * 1000);
-                      });
-                      if (!hasPassedTime) return null;
+                      const hasCabezas = draw.lotteries.some((lot) => !lot.completed && !!mongoCabezas[`${draw.draw_id}-${lot.lottery_id}`]);
+                      if (!hasCabezas) return null;
                       return (
                         <button
-                          onClick={() => insertAllFromMongo(draw)}
+                          onClick={(e) => { e.stopPropagation(); insertAllFromMongo(draw); }}
                           disabled={busy[`insert-all-${draw.draw_id}`]}
                           title="Cargar todas las loterías de este turno desde Mongo a MySQL"
-                          className="flex items-center justify-center text-emerald-300 hover:text-white hover:bg-emerald-600/60 bg-emerald-600/20 border border-emerald-500/30 p-2 rounded-lg transition disabled:opacity-50"
+                          className="flex items-center justify-center text-emerald-300 hover:text-white hover:bg-emerald-600/60 bg-emerald-600/20 border border-emerald-500/30 p-2 rounded-lg transition disabled:opacity-50 animate-pulse hover:animate-none shadow-[0_0_8px_rgba(16,185,129,0.4)]"
                         >
                           {busy[`insert-all-${draw.draw_id}`] ? <FiRefreshCw size={15} className="animate-spin" /> : <FiDownload size={15} />}
                         </button>
                       );
                     })()}
-                    <button
-                      onClick={() => deleteTurn(draw)}
-                      disabled={busy[`del-turn-${draw.draw_id}`]}
-                      title="Eliminar la grilla de todas las loterías de este turno"
-                      className="flex items-center justify-center text-red-300 hover:text-white hover:bg-red-600/60 bg-red-600/20 border border-red-500/30 p-2 rounded-lg transition disabled:opacity-50"
-                    >
-                      {busy[`del-turn-${draw.draw_id}`] ? <FiRefreshCw size={15} className="animate-spin" /> : <FiTrash2 size={15} />}
-                    </button>
+                    {draw.lotteries.some(lot => lot.completed || lot.extract_id) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); deleteTurn(draw); }}
+                        disabled={busy[`del-turn-${draw.draw_id}`]}
+                        title="Eliminar la grilla de todas las loterías de este turno"
+                        className="flex items-center justify-center text-red-300 hover:text-white hover:bg-red-600/60 bg-red-600/20 border border-red-500/30 p-2 rounded-lg transition disabled:opacity-50"
+                      >
+                        {busy[`del-turn-${draw.draw_id}`] ? <FiRefreshCw size={15} className="animate-spin" /> : <FiTrash2 size={15} />}
+                      </button>
+                    )}
                   </>
                 )}
                 <FiMenu className="text-gray-600" size={16} />

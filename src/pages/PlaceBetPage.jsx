@@ -79,12 +79,12 @@ export default function PlaceBetPage() {
     }
   }, [redModalOpen]);
 
-  const rangeLabel = { 1: 'A la cabeza', 5: 'A los 5', 10: 'A los 10', 20: 'A los 20' };
+  const rangeLabel = { 1: 'A la cabeza', 5: 'A los 5', 10: 'A los 10', 15: 'A los 15' };
 
-  // El 2° rango (Posicion) solo admite 5/10/20 y debe ser >= al 1° rango.
+  // El 2° rango (Posicion) solo admite 5/10/15 y debe ser >= al 1° rango.
   useEffect(() => {
-    if (redSecondRange < redFirstRange || ![5, 10, 20].includes(redSecondRange)) {
-      const valid = [5, 10, 20].filter((r) => r >= redFirstRange);
+    if (redSecondRange < redFirstRange || ![5, 10, 15].includes(redSecondRange)) {
+      const valid = [5, 10, 15].filter((r) => r >= redFirstRange);
       setRedSecondRange(valid[0]);
     }
   }, [redFirstRange, redSecondRange]);
@@ -127,7 +127,7 @@ export default function PlaceBetPage() {
     if (pos <= 1) return 'primera';
     if (pos <= 5) return 'a_los_5';
     if (pos <= 10) return 'a_los_10';
-    return 'a_los_20';
+    return 'a_los_15';
   };
 
   const handleAddSimple = () => {
@@ -136,8 +136,8 @@ export default function PlaceBetPage() {
       return;
     }
     const pos = parseInt(position);
-    if (!pos || pos < 1 || pos > 20) {
-      setError('La posicion debe ser un numero del 1 al 20');
+    if (!pos || pos < 1 || pos > 15) {
+      setError('La posicion debe ser un numero del 1 al 15');
       return;
     }
     // Las apuestas a 1 cifra solo se permiten hasta el puesto 10.
@@ -215,12 +215,12 @@ export default function PlaceBetPage() {
       setError('Ambos numeros deben tener exactamente 2 digitos');
       return;
     }
-    if (![1, 5, 10, 20].includes(redFirstRange)) {
-      setError('El Rango 1° debe ser 1, 5, 10 o 20');
+    if (![1, 5, 10, 15].includes(redFirstRange)) {
+      setError('El Rango 1° debe ser 1, 5, 10 o 15');
       return;
     }
-    if (![5, 10, 20].includes(redSecondRange) || redSecondRange < redFirstRange) {
-      setError('La Posicion debe ser 5, 10 o 20 y mayor o igual al Rango 1°');
+    if (![5, 10, 15].includes(redSecondRange) || redSecondRange < redFirstRange) {
+      setError('La Posicion debe ser 5, 10 o 15 y mayor o igual al Rango 1°');
       return;
     }
     const val = parseFloat(redAmount.replace(/\./g, ''));
@@ -365,7 +365,7 @@ export default function PlaceBetPage() {
               onChange={(e) => setPosition(e.target.value.replace(/\D/g, ''))}
               className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg text-center font-bold text-xl text-white focus:outline-none focus:border-indigo-500"
               style={{ padding: '1.5rem 0.5rem' }}
-              placeholder="1-20"
+              placeholder="1-15"
             />
           </div>
           <div>
@@ -423,13 +423,13 @@ export default function PlaceBetPage() {
               onChange={(e) => {
                 const raw = e.target.value.replace(/\D/g, '');
                 const v = Number(raw);
-                if (raw === '' || [1, 2, 5, 10, 20].includes(v)) {
+                if (raw === '' || [1, 2, 5, 10, 15].includes(v)) {
                   setRedFirstRange(v);
                 }
               }}
               className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg text-center font-bold text-xl text-white focus:outline-none focus:border-indigo-500"
               style={{ padding: '1.5rem 0.5rem' }}
-              placeholder="1/5/10/20"
+              placeholder="1/5/10/15"
             />
           </div>
           <div>
@@ -461,7 +461,7 @@ export default function PlaceBetPage() {
           <div className="w-full max-w-sm bg-gray-900 border border-indigo-500/20 rounded-2xl shadow-2xl overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-700/50">
               <h3 className="text-base font-semibold text-white">Completar Redoblona</h3>
-              <p className="text-xs text-gray-400">Ingresá el 2° numero y su posicion (5, 10 o 20).</p>
+              <p className="text-xs text-gray-400">Ingresá el 2° numero y su posicion (5, 10 o 15).</p>
             </div>
             <div className="p-5 grid grid-cols-2 gap-3">
               <div>
@@ -481,7 +481,7 @@ export default function PlaceBetPage() {
               <div>
                 <label className="text-xs text-gray-400 block mb-1 text-center">Posicion (2° rango)</label>
                 <div className="flex gap-2">
-                  {[5, 10, 20].map((r) => (
+                  {[5, 10, 15].map((r) => (
                     <button
                       key={r}
                       type="button"

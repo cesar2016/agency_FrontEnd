@@ -31,21 +31,26 @@ function writeCache(map) {
 }
 
 // Endpoints que NUNCA se cachean:
-// - `/me` son la identidad y los ROLES del usuario. Es autorizacion, no datos
-//   de pantalla: la UI muestra u oculta botones segun el rol, asi que servirlo
-//   de cache hacia que un cambio de rol tardara hasta 5 minutos en verse (con
-//   el token ya renovado, el backend aceptaba la accion pero el boton no
-//   estaba). Igual para una baja de usuario.
-// - los detalles de extractos y el dashboard tienen que reflejar datos frescos.
+// - `/me` son la identidad y los ROLES del usuario. Es autorizacion, no datos.
 const SIN_CACHE_EXACTO = ['/me'];
-const SIN_CACHE_PREFIJO = ['/extracts/', '/externos/dashboard/', '/bets'];
+
+// Estos endpoints representan datos dinámicos altamente cambiantes. 
+// En lugar de no cachearlos, usamos un TTL corto (15 seg) para que la
+// navegación tipo "ida y vuelta" en la UI se sienta instantánea sin sacrificar frescura.
+const DYNAMIC_PREFIXES = ['/extracts/', '/externos/dashboard/', '/bets', '/aciertos'];
+
+function getUrlTTL(url) {
+  if (DYNAMIC_PREFIXES.some((prefijo) => url.startsWith(prefijo))) {
+    return 15 * 1000; // 15 segundos para datos vivos
+  }
+  return CACHE_TTL; // 5 minutos para loterias, horarios, etc.
+}
 
 function cacheable(config) {
   const url = config.url || '';
   if (!url || (config.method || 'get').toLowerCase() !== 'get') return false;
   if (SIN_CACHE_EXACTO.includes(url)) return false;
-
-  return !SIN_CACHE_PREFIJO.some((prefijo) => url.startsWith(prefijo));
+  return true;
 }
 
 function cacheKey(url, params) {
@@ -68,7 +73,8 @@ api.interceptors.request.use((config) => {
   if (cacheable(config)) {
     const map = readCache();
     const entry = map[cacheKey(config.url, config.params)];
-    if (entry && Date.now() - entry.t < CACHE_TTL) {
+    const ttl = getUrlTTL(config.url);
+    if (entry && Date.now() - entry.t < ttl) {
       // Se marca la respuesta como servida del cache para que el interceptor
       // de respuesta NO la vuelva a guardar: al reescribir la entrada le
       // renovaba el TTL, asi que un dato viejo se quedaba pegado para siempre

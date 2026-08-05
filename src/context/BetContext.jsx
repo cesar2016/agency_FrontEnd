@@ -70,7 +70,8 @@ export function BetProvider({ children }) {
       const { data } = await api.get('/bets', { params: p });
       const betsData = data.data || data;
       setBets(betsData);
-      if (data.total) setTotalBets(data.total);
+      if (data.meta && data.meta.total !== undefined) setTotalBets(data.meta.total);
+      else if (data.total !== undefined) setTotalBets(data.total);
       return betsData;
     } catch (e) {
       console.error('Error fetching bets:', e);

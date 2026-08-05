@@ -170,6 +170,7 @@ export default function AciertosPage() {
                   <th className="p-2 text-right">Al 1° todo a los 5</th>
                   <th className="p-2 text-right">Al 1° todo a los 10</th>
                   <th className="p-2 text-right">Al 1° todo a los 15</th>
+                  <th className="p-2 text-right">Al 1° todo a los 20</th>
                 </tr>
               </thead>
               <tbody>
@@ -179,6 +180,7 @@ export default function AciertosPage() {
                     <td className="p-2 text-right">${Number(r.r1_5).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="p-2 text-right">${Number(r.r1_10).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="p-2 text-right">${Number(r.r1_15).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="p-2 text-right">${Number(r.r1_20).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   </tr>
                 ))}
               </tbody>
@@ -188,6 +190,7 @@ export default function AciertosPage() {
                   <th className="p-2 text-right">A los 5 todo a los 5</th>
                   <th className="p-2 text-right">A los 5 todo a los 10</th>
                   <th className="p-2 text-right">A los 5 todo a los 15</th>
+                  <th className="p-2 text-right">A los 5 todo a los 20</th>
                 </tr>
               </thead>
               <tbody>
@@ -197,6 +200,7 @@ export default function AciertosPage() {
                     <td className="p-2 text-right">${Number(r.r5_5).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="p-2 text-right">${Number(r.r5_10).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="p-2 text-right">${Number(r.r5_15).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="p-2 text-right">${Number(r.r5_20).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   </tr>
                 ))}
               </tbody>
@@ -205,7 +209,7 @@ export default function AciertosPage() {
                   <th className="p-2 text-left">Juega $</th>
                   <th className="p-2 text-right">A los 10 todo a los 10</th>
                   <th className="p-2 text-right">A los 10 todo a los 15</th>
-                  <th className="p-2 text-right">A los 15 todo a los 15</th>
+                  <th className="p-2 text-right">A los 10 todo a los 20</th>
                 </tr>
               </thead>
               <tbody>
@@ -214,7 +218,7 @@ export default function AciertosPage() {
                     <td className="p-2 font-bold">${Number(r.play).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="p-2 text-right">${Number(r.r10_10).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="p-2 text-right">${Number(r.r10_15).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td className="p-2 text-right">${Number(r.r15_15).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="p-2 text-right">${Number(r.r10_20).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   </tr>
                 ))}
               </tbody>

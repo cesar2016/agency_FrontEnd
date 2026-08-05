@@ -499,7 +499,12 @@ export default function ScrapeExtractsPage() {
                 {isSuperAdmin && (
                   <>
                     {(() => {
-                      const hasCabezas = draw.lotteries.some((lot) => !lot.completed && !!mongoCabezas[`${draw.draw_id}-${lot.lottery_id}`]);
+                      const hasCabezas = draw.lotteries.some((lot) => {
+                        if (lot.completed || !mongoCabezas[`${draw.draw_id}-${lot.lottery_id}`]) return false;
+                        const drawTime = lot.draw_time ? new Date(`${selectedDate}T${lot.draw_time}:00-03:00`) : null;
+                        const now = new Date();
+                        return drawTime && (now.getTime() - drawTime.getTime() >= 20 * 60 * 1000);
+                      });
                       if (!hasCabezas) return null;
                       return (
                         <button

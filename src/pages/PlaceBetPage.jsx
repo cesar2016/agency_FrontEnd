@@ -247,6 +247,7 @@ export default function PlaceBetPage() {
   };
 
   const handleGenerate = async () => {
+    if (submitting) return; // double-click edge case protection
     if (hasClosedSelection) {
       setError('No se pueden registrar apuestas: el horario de cierre de uno o más sorteos ya pasó.');
       return;
@@ -669,19 +670,31 @@ export default function PlaceBetPage() {
               </div>
             </div>
             <div className="p-4 pt-0 flex gap-3">
-              <button
-                onClick={() => setShowPreview(false)}
-                className="flex-1 flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2.5 rounded-lg text-sm transition"
-              >
-                <FiX size={16} className="text-red-400" /> Rechazar
-              </button>
-              <button
-                onClick={handleGenerate}
-                disabled={submitting || hasClosedSelection}
-                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg shadow-green-500/20"
-              >
-                <FiCheck size={16} /> {submitting ? 'Generando...' : 'Compartir'}
-              </button>
+              {submitting ? (
+                <div className="w-full flex items-center justify-center py-2.5 bg-gray-800/80 rounded-lg text-green-400 font-bold border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Generando PDF...
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setShowPreview(false)}
+                    className="flex-1 flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2.5 rounded-lg text-sm transition"
+                  >
+                    <FiX size={16} className="text-red-400" /> Rechazar
+                  </button>
+                  <button
+                    onClick={handleGenerate}
+                    disabled={hasClosedSelection}
+                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg shadow-green-500/20"
+                  >
+                    <FiCheck size={16} /> Compartir
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

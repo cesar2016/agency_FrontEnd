@@ -93,6 +93,7 @@ export default function PlaceBetPage() {
   const [openRedoblona, setOpenRedoblona] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const allSelectedLotteryIds = Array.from(new Set(Object.values(selectedByDraw).flat()));
   const drawNames = draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.name).join(' / ');
@@ -286,29 +287,131 @@ export default function PlaceBetPage() {
   };
 
   const downloadTicket = async (id) => {
-    const blob = await getTicketBlob(id);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `boleta-${id}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
-  const shareTicket = async (id, sequence) => {
+    if (actionLoading) return;
+    setActionLoading(true);
     try {
       const blob = await getTicketBlob(id);
-      const file = new File([blob], `boleta-${sequence}.pdf`, { type: 'application/pdf' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Boleta Agencia' });
-        return;
-      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `boleta-${id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
-      if (e.name === 'AbortError') return;
+      console.error(e);
+      alert('Error descargando boleta');
+    } finally {
+      setActionLoading(false);
     }
-    downloadTicket(id);
+  };
+
+  const shareTicket = (sequence) => {
+    try {
+      const toBold = (str) => {
+        const offsetU = 0x1D5D4 - 65;
+        const offsetL = 0x1D5EE - 97;
+        return str.replace(/[A-Za-z]/g, ch => {
+          const c = ch.charCodeAt(0);
+          if (c >= 65 && c <= 90) return String.fromCodePoint(c + offsetU);
+          if (c >= 97 && c <= 122) return String.fromCodePoint(c + offsetL);
+          return ch;
+        });
+      };
+
+      
+      const widthOf = (s) => Array.from(String(s)).length;
+      
+      const padC = (str, len = 32) => {
+        const s = String(str);
+        const w = widthOf(s);
+        if (w >= len) return s;
+        const left = Math.floor((len - w) / 2);
+        return ' '.repeat(left) + s + ' '.repeat(len - w - left);
+      };
+      const padR = (str, len) => {
+        const s = String(str);
+        return widthOf(s) >= len ? s : s + ' '.repeat(len - widthOf(s));
+      };
+      const padL = (str, len) => {
+        const s = String(str);
+        return widthOf(s) >= len ? s : ' '.repeat(len - widthOf(s)) + s;
+      };
+      
+      const WIDTH = 32;
+      const sep = '-'.repeat(WIDTH);
+      const sep2 = '='.repeat(WIDTH);
+      
+      const now = new Date();
+      const fecha = now.toLocaleDateString('es-AR', { year: '2-digit', month: '2-digit', day: '2-digit' });
+      const hora = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+      const pasador = result?.[0]?.user?.name || 'Pasador';
+      
+      let text = '```\n';
+      text += padC(toBold('TICKET')) + '\n';
+      text += padC(`FECHA/HORA: ${fecha} ${hora}`) + '\n';
+      text += padC(`PASADOR: ${pasador}`) + '\n';
+      text += sep + '\n';
+      text += padC(`SECUENCIA: ${sequence}`) + '\n';
+      text += sep + '\n';
+      
+      let secSuffix = 1;
+
+      result.forEach((bet) => {
+        const drawName = bet.draw?.name || '';
+        const lotInitials = bet.lotteries?.map(l => l.initials) || [];
+        
+        text += padC(toBold(drawName)) + '\n';
+        text += padC(toBold(lotInitials.join(' - '))) + '\n';
+        
+        const simpleItems = bet.items || [];
+        const redItems = bet.redoblonas || [];
+        
+        if (simpleItems.length > 0) {
+          text += padC(`Jugada Simple Secuencia: ${sequence}-${secSuffix++}`) + '\n';
+          text += padR(toBold('NUMERO'), 10) + padC(toBold('TIPO'), 8) + padL(toBold('IMPORTE'), 14) + '\n';
+          text += sep + '\n';
+          simpleItems.forEach(item => {
+            text += padR(item.number, 10) + padC('#'+item.position, 8) + padL('$' + fmt(item.amount), 14) + '\n';
+          });
+        }
+        
+        if (redItems.length > 0) {
+          if (simpleItems.length > 0) text += sep + '\n';
+          text += padC(`Redoblona Secuencia: ${sequence}-${secSuffix++}`) + '\n';
+          text += padR(toBold('NUMERO'), 10) + padC(toBold('RANGO'), 8) + padL(toBold('IMPORTE'), 14) + '\n';
+          text += sep + '\n';
+          redItems.forEach(item => {
+            const num = `${String(item.first_number).padStart(2, '0')}-${String(item.second_number).padStart(2, '0')}`;
+            const rng = `${String(item.first_range).padStart(2, '0')}/${String(item.second_range).padStart(2, '0')}`;
+            text += padR(num, 10) + padC(rng, 8) + padL('$' + fmt(item.amount), 14) + '\n';
+          });
+        }
+        
+        text += padL(`Subtotal ${drawName}: $${fmt(bet.subtotal)}`, WIDTH) + '\n';
+        text += sep2 + '\n';
+      });
+
+      const totalLote = result.reduce((acc, bet) => acc + Number(bet.total), 0);
+      const subtotalM = result[0]?.subtotal || 0;
+
+      text += padC('GRACIAS POR SU JUGADA') + '\n';
+      text += padL(`${toBold('TOTAL:')} $${fmt(subtotalM)}`, WIDTH) + '\n';
+      text += padL(`${toBold('TOTAL LOTE:')} $${fmt(totalLote)}`, WIDTH) + '\n';
+      text += '```';
+
+      const a = document.createElement('a');
+      a.href = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      console.error(e);
+      alert('Error armando boleta de WhatsApp');
+    }
   };
 
   const handleAmountChange = (val, setter) => {
@@ -709,24 +812,36 @@ export default function PlaceBetPage() {
             <h3 className="text-white font-bold mb-1">Boleta Generada</h3>
             <p className="text-indigo-300 font-mono text-sm mb-4">Secuencia: {result[0]?.sequence}</p>
             <div className="flex flex-col gap-2">
-              <button
-                onClick={() => shareTicket(result[0]?.id, result[0]?.sequence)}
-                className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-medium py-2.5 rounded-lg text-sm transition"
-              >
-                Compartir por WhatsApp
-              </button>
-              <button
-                onClick={() => downloadTicket(result[0]?.id)}
-                className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg text-sm transition"
-              >
-                Descargar PDF
-              </button>
-              <button
-                onClick={() => { setResult(null); clearCart(); navigate('/'); }}
-                className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2 rounded-lg text-sm transition"
-              >
-                Nueva Apuesta
-              </button>
+              {actionLoading ? (
+                <div className="w-full flex items-center justify-center py-4 bg-gray-700/50 rounded-lg text-indigo-400 font-medium">
+                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Procesando Descarga...
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={() => shareTicket(result[0]?.id, result[0]?.sequence)}
+                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-medium py-2.5 rounded-lg text-sm transition"
+                  >
+                    Compartir por WhatsApp
+                  </button>
+                  <button
+                    onClick={() => downloadTicket(result[0]?.id)}
+                    className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg text-sm transition"
+                  >
+                    Descargar PDF
+                  </button>
+                  <button
+                    onClick={() => { setResult(null); clearCart(); navigate('/'); }}
+                    className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2 rounded-lg text-sm transition"
+                  >
+                    Nueva Apuesta
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

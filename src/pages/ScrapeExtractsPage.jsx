@@ -493,6 +493,11 @@ export default function ScrapeExtractsPage() {
                 <span className="text-xs text-gray-500 bg-gray-700/50 px-2 py-0.5 rounded-full">
                   {completos}/{draw.lotteries.length} completos
                 </span>
+                {draw.sales_total > 0 && (
+                  <span className="text-xs text-emerald-300 font-bold bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hidden sm:inline-block">
+                    Carga: ${Number(draw.sales_total).toLocaleString('es-AR', { minimumFractionDigits: 2 })} ({draw.sales_count})
+                  </span>
+                )}
                 {openDraws.has(draw.draw_id) ? <FiChevronUp className="text-gray-400" /> : <FiChevronDown className="text-gray-400" />}
               </button>
               <div className="flex items-center gap-2">

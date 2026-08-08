@@ -137,16 +137,38 @@ export default function DashboardPage() {
           {statsOpen ? <FiChevronDown size={16} className="text-gray-400" /> : <FiChevronRight size={16} className="text-gray-400" />}
         </button>
         {statsOpen && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 pt-0">
-            {cards.map((card) => (
-              <div key={card.label} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-xl p-4 text-center">
-                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${card.color} flex items-center justify-center mx-auto mb-3`}>
-                  <card.icon className="text-white" size={18} />
+          <div className="p-4 pt-0 space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {cards.map((card) => (
+                <div key={card.label} className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-xl p-4 text-center">
+                  <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${card.color} flex items-center justify-center mx-auto mb-3`}>
+                    <card.icon className="text-white" size={18} />
+                  </div>
+                  <p className="text-2xl font-bold text-white">{card.value}</p>
+                  <p className="text-xs text-gray-400 mt-1">{card.label}</p>
                 </div>
-                <p className="text-2xl font-bold text-white">{card.value}</p>
-                <p className="text-xs text-gray-400 mt-1">{card.label}</p>
+              ))}
+            </div>
+
+            {stats.by_draw && stats.by_draw.length > 0 && (
+              <div className="border-t border-gray-700/50 pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-semibold text-indigo-300 uppercase tracking-wider">
+                    Resumen de Carga por Turno
+                  </h4>
+                  <span className="text-xs text-gray-500">Subtotales recaudados por sorteo</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                  {stats.by_draw.map((d) => (
+                    <div key={d.draw_id} className="bg-gray-900/60 border border-indigo-500/15 rounded-xl p-3 text-center hover:border-indigo-500/40 transition">
+                      <p className="text-xs font-bold text-indigo-300 truncate">{d.draw_name}</p>
+                      <p className="text-base font-bold text-white mt-1">${fmt(d.total)}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">{d.count} {d.count === 1 ? 'boleta' : 'boletas'}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>

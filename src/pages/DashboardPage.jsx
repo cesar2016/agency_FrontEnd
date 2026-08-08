@@ -8,9 +8,10 @@ import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiE
 const fmt = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function DashboardPage() {
-  const { stats, bets, filterDate, viewBet, viewBetEntries, openViewBet, closeViewBet, fetchBets, fetchStats, copyBet, clearDateFilter, setFilterDate, page, setPage, pageSize, setPageSize, totalBets } = useBet();
+  const { stats, bets, setBets, filterDate, viewBet, viewBetEntries, openViewBet, closeViewBet, fetchBets, fetchStats, copyBet, clearDateFilter, setFilterDate, page, setPage, pageSize, setPageSize, totalBets } = useBet();
   const navigate = useNavigate();
   const [deleteEntry, setDeleteEntry] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [globalFilter, setGlobalFilter] = useState('');
   const [statsOpen, setStatsOpen] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
@@ -31,12 +32,12 @@ export default function DashboardPage() {
         const rows = [];
         if (hasItems) {
           seqCounters[bet.sequence]++;
-          const isDeleted = bet.deleted_at || (bet.items && bet.items.every(i => i.deleted_at));
+          const isDeleted = Boolean(bet.deleted_at) || bet.status === 'deleted' || (bet.items && bet.items.length > 0 && bet.items.every(i => Boolean(i.deleted_at)));
           rows.push({ ...bet, draw, displaySequence: `${bet.sequence}-${seqCounters[bet.sequence]}`, section: 'items', sectionTotal: itemsBase * lotteryCount, isDeleted });
         }
         if (hasRedoblonas) {
           seqCounters[bet.sequence]++;
-          const isDeleted = bet.deleted_at || (bet.redoblonas && bet.redoblonas.every(i => i.deleted_at));
+          const isDeleted = Boolean(bet.deleted_at) || bet.status === 'deleted' || (bet.redoblonas && bet.redoblonas.length > 0 && bet.redoblonas.every(r => Boolean(r.deleted_at)));
           rows.push({ ...bet, draw, displaySequence: `${bet.sequence}-${seqCounters[bet.sequence]}`, section: 'redoblonas', sectionTotal: redBase * lotteryCount, isDeleted });
         }
         return rows;
@@ -62,13 +63,50 @@ export default function DashboardPage() {
   });
 
   const handleDeleteEntry = async () => {
-    if (!deleteEntry) return;
+    if (!deleteEntry || isDeleting) return;
+    setIsDeleting(true);
+    const targetId = deleteEntry.id;
+    const targetSection = deleteEntry.section;
+
+    if (setBets) {
+      setBets((prevBets) =>
+        prevBets.map((b) => {
+          if (b.id !== targetId) return b;
+          const nowIso = new Date().toISOString();
+          if (targetSection === 'items') {
+            const updatedItems = (b.items || []).map((i) => ({ ...i, deleted_at: nowIso }));
+            const allRedDeleted = !b.redoblonas || b.redoblonas.length === 0 || b.redoblonas.every((r) => Boolean(r.deleted_at));
+            return {
+              ...b,
+              items: updatedItems,
+              status: allRedDeleted ? 'deleted' : b.status,
+              deleted_at: allRedDeleted ? nowIso : b.deleted_at,
+            };
+          }
+          if (targetSection === 'redoblonas') {
+            const updatedRed = (b.redoblonas || []).map((r) => ({ ...r, deleted_at: nowIso }));
+            const allItemsDeleted = !b.items || b.items.length === 0 || b.items.every((i) => Boolean(i.deleted_at));
+            return {
+              ...b,
+              redoblonas: updatedRed,
+              status: allItemsDeleted ? 'deleted' : b.status,
+              deleted_at: allItemsDeleted ? nowIso : b.deleted_at,
+            };
+          }
+          return { ...b, status: 'deleted', deleted_at: nowIso };
+        })
+      );
+    }
+
     try {
-      await api.delete(`/bets/${deleteEntry.id}`, { params: { section: deleteEntry.section } });
+      await api.delete(`/bets/${targetId}`, { params: { section: targetSection } });
       setDeleteEntry(null);
-      fetchBets({ date: filterDate });
+      await Promise.all([fetchBets({ date: filterDate }), fetchStats()]);
     } catch (e) {
       console.error('Error deleting bet:', e);
+      await fetchBets({ date: filterDate });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -298,9 +336,10 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={handleDeleteEntry}
-                className="flex-1 bg-red-600 hover:bg-red-500 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg shadow-red-500/20"
+                disabled={isDeleting}
+                className="flex-1 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg shadow-red-500/20 flex items-center justify-center gap-2"
               >
-                Eliminar
+                {isDeleting ? <FiRefreshCw className="animate-spin" size={16} /> : 'Eliminar'}
               </button>
             </div>
           </div>

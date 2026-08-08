@@ -50,7 +50,7 @@ function cacheable(config) {
   const url = config.url || '';
   if (!url || (config.method || 'get').toLowerCase() !== 'get') return false;
   if (config.responseType === 'blob') return false;
-  if (SIN_CACHE_EXACTO.includes(url)) return false;
+  if (SIN_CACHE_EXACTO.includes(url) || url.startsWith('/bets')) return false;
   return true;
 }
 

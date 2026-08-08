@@ -239,7 +239,7 @@ return (
     <BetContext.Provider
       value={{
         lotteries, draws, cart,
-        bets,
+        bets, setBets,
         selectedByDraw, selectedDraws, selectedLotteries,
         selectedGroupsByDraw, toggleGroupInDraw,
         selectedAllByDraw, toggleAllInDraw,

@@ -45,6 +45,12 @@ export default function CajaModal({ user, open, onClose, onError }) {
 
   if (!open || !user) return null;
 
+  const isAdmin = cajaData?.is_admin ?? (
+    Array.isArray(user?.roles)
+      ? user.roles.some((r) => (typeof r === 'string' ? r : r?.name) === 'admin' || (typeof r === 'string' ? r : r?.name) === 'super_admin')
+      : user?.role === 'admin' || user?.role === 'super_admin'
+  );
+
   const handleClose = () => {
     setGanadorasOpen(false);
     onClose?.();
@@ -113,7 +119,9 @@ export default function CajaModal({ user, open, onClose, onError }) {
                   <span className="text-indigo-300 font-medium">${money(cajaData.ajuste_entregas_hoy)}</span>
                 </div>
                 <p className="text-[10px] text-gray-500">
-                  Saldo a favor de ayer + comisión del día ({Math.round((cajaData.comision_rate || 0.3) * 100)}%)
+                  {isAdmin
+                    ? 'Saldo a favor de ayer'
+                    : `Saldo a favor de ayer + comisión del día (${Math.round((cajaData.comision_rate || 0.3) * 100)}%)`}
                 </p>
               </div>
 
@@ -122,10 +130,12 @@ export default function CajaModal({ user, open, onClose, onError }) {
                   <span className="text-gray-400">Total de ventas</span>
                   <span className="text-white font-medium">${money(cajaData.total_ventas)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Comisión (+ pasador)</span>
-                  <span className="text-indigo-300 font-medium">${money(cajaData.comision)}</span>
-                </div>
+                {!isAdmin && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Comisión (+ pasador)</span>
+                    <span className="text-indigo-300 font-medium">${money(cajaData.comision)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Total premios (aciertos)</span>
                   <span className="text-red-400 font-medium">${money(cajaData.total_premios)}</span>

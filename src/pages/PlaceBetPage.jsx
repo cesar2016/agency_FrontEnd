@@ -24,7 +24,7 @@ function fmt(n) {
 }
 
 export default function PlaceBetPage() {
-  const { selectedByDraw, selectedDraws, lotteries, draws, cart, addToCart, removeFromCart, clearCart, submitBet, totalMultiplier, lotteryCountForDraw, consumeCopiedBet, copiedBet } = useBet();
+  const { selectedByDraw, selectedDraws, lotteries, draws, cart, extractStatus, addToCart, removeFromCart, clearCart, submitBet, totalMultiplier, lotteryCountForDraw, consumeCopiedBet, copiedBet } = useBet();
   const navigate = useNavigate();
   const copiedBetRef = useRef(null);
 
@@ -110,6 +110,15 @@ export default function PlaceBetPage() {
   };
 
   const isClosedFor = (drawId, lotteryId) => {
+    // 1. Verificar si el extracto ya fue cargado (al nivel que tenga algún número cargado)
+    const drawStatus = extractStatus?.find(d => d.draw_id === drawId);
+    if (drawStatus) {
+      const lotStatus = drawStatus.lotteries.find(l => l.lottery_id === lotteryId);
+      if (lotStatus && lotStatus.count > 0) {
+        return true; // Ya tiene números cargados, se cierra la apuesta
+      }
+    }
+
     const ct = closingTimeFor(drawId, lotteryId);
     // Sin horario cargado para ese sorteo => se considera cerrada.
     if (!ct) return true;
@@ -250,7 +259,7 @@ export default function PlaceBetPage() {
   const handleGenerate = async () => {
     if (submitting) return; // double-click edge case protection
     if (hasClosedSelection) {
-      setError('No se pueden registrar apuestas: el horario de cierre de uno o más sorteos ya pasó.');
+      setError('No se pueden registrar apuestas: el horario de cierre de uno o más sorteos pasó o sus resultados ya fueron cargados.');
       return;
     }
     for (const item of cart) {

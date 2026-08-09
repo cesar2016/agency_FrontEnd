@@ -7,6 +7,7 @@ export function BetProvider({ children }) {
   const [lotteries, setLotteries] = useState([]);
   const [draws, setDraws] = useState([]);
   const [cart, setCart] = useState([]);
+  const [extractStatus, setExtractStatus] = useState([]);
   // Selección por turno: { [drawId]: [lotteryId, ...] }
   const [selectedByDraw, setSelectedByDraw] = useState({});
   // Grupos de favoritos activados explícitamente por turno: { [drawId]: [groupNum, ...] }
@@ -44,8 +45,12 @@ export function BetProvider({ children }) {
   }, []);
 
   const fetchLotteries = useCallback(async () => {
-    const { data } = await api.get('/lotteries');
+    const [{ data }, { data: statusData }] = await Promise.all([
+      api.get('/lotteries'),
+      api.get('/extracts/scrape/status?date=' + new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })).catch(() => ({ data: { draws: [] } }))
+    ]);
     setLotteries(data);
+    setExtractStatus(statusData?.draws || []);
   }, []);
 
   const fetchDraws = useCallback(async () => {
@@ -238,7 +243,7 @@ export function BetProvider({ children }) {
 return (
     <BetContext.Provider
       value={{
-        lotteries, draws, cart,
+        lotteries, draws, cart, extractStatus,
         bets, setBets,
         selectedByDraw, selectedDraws, selectedLotteries,
         selectedGroupsByDraw, toggleGroupInDraw,

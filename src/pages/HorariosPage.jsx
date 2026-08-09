@@ -53,8 +53,7 @@ export default function HorariosPage() {
   const [toast, setToast] = useState(null);
   const [filter, setFilter] = useState('all'); // all | daily | saturday | sunday
   const [search, setSearch] = useState('');
-  const [showCsvOption, setShowCsvOption] = useState(false);
-
+  
   // State for inline editing of existing schedule
   const [editingScheduleId, setEditingScheduleId] = useState(null);
   const [editForm, setEditForm] = useState({ draw_time: '', closing_time: '' });
@@ -229,31 +228,6 @@ export default function HorariosPage() {
     }
   };
 
-  // Emergency CSV refresh
-  const refreshFromCsv = async () => {
-    setBusy(true);
-    try {
-      let data;
-      try {
-        const res = await api.post('/schedules/scrape', {}, { timeout: 60000 });
-        data = res.data;
-      } catch (firstErr) {
-        if (firstErr.code === 'ECONNABORTED' || firstErr.response?.status >= 500) {
-          const res = await api.post('/schedules/scrape', {}, { timeout: 60000 });
-          data = res.data;
-        } else {
-          throw firstErr;
-        }
-      }
-      flash(data.message + (data.defects?.length ? ` · defectos: ${data.defects.map((d) => d.initials).join(', ')}` : ''));
-      await load();
-    } catch (err) {
-      const msg = err?.response?.data?.message;
-      flash(msg ? `Error: ${msg}` : 'Error al importar desde CSV');
-    } finally {
-      setBusy(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -668,41 +642,6 @@ export default function HorariosPage() {
             );
           })}
       </div>
-
-      {/* Emergency CSV Import Section */}
-      {isAdmin && (
-        <div className="pt-4 border-t border-gray-800">
-          <button
-            onClick={() => setShowCsvOption((prev) => !prev)}
-            className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 transition"
-          >
-            <FiSliders size={13} />
-            <span>Opciones de respaldo y emergencia</span>
-            {showCsvOption ? <FiChevronUp size={13} /> : <FiChevronDown size={13} />}
-          </button>
-
-          {showCsvOption && (
-            <div className="mt-3 p-4 bg-gray-900/60 border border-gray-800 rounded-xl space-y-2">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
-                  <h4 className="text-xs font-semibold text-gray-300">Importar desde CSV</h4>
-                  <p className="text-[11px] text-gray-500">
-                    Sobreescribe los horarios de la base de datos utilizando los archivos CSV por defecto del sistema.
-                  </p>
-                </div>
-                <button
-                  onClick={refreshFromCsv}
-                  disabled={busy}
-                  className="flex items-center gap-1.5 text-xs bg-indigo-900/40 hover:bg-indigo-800/60 text-indigo-300 px-3 py-1.5 rounded-lg border border-indigo-700/40 transition disabled:opacity-50"
-                >
-                  {busy ? <FiRefreshCw size={12} className="animate-spin" /> : <FiRefreshCw size={12} />}
-                  Re-importar CSV
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

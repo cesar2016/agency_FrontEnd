@@ -501,9 +501,7 @@ export default function ScrapeExtractsPage() {
                     {(() => {
                       const hasCabezas = draw.lotteries.some((lot) => {
                         if (lot.completed || !mongoCabezas[`${draw.draw_id}-${lot.lottery_id}`]) return false;
-                        const drawTime = lot.draw_time ? new Date(`${selectedDate}T${lot.draw_time}:00-03:00`) : null;
-                        const now = new Date();
-                        return drawTime && (now.getTime() - drawTime.getTime() >= 20 * 60 * 1000);
+                        return true;
                       });
                       if (!hasCabezas) return null;
                       return (
@@ -644,13 +642,6 @@ export default function ScrapeExtractsPage() {
                                   const cab = mongoCabezas[mKey];
                                   const preview = cab ? (cab.match_cabeza ?? cab.cabezas.join('|')) : null;
                                   if (!preview) return null;
-                                  
-                                  // Solo mostrar la cabeza si el sorteo ya pasó (draw_time + 20 min)
-                                  const drawTime = lot.draw_time ? new Date(`${selectedDate}T${lot.draw_time}:00-03:00`) : null;
-                                  const now = new Date();
-                                  const delayMs = 20 * 60 * 1000; // 20 min
-                                  const canShowHead = drawTime && (now.getTime() - drawTime.getTime() >= delayMs);
-                                  if (!canShowHead) return null;
                                   
                                   return (
                                     <button

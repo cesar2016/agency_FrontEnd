@@ -115,6 +115,28 @@ export default function PlaceBetPage() {
     }
   }, [hasParaguay]);
 
+  // Paraguay usa CAT (posiciones 1 y 15-20) y SGO (posiciones 2-14) para completar su grilla.
+  // Si esas loterías ya cerraron, se restringe a jugadas hasta posición 14.
+  const parComplementClosed = (() => {
+    if (!hasParaguay) return false;
+    const catLot = lotteries.find((l) => l.initials === 'CAT');
+    const sgoLot = lotteries.find((l) => l.initials === 'SGO');
+    if (!catLot && !sgoLot) return false;
+    // Basta con que ALGUNO de los draws seleccionados con PAR tenga CAT o SGO cerrado
+    return selectedDraws.some((drawId) => {
+      const hasPar = (selectedByDraw[drawId] || []).some(
+        (lotId) => lotteries.find((l) => l.id === lotId)?.initials === 'PAR'
+      );
+      if (!hasPar) return false;
+      const catClosed = catLot ? isClosedFor(drawId, catLot.id) : true;
+      const sgoClosed = sgoLot ? isClosedFor(drawId, sgoLot.id) : true;
+      return catClosed || sgoClosed;
+    });
+  })();
+
+  // Límite de posición para apuesta simple cuando Paraguay tiene complemento cerrado
+  const parMaxPos = hasParaguay && parComplementClosed ? 14 : 20;
+
   const closingTimeFor = (drawId, lotteryId) => {
     const l = lotteries.find((x) => x.id === lotteryId);
     const matching = (l?.schedules || []).filter((s) => s.draw_id === drawId);
@@ -163,6 +185,11 @@ export default function PlaceBetPage() {
     const pos = parseInt(position);
     if (!pos || pos < 1 || pos > 20) {
       setError('La posicion debe ser un numero del 1 al 20');
+      return;
+    }
+    // Restricción especial Paraguay: máximo posición 14 cuando complemento cerró
+    if (hasParaguay && parComplementClosed && pos > 14) {
+      setError('PARAGUAY: Las loterías complementarias ya cerraron. Solo se permiten jugadas hasta la posición 14.');
       return;
     }
     // Las apuestas a 1 cifra solo se permiten hasta el puesto 10.
@@ -240,12 +267,18 @@ export default function PlaceBetPage() {
       setError('Ambos numeros deben tener exactamente 2 digitos');
       return;
     }
-    if (![1, 5, 10, 15, 20].includes(redFirstRange)) {
-      setError('El Rango 1° debe ser 1, 5, 10, 15 o 20');
+    const allowedFirstRanges = hasParaguay && parComplementClosed ? [1, 5, 10] : [1, 5, 10, 15, 20];
+    const allowedSecondRanges = hasParaguay && parComplementClosed ? [5, 10] : [5, 10, 15, 20];
+    if (!allowedFirstRanges.includes(redFirstRange)) {
+      setError(hasParaguay && parComplementClosed
+        ? 'PARAGUAY: El Rango 1° solo puede ser 1, 5 o 10 (complemento cerrado)'
+        : 'El Rango 1° debe ser 1, 5, 10, 15 o 20');
       return;
     }
-    if (![5, 10, 15, 20].includes(redSecondRange) || redSecondRange < redFirstRange) {
-      setError('La Posicion debe ser 5, 10, 15 o 20 y mayor o igual al Rango 1°');
+    if (!allowedSecondRanges.includes(redSecondRange) || redSecondRange < redFirstRange) {
+      setError(hasParaguay && parComplementClosed
+        ? 'PARAGUAY: La Posicion solo puede ser 5 o 10 (complemento cerrado)'
+        : 'La Posicion debe ser 5, 10, 15 o 20 y mayor o igual al Rango 1°');
       return;
     }
     const val = parseFloat(redAmount.replace(/\./g, ''));
@@ -418,16 +451,20 @@ export default function PlaceBetPage() {
             />
           </div>
           <div>
-            <label className="text-xs text-gray-400 block mb-1 text-center">Posicion</label>
+            <label className="text-xs text-gray-400 block mb-1 text-center">
+              Posicion{hasParaguay && parComplementClosed && (
+                <span className="text-amber-400 ml-1">(máx. {parMaxPos})</span>
+              )}
+            </label>
             <input
               type="text"
               inputMode="numeric"
               maxLength={2}
               value={position}
               onChange={(e) => setPosition(e.target.value.replace(/\D/g, ''))}
-              className="no-spinner w-full bg-gray-700/50 border border-gray-600 rounded-lg text-center font-bold text-xl text-white focus:outline-none focus:border-indigo-500"
+              className={`no-spinner w-full bg-gray-700/50 border rounded-lg text-center font-bold text-xl text-white focus:outline-none transition ${hasParaguay && parComplementClosed ? 'border-amber-500/50 focus:border-amber-400' : 'border-gray-600 focus:border-indigo-500'}`}
               style={{ padding: '1.5rem 0.5rem' }}
-              placeholder="1-20"
+              placeholder={hasParaguay && parComplementClosed ? `1-${parMaxPos}` : '1-20'}
             />
           </div>
           <div>
@@ -587,8 +624,11 @@ export default function PlaceBetPage() {
               </div>
               <div>
                 <label className="text-xs text-gray-400 block mb-1 text-center">Posicion (2° rango)</label>
+                {hasParaguay && parComplementClosed && (
+                  <p className="text-amber-400 text-xs mb-1 text-center">⚠ PAR: solo hasta posición 10</p>
+                )}
                 <div className="flex gap-2">
-                  {[5, 10, 15, 20].map((r) => (
+                  {(hasParaguay && parComplementClosed ? [5, 10] : [5, 10, 15, 20]).map((r) => (
                     <button
                       key={r}
                       type="button"

@@ -115,28 +115,6 @@ export default function PlaceBetPage() {
     }
   }, [hasParaguay]);
 
-  // Paraguay usa CAT (posiciones 1 y 15-20) y SGO (posiciones 2-14) para completar su grilla.
-  // Si esas loterías ya cerraron, se restringe a jugadas hasta posición 14.
-  const parComplementClosed = (() => {
-    if (!hasParaguay) return false;
-    const catLot = lotteries.find((l) => l.initials === 'CAT');
-    const sgoLot = lotteries.find((l) => l.initials === 'SGO');
-    if (!catLot && !sgoLot) return false;
-    // Basta con que ALGUNO de los draws seleccionados con PAR tenga CAT o SGO cerrado
-    return selectedDraws.some((drawId) => {
-      const hasPar = (selectedByDraw[drawId] || []).some(
-        (lotId) => lotteries.find((l) => l.id === lotId)?.initials === 'PAR'
-      );
-      if (!hasPar) return false;
-      const catClosed = catLot ? isClosedFor(drawId, catLot.id) : true;
-      const sgoClosed = sgoLot ? isClosedFor(drawId, sgoLot.id) : true;
-      return catClosed || sgoClosed;
-    });
-  })();
-
-  // Límite de posición para apuesta simple cuando Paraguay tiene complemento cerrado
-  const parMaxPos = hasParaguay && parComplementClosed ? 14 : 20;
-
   const closingTimeFor = (drawId, lotteryId) => {
     const l = lotteries.find((x) => x.id === lotteryId);
     const matching = (l?.schedules || []).filter((s) => s.draw_id === drawId);
@@ -168,6 +146,27 @@ export default function PlaceBetPage() {
     (selectedByDraw[drawId] || []).some((lotId) => isClosedFor(drawId, lotId))
   );
   const hasClosedSelection = closedSelection !== undefined;
+
+  // Paraguay usa CAT (posiciones 1 y 15-20) y SGO (posiciones 2-14) para completar su grilla.
+  // Se coloca DESPUÉS de isClosedFor para evitar TDZ. Si cerraron, se restringe a pos ≤ 14.
+  const parComplementClosed = (() => {
+    if (!hasParaguay) return false;
+    const catLot = lotteries.find((l) => l.initials === 'CAT');
+    const sgoLot = lotteries.find((l) => l.initials === 'SGO');
+    if (!catLot && !sgoLot) return false;
+    return selectedDraws.some((drawId) => {
+      const hasPar = (selectedByDraw[drawId] || []).some(
+        (lotId) => lotteries.find((l) => l.id === lotId)?.initials === 'PAR'
+      );
+      if (!hasPar) return false;
+      const catClosed = catLot ? isClosedFor(drawId, catLot.id) : true;
+      const sgoClosed = sgoLot ? isClosedFor(drawId, sgoLot.id) : true;
+      return catClosed || sgoClosed;
+    });
+  })();
+
+  // Límite de posición para apuesta simple cuando Paraguay tiene complemento cerrado
+  const parMaxPos = hasParaguay && parComplementClosed ? 14 : 20;
 
   const mapPositionToType = (pos) => {
     if (pos <= 1) return 'primera';

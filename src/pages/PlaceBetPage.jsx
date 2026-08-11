@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
-import { FiPlus, FiCheck, FiX, FiArrowLeft, FiTrash2, FiChevronDown, FiChevronUp, FiEye, FiArrowDown } from 'react-icons/fi';
+import { FiPlus, FiCheck, FiX, FiArrowLeft, FiTrash2, FiChevronDown, FiChevronUp, FiEye, FiArrowDown, FiAlertTriangle } from 'react-icons/fi';
 import api from '../services/api';
 
 function Accordion({ title, count, open, onToggle, children }) {
@@ -94,12 +94,26 @@ export default function PlaceBetPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showParaguayAlert, setShowParaguayAlert] = useState(false);
+  const paraguayAlertShownRef = useRef(false);
 
   const allSelectedLotteryIds = Array.from(new Set(Object.values(selectedByDraw).flat()));
   const drawNames = draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.name).join(' / ');
   const lotteryLabels = lotteries.filter((l) => allSelectedLotteryIds.includes(l.id)).map((l) => l.initials).join(', ');
   const subtotal = cart.reduce((acc, i) => acc + Number(i.amount), 0);
   const total = subtotal * totalMultiplier;
+
+  // Mostrar alerta de Paraguay una sola vez al montar la página si PAR está seleccionado
+  const hasParaguay = lotteries
+    .filter((l) => allSelectedLotteryIds.includes(l.id))
+    .some((l) => l.initials === 'PAR');
+
+  useEffect(() => {
+    if (hasParaguay && !paraguayAlertShownRef.current) {
+      paraguayAlertShownRef.current = true;
+      setShowParaguayAlert(true);
+    }
+  }, [hasParaguay]);
 
   const closingTimeFor = (drawId, lotteryId) => {
     const l = lotteries.find((x) => x.id === lotteryId);
@@ -503,6 +517,51 @@ export default function PlaceBetPage() {
           R
         </button>
       </Accordion>
+
+      {/* Modal de advertencia: Lotería Paraguay */}
+      {showParaguayAlert && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-gray-900 border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden animate-[fadeInScale_0.2s_ease-out]">
+            {/* Header */}
+            <div className="flex items-center gap-3 px-5 py-4 bg-amber-500/10 border-b border-amber-500/20">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <FiAlertTriangle size={22} className="text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-amber-300 font-bold text-base tracking-wide">⚠ ATENCIÓN — Lotería PARAGUAY</h3>
+                <p className="text-amber-400/70 text-xs mt-0.5">Información importante sobre la jugada</p>
+              </div>
+            </div>
+            {/* Body */}
+            <div className="px-5 py-5 space-y-3">
+              <p className="text-gray-100 text-sm leading-relaxed">
+                Recuerde que la lotería de <span className="text-amber-300 font-bold">PARAGUAY</span> completa
+                sus jugadas para las <span className="font-semibold text-white">4 cifras</span> y del{' '}
+                <span className="font-semibold text-white">15 al 20</span> en{' '}
+                <span className="text-amber-300 font-semibold">La Primera</span> con la jugada de{' '}
+                <span className="font-semibold text-white">CATAMARCA</span> y las restantes con{' '}
+                <span className="font-semibold text-white">Santiago</span> del turno pasado.
+              </p>
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-4 py-3">
+                <p className="text-amber-300 text-xs font-semibold uppercase tracking-wider mb-1">Ejemplo</p>
+                <p className="text-gray-300 text-sm">
+                  Paraguay en <span className="font-bold text-white">Matutina</span> completa con
+                  Santiago de <span className="font-bold text-white">La Previa</span>.
+                </p>
+              </div>
+            </div>
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-gray-700/50 flex justify-end">
+              <button
+                onClick={() => setShowParaguayAlert(false)}
+                className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-6 py-2.5 rounded-lg text-sm transition shadow-lg shadow-amber-500/20"
+              >
+                <FiCheck size={16} /> Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {redModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">

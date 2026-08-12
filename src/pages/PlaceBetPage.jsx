@@ -443,7 +443,14 @@ export default function PlaceBetPage() {
         </button>
         <div className="text-right min-w-0">
           <p className="text-white font-medium text-sm truncate">{drawNames}</p>
-          <p className="text-indigo-300 text-xs truncate max-w-[180px] sm:max-w-none">{lotteryLabels}</p>
+          <p className="text-indigo-300 text-xs truncate max-w-[180px] sm:max-w-none">
+            {lotteryLabels}
+            {allSelectedLotteryIds.length > 0 && (
+              <span className="ml-1.5 bg-indigo-600/40 text-indigo-200 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {allSelectedLotteryIds.length} Lot
+              </span>
+            )}
+          </p>
         </div>
       </div>
 
@@ -778,7 +785,12 @@ export default function PlaceBetPage() {
                 return (
                   <div key={draw.id}>
                     <p className="text-center text-white font-bold text-sm mb-1">{draw.name}</p>
-                    <p className="text-center text-indigo-300 font-bold mb-2">{lotInitials.join(' · ')}</p>
+                    <p className="text-center text-indigo-300 font-bold mb-2">
+                      {lotInitials.join(' · ')}
+                      <span className="ml-2 bg-indigo-600/30 text-indigo-200 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                        {n} Lot
+                      </span>
+                    </p>
                     {simpleItems.length > 0 && (
                       <>
                         <table className="w-full">

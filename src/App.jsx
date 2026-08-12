@@ -15,6 +15,7 @@ import UsersPage from './pages/UsersPage';
 import ComisionesPage from './pages/ComisionesPage';
 import MiComisionPage from './pages/MiComisionPage';
 import Layout from './components/layout/Layout';
+import TermsModal from './components/TermsModal';
 
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
@@ -28,6 +29,7 @@ function ProtectedRoute({ children, roles }) {
 export default function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-950 to-gray-900">
+      <TermsModal />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route element={<Layout />}>

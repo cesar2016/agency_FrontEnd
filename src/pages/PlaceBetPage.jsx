@@ -443,13 +443,13 @@ export default function PlaceBetPage() {
         </button>
         <div className="text-right min-w-0">
           <p className="text-white font-medium text-sm truncate">{drawNames}</p>
-          <p className="text-indigo-300 text-xs truncate max-w-[180px] sm:max-w-none">
-            {lotteryLabels}
+          <p className="text-indigo-300 text-xs flex items-center justify-end gap-1.5 flex-wrap">
             {allSelectedLotteryIds.length > 0 && (
-              <span className="ml-1.5 bg-indigo-600/40 text-indigo-200 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+              <span className="bg-white text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
                 {allSelectedLotteryIds.length} Lot
               </span>
             )}
+            <span className="truncate">{lotteryLabels}</span>
           </p>
         </div>
       </div>
@@ -785,11 +785,11 @@ export default function PlaceBetPage() {
                 return (
                   <div key={draw.id}>
                     <p className="text-center text-white font-bold text-sm mb-1">{draw.name}</p>
-                    <p className="text-center text-indigo-300 font-bold mb-2">
-                      {lotInitials.join(' · ')}
-                      <span className="ml-2 bg-indigo-600/30 text-indigo-200 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                    <p className="text-center text-indigo-300 font-bold mb-2 flex items-center justify-center gap-1.5 flex-wrap">
+                      <span className="bg-white text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-full">
                         {n} Lot
                       </span>
+                      {lotInitials.join(' · ')}
                     </p>
                     {simpleItems.length > 0 && (
                       <>

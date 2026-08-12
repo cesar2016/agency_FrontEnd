@@ -147,22 +147,42 @@ export default function PlaceBetPage() {
   );
   const hasClosedSelection = closedSelection !== undefined;
 
-  // Paraguay usa CAT (posiciones 1 y 15-20) y SGO (posiciones 2-14) para completar su grilla.
-  // Se coloca DESPUÉS de isClosedFor para evitar TDZ. Si cerraron, se restringe a pos ≤ 14.
+  // Paraguay completa su grilla con:
+  //   CAT La Previa  → posiciones 1 y 15-20 ("La Primera")
+  //   SGO turno anterior → posiciones 2-14
+  // La condición correcta es verificar CAT en el draw "La Previa" (distinto al draw de PAR)
+  // y SGO en cualquier draw donde realmente tenga horario y haya cerrado.
+  // Se ubica DESPUÉS de isClosedFor para evitar TDZ.
   const parComplementClosed = (() => {
     if (!hasParaguay) return false;
     const catLot = lotteries.find((l) => l.initials === 'CAT');
     const sgoLot = lotteries.find((l) => l.initials === 'SGO');
     if (!catLot && !sgoLot) return false;
-    return selectedDraws.some((drawId) => {
-      const hasPar = (selectedByDraw[drawId] || []).some(
-        (lotId) => lotteries.find((l) => l.id === lotId)?.initials === 'PAR'
-      );
-      if (!hasPar) return false;
-      const catClosed = catLot ? isClosedFor(drawId, catLot.id) : true;
-      const sgoClosed = sgoLot ? isClosedFor(drawId, sgoLot.id) : true;
-      return catClosed || sgoClosed;
-    });
+
+    // 1. CAT La Previa: buscar el draw cuyo nombre contiene "Previa"
+    const laPreviaDraw = draws.find((d) => /previa/i.test(d.name));
+    if (catLot && laPreviaDraw && isClosedFor(laPreviaDraw.id, catLot.id)) {
+      return true;
+    }
+
+    // 2. SGO en el mismo draw de PAR (si SGO realmente tiene horario ahí)
+    //    Evitar el false-positive de isClosedFor: solo aplica si hay schedule real
+    if (sgoLot) {
+      const sgoSchedules = sgoLot.schedules || [];
+      const closed = selectedDraws.some((drawId) => {
+        const hasPar = (selectedByDraw[drawId] || []).some(
+          (lotId) => lotteries.find((l) => l.id === lotId)?.initials === 'PAR'
+        );
+        if (!hasPar) return false;
+        // Solo chequear si SGO tiene horario real en este draw
+        const sgoHasSchedule = sgoSchedules.some((s) => s.draw_id === drawId);
+        if (!sgoHasSchedule) return false;
+        return isClosedFor(drawId, sgoLot.id);
+      });
+      if (closed) return true;
+    }
+
+    return false;
   })();
 
   // Límite de posición para apuesta simple cuando Paraguay tiene complemento cerrado
@@ -460,7 +480,17 @@ export default function PlaceBetPage() {
               inputMode="numeric"
               maxLength={2}
               value={position}
-              onChange={(e) => setPosition(e.target.value.replace(/\D/g, ''))}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                if (hasParaguay && parComplementClosed && val !== '' && parseInt(val, 10) > parMaxPos) {
+                  setError(
+                    `⚠ PARAGUAY: Catamarca La Previa ya cerró. Las posiciones 15 al 20 las completa la lotería complementaria. Solo se admiten jugadas hasta la posición ${parMaxPos}.`
+                  );
+                  return; // no actualizar el campo
+                }
+                setError('');
+                setPosition(val);
+              }}
               className={`no-spinner w-full bg-gray-700/50 border rounded-lg text-center font-bold text-xl text-white focus:outline-none transition ${hasParaguay && parComplementClosed ? 'border-amber-500/50 focus:border-amber-400' : 'border-gray-600 focus:border-indigo-500'}`}
               style={{ padding: '1.5rem 0.5rem' }}
               placeholder={hasParaguay && parComplementClosed ? `1-${parMaxPos}` : '1-20'}

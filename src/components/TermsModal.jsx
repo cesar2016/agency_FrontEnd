@@ -11,8 +11,8 @@ export default function TermsModal() {
     return null;
   }
 
-  const isSuperAdmin = Array.isArray(user.roles) && user.roles.includes('super_admin');
-  if (!isSuperAdmin) {
+  const hasTargetRole = Array.isArray(user.roles) && (user.roles.includes('super_admin') || user.roles.includes('admin'));
+  if (!hasTargetRole) {
     return null;
   }
 

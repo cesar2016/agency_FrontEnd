@@ -159,30 +159,51 @@ export default function PlaceBetPage() {
     const sgoLot = lotteries.find((l) => l.initials === 'SGO');
     if (!catLot && !sgoLot) return false;
 
-    // 1. CAT La Previa: buscar el draw cuyo nombre contiene "Previa"
-    const laPreviaDraw = draws.find((d) => /previa/i.test(d.name));
-    if (catLot && laPreviaDraw && isClosedFor(laPreviaDraw.id, catLot.id)) {
-      return true;
-    }
+    const isSunday = new Date().getDay() === 0;
 
-    // 2. SGO en el mismo draw de PAR (si SGO realmente tiene horario ahí)
-    //    Evitar el false-positive de isClosedFor: solo aplica si hay schedule real
-    if (sgoLot) {
-      const sgoSchedules = sgoLot.schedules || [];
-      const closed = selectedDraws.some((drawId) => {
-        const hasPar = (selectedByDraw[drawId] || []).some(
-          (lotId) => lotteries.find((l) => l.id === lotId)?.initials === 'PAR'
-        );
-        if (!hasPar) return false;
-        // Solo chequear si SGO tiene horario real en este draw
-        const sgoHasSchedule = sgoSchedules.some((s) => s.draw_id === drawId);
-        if (!sgoHasSchedule) return false;
-        return isClosedFor(drawId, sgoLot.id);
-      });
-      if (closed) return true;
-    }
+    return selectedDraws.some((drawId) => {
+      const hasPar = (selectedByDraw[drawId] || []).some(
+        (lotId) => lotteries.find((l) => l.id === lotId)?.initials === 'PAR'
+      );
+      if (!hasPar) return false;
 
-    return false;
+      const currentDraw = draws.find((d) => d.id === drawId);
+      if (!currentDraw) return false;
+
+      const drawName = currentDraw.name.toLowerCase();
+
+      if (isSunday) {
+        if (/primera/.test(drawName)) {
+          // Domingo - PAR Primera -> SGO Primera
+          const primeraDraw = draws.find((d) => /primera/i.test(d.name));
+          if (sgoLot && primeraDraw && isClosedFor(primeraDraw.id, sgoLot.id)) return true;
+        } else if (/matutina/.test(drawName)) {
+          // Domingo - PAR Matutina -> SGO Matutina
+          const matutinaDraw = draws.find((d) => /matutina/i.test(d.name));
+          if (sgoLot && matutinaDraw && isClosedFor(matutinaDraw.id, sgoLot.id)) return true;
+        }
+      } else {
+        if (/previa/.test(drawName)) {
+          // L-S - PAR Previa -> CAT Previa
+          const previaDraw = draws.find((d) => /previa/i.test(d.name));
+          if (catLot && previaDraw && isClosedFor(previaDraw.id, catLot.id)) return true;
+        } else if (/matutina/.test(drawName)) {
+          // L-S - PAR Matutina -> SGO Primera
+          const primeraDraw = draws.find((d) => /primera/i.test(d.name));
+          if (sgoLot && primeraDraw && isClosedFor(primeraDraw.id, sgoLot.id)) return true;
+        } else if (/vespertina/.test(drawName)) {
+          // L-S - PAR Vespertina -> SGO Matutina
+          const matutinaDraw = draws.find((d) => /matutina/i.test(d.name));
+          if (sgoLot && matutinaDraw && isClosedFor(matutinaDraw.id, sgoLot.id)) return true;
+        } else if (/nocturna/.test(drawName)) {
+          // L-S - PAR Nocturna -> SGO Vespertina
+          const vespertinaDraw = draws.find((d) => /vespertina/i.test(d.name));
+          if (sgoLot && vespertinaDraw && isClosedFor(vespertinaDraw.id, sgoLot.id)) return true;
+        }
+      }
+
+      return false;
+    });
   })();
 
   // Límite de posición para apuesta simple cuando Paraguay tiene complemento cerrado
@@ -491,7 +512,7 @@ export default function PlaceBetPage() {
                 const val = e.target.value.replace(/\D/g, '');
                 if (hasParaguay && parComplementClosed && val !== '' && parseInt(val, 10) > parMaxPos) {
                   setError(
-                    `⚠ PARAGUAY: Catamarca La Previa ya cerró. Las posiciones 15 al 20 las completa la lotería complementaria. Solo se admiten jugadas hasta la posición ${parMaxPos}.`
+                    `⚠ PARAGUAY: La lotería complementaria correspondiente a este turno ya cerró. Solo se admiten jugadas hasta la posición ${parMaxPos}.`
                   );
                   return; // no actualizar el campo
                 }
@@ -610,17 +631,16 @@ export default function PlaceBetPage() {
               <p className="text-gray-100 text-sm leading-relaxed">
                 Recuerde que la lotería de <span className="text-amber-300 font-bold">PARAGUAY</span> completa
                 sus jugadas para las <span className="font-semibold text-white">4 cifras</span> y del{' '}
-                <span className="font-semibold text-white">15 al 20</span> en{' '}
-                <span className="text-amber-300 font-semibold">La Primera</span> con la jugada de{' '}
-                <span className="font-semibold text-white">CATAMARCA</span> y las restantes con{' '}
-                <span className="font-semibold text-white">Santiago</span> del turno pasado.
+                <span className="font-semibold text-white">15 al 20</span> con su{' '}
+                <span className="text-amber-300 font-semibold">lotería complementaria</span> correspondiente.
               </p>
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-4 py-3">
-                <p className="text-amber-300 text-xs font-semibold uppercase tracking-wider mb-1">Ejemplo</p>
-                <p className="text-gray-300 text-sm">
-                  Paraguay en <span className="font-bold text-white">Matutina</span> completa con
-                  Santiago de <span className="font-bold text-white">La Previa</span>.
-                </p>
+                <p className="text-amber-300 text-xs font-semibold uppercase tracking-wider mb-2">Reglas de complemento</p>
+                <ul className="text-gray-300 text-xs space-y-1.5 list-disc list-inside">
+                  <li><span className="font-bold text-white">L a S:</span> Previa con CAT Previa.</li>
+                  <li><span className="font-bold text-white">L a S:</span> Mat., Vesp., y Noct. con SGO del turno anterior.</li>
+                  <li><span className="font-bold text-white">Domingos:</span> Primera y Matutina completan con SGO del mismo turno.</li>
+                </ul>
               </div>
             </div>
             {/* Footer */}

@@ -1,9 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
-import { useAuth } from '../context/AuthContext';
 import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp, FiMenu } from 'react-icons/fi';
-import { FaWhatsapp } from 'react-icons/fa';
 
 function isClosed(closingTime, now) {
   if (!closingTime) return true;
@@ -61,8 +59,6 @@ const DRAW_PRINCIPAL_GROUPS = {
 
 export default function SelectLotteryDraw() {
   const { lotteries, draws, selectedByDraw, selectedGroupsByDraw, toggleLotteryInDraw, toggleGroupInDraw, toggleAllInDraw, fetchLotteries, fetchDraws } = useBet();
-  const { user } = useAuth();
-  const isSuperAdmin = user?.roles?.includes('super_admin');
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
@@ -179,20 +175,6 @@ export default function SelectLotteryDraw() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 pb-24 relative">
-      {isSuperAdmin && (
-        <a 
-          href="https://wa.me/5493408675665" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="block border border-red-500/50 bg-red-500/10 rounded-lg p-3 text-center hover:bg-red-500/20 transition-colors"
-        >
-          <p className="text-white text-sm flex items-center justify-center gap-2">
-            <FaWhatsapp className="text-green-500" size={18} />
-            Cristian agregame a este whatsapp <span className="font-bold text-green-400">3408675665</span> Me bloquearon el otro de empresa
-          </p>
-        </a>
-      )}
-
       <div className="text-center">
         <h2 className="text-lg font-semibold text-white">Sorteos y Loterías</h2>
         <p className="text-xs text-gray-400">{todayLabel()}</p>

@@ -28,7 +28,7 @@ function ProtectedRoute({ children, roles }) {
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-950 to-gray-900">
+    <div className="min-h-screen bg-gray-900 bg-gradient-to-br from-gray-900 via-indigo-950 to-gray-900">
       <TermsModal />
       <Routes>
         <Route path="/login" element={<LoginPage />} />

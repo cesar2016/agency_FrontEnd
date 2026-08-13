@@ -3,10 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
 import { FiTrash2, FiArrowLeft, FiCheck, FiDownload, FiX } from 'react-icons/fi';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function CartPage() {
   const { cart, removeFromCart, clearCart, submitBet, selectedByDraw, selectedDraws, draws, lotteries, totalMultiplier, lotteryCountForDraw } = useBet();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const roles = Array.isArray(user?.roles) ? user.roles : [];
+  const isSuperAdmin = roles.includes('super_admin');
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
 
@@ -16,13 +20,22 @@ export default function CartPage() {
 
   const isClosedFor = (drawId, lotteryId) => {
     const l = lotteries.find((x) => x.id === lotteryId);
-    const ct = l?.schedules?.find((s) => s.draw_id === drawId)?.closing_time;
-    // Sin horario cargado para ese sorteo => se considera cerrada.
-    if (!ct) return true;
+    const sched = l?.schedules?.find((s) => s.draw_id === drawId);
+    
+    if (!sched) return true;
     const now = new Date();
-    const [h, m] = ct.split(':').map(Number);
+    
+    let timeStr = sched.closing_time;
+    let offsetMs = 0;
+    if (isSuperAdmin && sched.draw_time) {
+      timeStr = sched.draw_time;
+      offsetMs = 60000;
+    }
+    
+    if (!timeStr) return true;
+    const [h, m] = timeStr.split(':').map(Number);
     const close = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
-    return now > close;
+    return now > new Date(close.getTime() - offsetMs);
   };
   const hasClosedSelection = selectedDraws.some((drawId) =>
     (selectedByDraw[drawId] || []).some((lotId) => isClosedFor(drawId, lotId))

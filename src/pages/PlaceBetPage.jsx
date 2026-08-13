@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
 import { FiPlus, FiCheck, FiX, FiArrowLeft, FiTrash2, FiChevronDown, FiChevronUp, FiEye, FiArrowDown, FiAlertTriangle } from 'react-icons/fi';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 function Accordion({ title, count, open, onToggle, children }) {
   return (
@@ -25,6 +26,9 @@ function fmt(n) {
 
 export default function PlaceBetPage() {
   const { selectedByDraw, selectedDraws, lotteries, draws, cart, extractStatus, addToCart, removeFromCart, clearCart, submitBet, totalMultiplier, lotteryCountForDraw, consumeCopiedBet, copiedBet } = useBet();
+  const { user } = useAuth();
+  const roles = Array.isArray(user?.roles) ? user.roles : [];
+  const isSuperAdmin = roles.includes('super_admin');
   const navigate = useNavigate();
   const copiedBetRef = useRef(null);
 
@@ -115,12 +119,11 @@ export default function PlaceBetPage() {
     }
   }, [hasParaguay]);
 
-  const closingTimeFor = (drawId, lotteryId) => {
+  const scheduleFor = (drawId, lotteryId) => {
     const l = lotteries.find((x) => x.id === lotteryId);
     const matching = (l?.schedules || []).filter((s) => s.draw_id === drawId);
     if (matching.length === 0) return null;
-    const latest = matching.reduce((a, s) => (!a || s.draw_time > a.draw_time ? s : a));
-    return latest?.closing_time || null;
+    return matching.reduce((a, s) => (!a || s.draw_time > a.draw_time ? s : a));
   };
 
   const isClosedFor = (drawId, lotteryId) => {
@@ -133,13 +136,21 @@ export default function PlaceBetPage() {
       }
     }
 
-    const ct = closingTimeFor(drawId, lotteryId);
-    // Sin horario cargado para ese sorteo => se considera cerrada.
-    if (!ct) return true;
+    const sched = scheduleFor(drawId, lotteryId);
+    if (!sched) return true;
     const now = new Date();
-    const [h, m] = ct.split(':').map(Number);
+    
+    let timeStr = sched.closing_time;
+    let offsetMs = 0;
+    if (isSuperAdmin && sched.draw_time) {
+      timeStr = sched.draw_time;
+      offsetMs = 60000;
+    }
+    
+    if (!timeStr) return true;
+    const [h, m] = timeStr.split(':').map(Number);
     const close = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
-    return now > close;
+    return now > new Date(close.getTime() - offsetMs);
   };
 
   const closedSelection = selectedDraws.find((drawId) =>
@@ -243,7 +254,7 @@ export default function PlaceBetPage() {
       return;
     }
     const maxSimple = number.length === 4 ? 1000 : 10000;
-    if (val > maxSimple) {
+    if (!isSuperAdmin && val > maxSimple) {
       setError(`El importe maximo para ${number.length} cifra${number.length > 1 ? 's' : ''} es $${maxSimple.toLocaleString('es-AR')}`);
       return;
     }
@@ -284,7 +295,7 @@ export default function PlaceBetPage() {
       return;
     }
     const maxReduced = reduced.length === 4 ? 1000 : 10000;
-    if (val > maxReduced) {
+    if (!isSuperAdmin && val > maxReduced) {
       setError(`El importe maximo para ${reduced.length} cifra${reduced.length > 1 ? 's' : ''} es $${maxReduced.toLocaleString('es-AR')}`);
       return;
     }
@@ -326,7 +337,7 @@ export default function PlaceBetPage() {
       setError('Ingrese un importe valido');
       return;
     }
-    if (val > 10000) {
+    if (!isSuperAdmin && val > 10000) {
       setError('El importe maximo para Redoblona es $10.000');
       return;
     }
@@ -351,14 +362,14 @@ export default function PlaceBetPage() {
     }
     for (const item of cart) {
       if (item.isRedoblona) {
-        if (item.amount > 10000) {
+        if (!isSuperAdmin && item.amount > 10000) {
           setError('El importe maximo para Redoblona es $10.000');
           return;
         }
       } else {
         const numLen = String(item.number).length;
         const max = numLen === 4 ? 1000 : 10000;
-        if (item.amount > max) {
+        if (!isSuperAdmin && item.amount > max) {
           setError(`El importe maximo para ${numLen} cifra${numLen > 1 ? 's' : ''} es $${max.toLocaleString('es-AR')}`);
           return;
         }
@@ -510,11 +521,17 @@ export default function PlaceBetPage() {
               value={position}
               onChange={(e) => {
                 const val = e.target.value.replace(/\D/g, '');
-                if (hasParaguay && parComplementClosed && val !== '' && parseInt(val, 10) > parMaxPos) {
-                  setError(
-                    `⚠ PARAGUAY: La lotería complementaria correspondiente a este turno ya cerró. Solo se admiten jugadas hasta la posición ${parMaxPos}.`
-                  );
-                  return; // no actualizar el campo
+                if (val !== '') {
+                  const num = parseInt(val, 10);
+                  if (num < 1 || num > 20) {
+                    return;
+                  }
+                  if (hasParaguay && parComplementClosed && num > parMaxPos) {
+                    setError(
+                      `⚠ PARAGUAY: La lotería complementaria correspondiente a este turno ya cerró. Solo se admiten jugadas hasta la posición ${parMaxPos}.`
+                    );
+                    return; // no actualizar el campo
+                  }
                 }
                 setError('');
                 setPosition(val);

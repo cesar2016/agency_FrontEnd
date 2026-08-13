@@ -1,13 +1,29 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
+import { useAuth } from '../context/AuthContext';
 import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp, FiMenu } from 'react-icons/fi';
 
-function isClosed(closingTime, now) {
+function isClosed(closingTime, now, isSuperAdmin = false, drawTime = null) {
+  if (isSuperAdmin && drawTime) {
+    const [h, m] = drawTime.split(':').map(Number);
+    const closeDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+    return now > new Date(closeDate.getTime() - 60000);
+  }
   if (!closingTime) return true;
   const [h, m] = closingTime.split(':').map(Number);
   const close = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
   return now > close;
+}
+
+function displayClosingTime(closingTime, isSuperAdmin = false, drawTime = null) {
+  if (isSuperAdmin && drawTime) {
+    const [h, m] = drawTime.split(':').map(Number);
+    const date = new Date(2000, 0, 1, h, m);
+    const bypassDate = new Date(date.getTime() - 60000);
+    return `${String(bypassDate.getHours()).padStart(2, '0')}:${String(bypassDate.getMinutes()).padStart(2, '0')}`;
+  }
+  return closingTime;
 }
 
 function effectiveSchedule(schedules, drawId) {
@@ -59,6 +75,9 @@ const DRAW_PRINCIPAL_GROUPS = {
 
 export default function SelectLotteryDraw() {
   const { lotteries, draws, selectedByDraw, selectedGroupsByDraw, toggleLotteryInDraw, toggleGroupInDraw, toggleAllInDraw, fetchLotteries, fetchDraws } = useBet();
+  const { user } = useAuth();
+  const roles = Array.isArray(user?.roles) ? user.roles : [];
+  const isSuperAdmin = roles.includes('super_admin');
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
@@ -198,15 +217,15 @@ export default function SelectLotteryDraw() {
             const bIdx = bi === -1 ? 999 : bi;
             if (aIdx !== bIdx) return aIdx - bIdx;
           }
-          const aHasOpen = a.items.some((it) => !isClosed(it.closingTime, now));
-          const bHasOpen = b.items.some((it) => !isClosed(it.closingTime, now));
+          const aHasOpen = a.items.some((it) => !isClosed(it.closingTime, now, isSuperAdmin, it.drawTime));
+          const bHasOpen = b.items.some((it) => !isClosed(it.closingTime, now, isSuperAdmin, it.drawTime));
           return (aHasOpen === bHasOpen ? 0 : aHasOpen ? -1 : 1);
         })
         .map(({ draw, items }) => {
         const open = openDraws.has(draw.id);
         const drawLots = selectedByDraw[draw.id] || [];
-        const openItems = items.filter((it) => !isClosed(it.closingTime, now));
-        const closedItems = items.filter((it) => isClosed(it.closingTime, now));
+        const openItems = items.filter((it) => !isClosed(it.closingTime, now, isSuperAdmin, it.drawTime));
+        const closedItems = items.filter((it) => isClosed(it.closingTime, now, isSuperAdmin, it.drawTime));
         const hasOpen = openItems.length > 0;
         return (
           <div
@@ -327,7 +346,7 @@ export default function SelectLotteryDraw() {
                         </div>
                         <div className="flex items-center gap-3 text-xs pl-10 sm:pl-0">
                           <span className="text-gray-500">Sorteo {drawTime}</span>
-                          <span className="text-yellow-400">Cierre {closingTime}</span>
+                          <span className="text-yellow-400">Cierre {displayClosingTime(closingTime, isSuperAdmin, drawTime)}</span>
                         </div>
                       </div>
                     );

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
 import { FiPlus, FiCheck, FiX, FiArrowLeft, FiTrash2, FiChevronDown, FiChevronUp, FiEye, FiArrowDown, FiAlertTriangle } from 'react-icons/fi';
@@ -630,8 +631,8 @@ export default function PlaceBetPage() {
       </Accordion>
 
       {/* Modal de advertencia: Lotería Paraguay */}
-      {showParaguayAlert && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+      {showParaguayAlert && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
           <div className="w-full max-w-md bg-gray-900 border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden animate-[fadeInScale_0.2s_ease-out]">
             {/* Header */}
             <div className="flex items-center gap-3 px-5 py-4 bg-amber-500/10 border-b border-amber-500/20">
@@ -670,11 +671,11 @@ export default function PlaceBetPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>, document.body
       )}
 
-      {redModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      {redModalOpen && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="w-full max-w-sm bg-gray-900 border border-indigo-500/20 rounded-2xl shadow-2xl overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-700/50">
               <h3 className="text-base font-semibold text-white">Completar Redoblona</h3>
@@ -734,7 +735,7 @@ export default function PlaceBetPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>, document.body
       )}
 
       {cart.length > 0 && (
@@ -800,9 +801,9 @@ export default function PlaceBetPage() {
         </div>
       )}
 
-      {showPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-gray-900 border border-indigo-500/20 rounded-2xl w-full max-w-sm shadow-2xl overflow-y-auto max-h-[95vh]">
+      {showPreview && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-gray-900 border border-indigo-500/20 rounded-2xl w-full max-w-sm shadow-2xl overflow-y-auto max-h-[95vh] pointer-events-auto">
             <div className="p-4 bg-gray-800/80 text-center border-b border-dashed border-gray-600/50">
               <p className="text-xs text-gray-400 font-mono">{new Date().toLocaleString('es-AR')}</p>
               <p className="text-white font-bold font-mono text-xs mt-1">BOLETA</p>
@@ -932,12 +933,12 @@ export default function PlaceBetPage() {
               )}
             </div>
           </div>
-        </div>
+        </div>, document.body
       )}
 
-      {result && !showPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-gray-800 border border-indigo-500/20 rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center">
+      {result && !showPreview && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-gray-800 border border-indigo-500/20 rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center pointer-events-auto">
             <div className="w-14 h-14 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <FiCheck className="text-green-400" size={24} />
             </div>
@@ -977,7 +978,7 @@ export default function PlaceBetPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>, document.body
       )}
     </div>
   );

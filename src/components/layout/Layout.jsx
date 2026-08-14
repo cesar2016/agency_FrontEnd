@@ -62,14 +62,13 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {['leo0905', 'lara1342'].includes(user?.username) && showPaymentAlert && createPortal(
+      {user?.rental_status === 'expired_today' && showPaymentAlert && createPortal(
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-red-900 border border-red-500 rounded-2xl w-full max-w-md shadow-2xl p-6 text-center shadow-[0_0_50px_rgba(239,68,68,0.3)]">
             <FiAlertTriangle className="text-yellow-400 mx-auto mb-4" size={56} />
             <h3 className="text-white font-bold text-2xl mb-3">Aviso Importante</h3>
             <p className="text-gray-200 mb-6 text-base leading-relaxed">
-              Estimado/a <strong>{user?.name}</strong>,<br /><br />
-              Hoy 14-8 se ha vencido tu tiempo de uso de la plataforma, tu cuenta se inhabilitará automáticamente en 1 hs. Por favor, efectúa el pago correspondiente y compártenos el comprobante para seguir haciendo uso del servicio. Gracias.
+              Estimado <strong>{user?.name}</strong>, tu plazo de uso de la plataforma se encuentra vencido, por eso genera tu pago y compártenos el comprobante antes de las 8 am para no suspender tu cuenta. Desde ya muchas gracias.
             </p>
             <button
               onClick={() => setShowPaymentAlert(false)}
@@ -156,6 +155,13 @@ export default function Layout() {
           </button>
         </div>
       </nav>
+
+      {user?.rental_status === 'expiring_tomorrow' && (
+        <div className="bg-orange-500/20 border-b border-orange-500/50 text-orange-200 px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 relative z-10 w-full animate-pulse shadow-lg cursor-default">
+          <FiAlertTriangle size={16} /> tu servicio vence mañana
+        </div>
+      )}
+
       {menuOpen && (
         <div className="md:hidden bg-gray-900/95 backdrop-blur-sm border-b border-indigo-500/20">
           <div className="flex flex-col px-4 py-3 gap-1">

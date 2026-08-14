@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CajaModal from '../components/CajaModal';
-import { FiRefreshCw, FiUserPlus, FiX, FiShare2, FiEdit, FiTrash2, FiToggleRight, FiToggleLeft, FiDollarSign, FiEye, FiEyeOff, FiSearch, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import RentalModal from '../components/RentalModal';
+import { FiRefreshCw, FiUserPlus, FiX, FiShare2, FiEdit, FiTrash2, FiToggleRight, FiToggleLeft, FiDollarSign, FiEye, FiEyeOff, FiSearch, FiChevronLeft, FiChevronRight, FiClock, FiList } from 'react-icons/fi';
 
 function generateFakeData(name) {
   const firstWord = name.trim().split(/\s+/)[0] || '';
@@ -45,6 +46,8 @@ export default function UsersPage() {
   const nameInputRef = useRef(null);
 
   const [cajaUser, setCajaUser] = useState(null);
+  const [rentalUser, setRentalUser] = useState(null);
+  const [rentalMode, setRentalMode] = useState('config');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -449,6 +452,14 @@ export default function UsersPage() {
         onError={flash}
       />
 
+      <RentalModal
+        user={rentalUser}
+        mode={rentalMode}
+        open={!!rentalUser}
+        onClose={() => setRentalUser(null)}
+        onError={flash}
+      />
+
       {loading ? (
         <div className="flex justify-center pt-20"><FiRefreshCw className="animate-spin text-indigo-400" size={28} /></div>
       ) : (
@@ -520,6 +531,16 @@ export default function UsersPage() {
                               <button onClick={() => setDeleteModal(u.id)} className="text-red-400 hover:text-red-300 transition p-1" title="Eliminar">
                                 <FiTrash2 size={14} />
                               </button>
+                              {isSuperAdmin && u.roles.includes('admin') && (
+                                <>
+                                  <button onClick={() => { setRentalUser(u); setRentalMode('config'); }} className="text-orange-400 hover:text-orange-300 transition p-1 mt-1" title="Configurar tiempo e importe">
+                                    <FiClock size={15} />
+                                  </button>
+                                  <button onClick={() => { setRentalUser(u); setRentalMode('history'); }} className="text-blue-400 hover:text-blue-300 transition p-1 mt-1" title="Historial de locación">
+                                    <FiList size={15} />
+                                  </button>
+                                </>
+                              )}
                             </>
                           )}
                         </div>

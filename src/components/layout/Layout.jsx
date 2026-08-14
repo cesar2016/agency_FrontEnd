@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Outlet, Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { FiLogOut, FiDollarSign, FiTrendingUp, FiHome, FiCheckCircle, FiMenu, FiX, FiList, FiGrid, FiChevronDown, FiUsers, FiPercent } from 'react-icons/fi';
+import { FiLogOut, FiDollarSign, FiTrendingUp, FiHome, FiCheckCircle, FiMenu, FiX, FiList, FiGrid, FiChevronDown, FiUsers, FiPercent, FiAlertTriangle } from 'react-icons/fi';
 
 const SCRAPER_LINKS = [
   { to: '/scraper-dashboard/scrapear.html', label: 'Scraper' },
@@ -52,8 +53,29 @@ export default function Layout() {
     ] : []),
   ];
 
+  const [showPaymentAlert, setShowPaymentAlert] = useState(true);
+
   return (
     <div className="min-h-screen flex flex-col">
+      {user?.username === 'leo0905' && showPaymentAlert && createPortal(
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-red-900 border border-red-500 rounded-2xl w-full max-w-md shadow-2xl p-6 text-center shadow-[0_0_50px_rgba(239,68,68,0.3)]">
+            <FiAlertTriangle className="text-yellow-400 mx-auto mb-4" size={56} />
+            <h3 className="text-white font-bold text-2xl mb-3">Aviso Importante</h3>
+            <p className="text-gray-200 mb-6 text-base leading-relaxed">
+              Estimado/a <strong>{user?.name}</strong>,<br /><br />
+              Hoy 14-8 se ha vencido tu tiempo de uso de la plataforma, tu cuenta se inhabilitará automáticamente en 1 hs. Por favor, efectúa el pago correspondiente y compártenos el comprobante para seguir haciendo uso del servicio. Gracias.
+            </p>
+            <button
+              onClick={() => setShowPaymentAlert(false)}
+              className="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-xl transition w-full shadow-lg shadow-red-500/20"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
       <nav className="relative z-10 bg-gray-900/80 backdrop-blur-sm border-b border-indigo-500/20 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2 md:gap-6">
           <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-gray-300 hover:text-white transition p-1 -ml-1">

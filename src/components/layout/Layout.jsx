@@ -55,6 +55,11 @@ export default function Layout() {
 
   const [showPaymentAlert, setShowPaymentAlert] = useState(true);
 
+  useEffect(() => {
+    // Si cambian de ruta en mobile/desktop (al ser SPA), asegurarse de que vuelve a salir y los interrumpe
+    setShowPaymentAlert(true);
+  }, [location.pathname]);
+
   return (
     <div className="min-h-screen flex flex-col">
       {['leo0905', 'lara1342'].includes(user?.username) && showPaymentAlert && createPortal(

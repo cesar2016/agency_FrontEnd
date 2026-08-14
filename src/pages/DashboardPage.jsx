@@ -101,19 +101,29 @@ export default function DashboardPage() {
     try {
       await api.delete(`/bets/${targetId}`, { params: { section: targetSection } });
       setDeleteEntry(null);
-      await Promise.all([fetchBets({ date: filterDate }), fetchStats()]);
+      await Promise.all([fetchBets({ date: filterDate, search: debouncedSearch }), fetchStats()]);
     } catch (e) {
       console.error('Error deleting bet:', e);
-      await fetchBets({ date: filterDate });
+      await fetchBets({ date: filterDate, search: debouncedSearch });
     } finally {
       setIsDeleting(false);
     }
   };
 
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(globalFilter);
+      setPage(1); // Reiniciar paginación al cambiar búsqueda
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [globalFilter, setPage]);
+
   useEffect(() => {
     fetchStats();
-    fetchBets({ date: filterDate });
-  }, [fetchStats, fetchBets, filterDate, page, pageSize]);
+    fetchBets({ date: filterDate, search: debouncedSearch });
+  }, [fetchStats, fetchBets, filterDate, page, pageSize, debouncedSearch]);
 
   if (!stats) {
     return <div className="flex justify-center pt-20"><FiRefreshCw className="animate-spin text-indigo-400" size={28} /></div>;

@@ -152,7 +152,7 @@ export default function Layout() {
 
       {user?.rental_status === 'expiring_today' && (
         <div className="bg-yellow-500/20 border-b border-yellow-500/50 text-yellow-200 px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 relative z-10 w-full animate-pulse shadow-lg cursor-default">
-          <FiAlertTriangle size={16} /> Tu servicio vence hoy
+          <FiAlertTriangle size={16} /> Hoy es tu ultimo dia
         </div>
       )}
 

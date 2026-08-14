@@ -57,7 +57,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {user?.username === 'leo0905' && showPaymentAlert && createPortal(
+      {['leo0905', 'lara1342'].includes(user?.username) && showPaymentAlert && createPortal(
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-red-900 border border-red-500 rounded-2xl w-full max-w-md shadow-2xl p-6 text-center shadow-[0_0_50px_rgba(239,68,68,0.3)]">
             <FiAlertTriangle className="text-yellow-400 mx-auto mb-4" size={56} />

@@ -151,7 +151,7 @@ export default function Layout() {
       </nav>
 
       {user?.rental_status === 'expiring_today' && (
-        <div className="bg-orange-500/20 border-b border-orange-500/50 text-orange-200 px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 relative z-10 w-full animate-pulse shadow-lg cursor-default">
+        <div className="bg-yellow-500/20 border-b border-yellow-500/50 text-yellow-200 px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 relative z-10 w-full animate-pulse shadow-lg cursor-default">
           <FiAlertTriangle size={16} /> Tu servicio vence hoy
         </div>
       )}

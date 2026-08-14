@@ -4,8 +4,9 @@ import api from '../services/api';
 
 const fmtDate = (d) => {
   if (!d) return '';
-  const parts = d.split('-');
-  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : d;
+  const pureDate = d.split('T')[0];
+  const parts = pureDate.split('-');
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : pureDate;
 };
 const fmtMoney = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -79,8 +80,10 @@ export default function RentalModal({ user, mode, open, onClose, onError }) {
               <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
                 {rentals.map((r, i) => {
                   const now = new Date();
-                  const from = new Date(r.date_from + 'T00:00:00');
-                  const to = new Date(r.date_to + 'T23:59:59');
+                  const pureFrom = r.date_from.split('T')[0];
+                  const pureTo = r.date_to.split('T')[0];
+                  const from = new Date(pureFrom + 'T00:00:00');
+                  const to = new Date(pureTo + 'T23:59:59');
                   const isCurrent = now >= from && now <= to;
                   
                   return (

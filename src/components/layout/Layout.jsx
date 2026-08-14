@@ -70,12 +70,6 @@ export default function Layout() {
             <p className="text-gray-200 mb-6 text-base leading-relaxed">
               Estimado <strong>{user?.name}</strong>, tu plazo de uso de la plataforma se encuentra vencido, por eso genera tu pago y compártenos el comprobante antes de las 8 am para no suspender tu cuenta. Desde ya muchas gracias.
             </p>
-            <button
-              onClick={() => setShowPaymentAlert(false)}
-              className="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-xl transition w-full shadow-lg shadow-red-500/20"
-            >
-              Entendido
-            </button>
           </div>
         </div>,
         document.body

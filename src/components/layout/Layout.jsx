@@ -62,7 +62,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {user?.rental_status === 'expired_today' && showPaymentAlert && createPortal(
+      {user?.rental_status === 'expired_grace_period' && showPaymentAlert && createPortal(
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-red-900 border border-red-500 rounded-2xl w-full max-w-md shadow-2xl p-6 text-center shadow-[0_0_50px_rgba(239,68,68,0.3)]">
             <FiAlertTriangle className="text-yellow-400 mx-auto mb-4" size={56} />
@@ -150,9 +150,9 @@ export default function Layout() {
         </div>
       </nav>
 
-      {user?.rental_status === 'expiring_tomorrow' && (
+      {user?.rental_status === 'expiring_today' && (
         <div className="bg-orange-500/20 border-b border-orange-500/50 text-orange-200 px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 relative z-10 w-full animate-pulse shadow-lg cursor-default">
-          <FiAlertTriangle size={16} /> tu servicio vence mañana
+          <FiAlertTriangle size={16} /> Tu servicio vence hoy
         </div>
       )}
 

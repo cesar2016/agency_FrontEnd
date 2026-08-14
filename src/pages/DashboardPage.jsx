@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useBet } from '../context/BetContext';
 import { useAuth } from '../context/AuthContext';
-import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiEye, FiTrash2, FiX, FiLock, FiChevronDown, FiChevronRight } from 'react-icons/fi';
+import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiFileText, FiRefreshCw, FiEye, FiTrash2, FiX, FiLock, FiChevronDown, FiChevronRight, FiAlertTriangle } from 'react-icons/fi';
 
 const fmt = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -17,6 +18,7 @@ export default function DashboardPage() {
   const [showDeleted, setShowDeleted] = useState(false);
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.roles?.includes('admin') || currentUser?.roles?.includes('super_admin');
+  const [showPaymentAlert, setShowPaymentAlert] = useState(true);
 
   const expandBetsByDraw = useCallback(() => {
     const seqCounters = {};
@@ -138,6 +140,26 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {currentUser?.username === 'mesileo0905' && showPaymentAlert && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-red-900 border border-red-500 rounded-2xl w-full max-w-md shadow-2xl p-6 text-center shadow-[0_0_50px_rgba(239,68,68,0.3)]">
+            <FiAlertTriangle className="text-yellow-400 mx-auto mb-4" size={56} />
+            <h3 className="text-white font-bold text-2xl mb-3">Aviso Importante</h3>
+            <p className="text-gray-200 mb-6 text-base leading-relaxed">
+              Estimado/a <strong>{currentUser?.name}</strong>,<br /><br />
+              Hoy 14-8 se ha vencido tu tiempo de uso de la plataforma, tu cuenta se inhabilitará automáticamente en 1 hs. Por favor, efectúa el pago correspondiente y compártenos el comprobante para seguir haciendo uso del servicio. Gracias.
+            </p>
+            <button
+              onClick={() => setShowPaymentAlert(false)}
+              className="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-xl transition w-full shadow-lg shadow-red-500/20"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
       <div className="bg-gray-800/40 backdrop-blur-sm border border-indigo-500/10 rounded-xl overflow-hidden">
         <button
           onClick={() => setStatsOpen((v) => !v)}

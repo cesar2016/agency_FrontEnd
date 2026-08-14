@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiX, FiCheckCircle, FiClock, FiDollarSign } from 'react-icons/fi';
+import { FiX, FiCheckCircle, FiClock, FiDollarSign, FiEdit, FiTrash2 } from 'react-icons/fi';
 import api from '../services/api';
 
 const fmtDate = (d) => {
@@ -16,8 +16,13 @@ export default function RentalModal({ user, mode, open, onClose, onError }) {
   const [formLoading, setFormLoading] = useState(false);
   const [form, setForm] = useState({ date_from: '', date_to: '', amount: '' });
 
+  const [localMode, setLocalMode] = useState('config');
+  const [editingRental, setEditingRental] = useState(null);
+
   useEffect(() => {
     if (open && user) {
+      setLocalMode(mode);
+      setEditingRental(null);
       if (mode === 'history') {
         loadHistory();
       } else {
@@ -43,13 +48,30 @@ export default function RentalModal({ user, mode, open, onClose, onError }) {
     e.preventDefault();
     setFormLoading(true);
     try {
-      await api.post(`/users/${user.id}/rentals`, form);
-      onError?.('Configuración guardada exitosamente');
+      if (editingRental) {
+        await api.put(`/users/${user.id}/rentals/${editingRental.id}`, form);
+        onError?.('Configuración actualizada exitosamente');
+      } else {
+        await api.post(`/users/${user.id}/rentals`, form);
+        onError?.('Configuración guardada exitosamente');
+      }
+      setEditingRental(null);
       onClose();
     } catch (e) {
       onError?.(e.response?.data?.message || 'Error al guardar configuración');
     } finally {
       setFormLoading(false);
+    }
+  };
+
+  const handleDelete = async (r) => {
+    if (!window.confirm('¿Seguro de eliminar este pago?')) return;
+    try {
+      await api.delete(`/users/${user.id}/rentals/${r.id}`);
+      onError?.('Pago eliminado');
+      loadHistory();
+    } catch (e) {
+      onError?.(e.response?.data?.message || 'Error al eliminar');
     }
   };
 
@@ -60,7 +82,7 @@ export default function RentalModal({ user, mode, open, onClose, onError }) {
       <div className="bg-gray-800 border border-indigo-500/20 rounded-2xl w-full max-w-md shadow-2xl p-6 relative" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-white font-bold text-lg">
-            {mode === 'history' ? 'Historial de Locación' : 'Configurar Alquiler'}
+            {localMode === 'history' ? 'Historial de Locación' : (editingRental ? 'Editar Alquiler' : 'Configurar Alquiler')}
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition">
             <FiX size={20} />
@@ -70,7 +92,7 @@ export default function RentalModal({ user, mode, open, onClose, onError }) {
           Admin: <span className="font-semibold text-indigo-300">{user.name}</span>
         </p>
 
-        {mode === 'history' && (
+        {localMode === 'history' && (
           <div className="space-y-4">
             {loading ? (
               <div className="text-center py-4 text-gray-400">Cargando historial...</div>
@@ -98,9 +120,23 @@ export default function RentalModal({ user, mode, open, onClose, onError }) {
                         <span className="text-emerald-400 font-semibold">${fmtMoney(r.amount)}</span>
                         {isCurrent && <span className="text-[10px] text-indigo-300 font-bold tracking-wider uppercase">En Curso</span>}
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs text-gray-300">
-                        <FiClock size={12} className="text-gray-400" />
-                        <span>{fmtDate(r.date_from)} - {fmtDate(r.date_to)}</span>
+                      <div className="flex justify-between items-end mt-2">
+                        <div className="flex items-center gap-1.5 text-xs text-gray-300">
+                          <FiClock size={12} className="text-gray-400" />
+                          <span>{fmtDate(r.date_from)} - {fmtDate(r.date_to)}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => {
+                            setEditingRental(r);
+                            setForm({ date_from: pureFrom, date_to: pureTo, amount: r.amount.toString() });
+                            setLocalMode('config');
+                          }} className="p-1.5 text-indigo-400 hover:bg-gray-600 rounded-md transition" title="Editar">
+                            <FiEdit size={14} />
+                          </button>
+                          <button onClick={() => handleDelete(r)} className="p-1.5 text-red-400 hover:bg-gray-600 rounded-md transition" title="Eliminar">
+                            <FiTrash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -110,8 +146,13 @@ export default function RentalModal({ user, mode, open, onClose, onError }) {
           </div>
         )}
 
-        {mode === 'config' && (
+        {localMode === 'config' && (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {editingRental && (
+              <div className="flex justify-end -mt-2 mb-2">
+                 <button type="button" onClick={() => { setEditingRental(null); setLocalMode('history'); }} className="text-xs text-indigo-400 hover:text-indigo-300 underline">Volver al historial</button>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Desde</label>

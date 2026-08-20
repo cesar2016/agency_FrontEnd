@@ -8,7 +8,7 @@ import { FiRefreshCw, FiUserPlus, FiX, FiShare2, FiEdit, FiTrash2, FiToggleRight
 function generateFakeData(name) {
   const firstWord = name.trim().split(/\s+/)[0] || '';
   const datePart = new Date().toLocaleDateString('es-AR').replace(/\//g, '');
-  const timePart = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }).replace(':', '');
+  const timePart = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/:/g, '');
   const username = (firstWord + timePart).toLowerCase();
   const whatsapp = String(Math.floor(1000 + Math.random() * 9000));
   const email = firstWord.toLowerCase().replace(/\s/g, '') + datePart + '@agencia.com';

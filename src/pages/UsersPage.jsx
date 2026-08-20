@@ -3,7 +3,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CajaModal from '../components/CajaModal';
 import RentalModal from '../components/RentalModal';
-import { FiRefreshCw, FiUserPlus, FiX, FiShare2, FiEdit, FiTrash2, FiToggleRight, FiToggleLeft, FiDollarSign, FiEye, FiEyeOff, FiSearch, FiChevronLeft, FiChevronRight, FiClock, FiList } from 'react-icons/fi';
+import { FiRefreshCw, FiUserPlus, FiX, FiShare2, FiEdit, FiTrash2, FiToggleRight, FiToggleLeft, FiDollarSign, FiEye, FiEyeOff, FiSearch, FiChevronLeft, FiChevronRight, FiClock, FiList, FiPercent } from 'react-icons/fi';
 
 function generateFakeData(name) {
   const firstWord = name.trim().split(/\s+/)[0] || '';
@@ -48,6 +48,10 @@ export default function UsersPage() {
   const [cajaUser, setCajaUser] = useState(null);
   const [rentalUser, setRentalUser] = useState(null);
   const [rentalMode, setRentalMode] = useState('config');
+
+  // Edición inline de porcentaje por fila: { userId: valorString }
+  const [rateEdits, setRateEdits] = useState({});
+  const [rateSaving, setRateSaving] = useState({});
 
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -105,7 +109,7 @@ export default function UsersPage() {
 
   const openCreate = () => {
     setEditingUser(null);
-    setForm({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '' });
+    setForm({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '', comision_rate: '30' });
     setGeneratedUsername('');
     setLastPassword('');
     setFormErrors({});
@@ -117,7 +121,7 @@ export default function UsersPage() {
     const role = user.roles?.[0] || 'usuario';
     const clave = user.password || '••••••';
     setEditingUser(user);
-    setForm({ name: user.name, whatsapp: user.whatsapp || '', email: user.email, username: user.username || '', role, password: clave, password_confirmation: clave });
+    setForm({ name: user.name, whatsapp: user.whatsapp || '', email: user.email, username: user.username || '', role, password: clave, password_confirmation: clave, comision_rate: String(user.comision_rate ?? 30) });
     setEditingPasswordField(false);
     setGeneratedUsername('');
     setLastPassword('');
@@ -189,7 +193,7 @@ export default function UsersPage() {
         setLastPassword(form.password);
         flash('Usuario creado correctamente');
       }
-      setForm({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '' });
+      setForm({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '', comision_rate: '30' });
       setEditingUser(null);
       setGeneratedUsername('');
       setShowPassword(false);
@@ -248,6 +252,30 @@ export default function UsersPage() {
       flash(e?.response?.data?.message || 'Error al eliminar usuario');
     }
     setDeleteModal(null);
+  };
+
+  // Guarda el porcentaje inline al salir del campo (blur) o Enter
+  const handleRateSave = async (userId, rawVal) => {
+    const rate = parseFloat(rawVal);
+    if (isNaN(rate) || rate < 0 || rate > 100) {
+      flash('El porcentaje debe estar entre 0 y 100');
+      // Revertir display al valor original
+      const orig = users.find((u) => u.id === userId)?.comision_rate ?? 30;
+      setRateEdits((prev) => ({ ...prev, [userId]: String(orig) }));
+      return;
+    }
+    const rounded = Math.round(rate * 100) / 100;
+    setRateSaving((prev) => ({ ...prev, [userId]: true }));
+    try {
+      await api.put(`/users/${userId}`, { comision_rate: rounded });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, comision_rate: rounded } : u));
+      setRateEdits((prev) => { const n = { ...prev }; delete n[userId]; return n; });
+      flash(`Comisión actualizada a ${rounded}%`);
+    } catch (e) {
+      flash(e?.response?.data?.message || 'Error al actualizar comisión');
+    } finally {
+      setRateSaving((prev) => { const n = { ...prev }; delete n[userId]; return n; });
+    }
   };
 
   const whatsappShare = (user) => {
@@ -388,6 +416,29 @@ export default function UsersPage() {
                 <p className="text-[10px] text-gray-500 mt-1">6 caracteres: 4 letras + 2 dígitos (ej: loxo12)</p>
               </div>
 
+              {/* Porcentaje de comisión (solo para pasadores) */}
+              {(form.role === 'usuario' || !form.role) && (
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1">
+                    <FiPercent size={11} /> Comisión del pasador
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.5"
+                      value={form.comision_rate ?? '30'}
+                      onChange={(e) => { setForm((p) => ({ ...p, comision_rate: e.target.value })); clearFieldError('comision_rate'); }}
+                      className={`w-28 bg-gray-700/50 border rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500 ${formErrors.comision_rate ? 'border-red-500' : 'border-gray-600'}`}
+                    />
+                    <span className="text-gray-400 text-sm">%</span>
+                  </div>
+                  {formErrors.comision_rate && <p className="text-red-400 text-xs mt-1">{formErrors.comision_rate.join('. ')}</p>}
+                  <p className="text-[10px] text-gray-500 mt-1">Porcentaje que retiene el pasador de sus ventas diarias</p>
+                </div>
+              )}
+
               <div className="flex gap-2 pt-1">
                 <button
                   type="submit"
@@ -489,13 +540,14 @@ export default function UsersPage() {
                   <th className="text-left p-3">Email</th>
                   <th className="text-left p-3">Rol</th>
                   {isSuperAdmin && <th className="text-left p-3">Creado por</th>}
+                  <th className="text-center p-3" title="% de comisión del pasador">% Com.</th>
                   <th className="text-center p-3">Activo</th>
                   <th className="text-center p-3">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedUsers.length === 0 ? (
-                  <tr><td colSpan={isSuperAdmin ? 8 : 7} className="text-center py-8 text-gray-400">No hay usuarios</td></tr>
+                  <tr><td colSpan={isSuperAdmin ? 9 : 8} className="text-center py-8 text-gray-400">No hay usuarios</td></tr>
                 ) : paginatedUsers.map((u) => (
                   <tr key={u.id} className={`border-b border-gray-700/30 hover:bg-gray-700/20 ${u.is_active ? '' : 'opacity-40'}`}>
                     <td className="p-3 text-white">{u.name}</td>
@@ -512,6 +564,40 @@ export default function UsersPage() {
                         {u.parent_name || '—'}
                       </td>
                     )}
+                    {/* Columna % comisión: editable inline solo para pasadores y admins */}
+                    <td className="p-2 text-center">
+                      {u.roles?.includes('usuario') && isAdmin && u.id !== currentUser?.id ? (
+                        <div className="flex items-center justify-center gap-1">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.5"
+                            disabled={!!rateSaving[u.id]}
+                            value={rateEdits[u.id] !== undefined ? rateEdits[u.id] : String(u.comision_rate ?? 30)}
+                            onChange={(e) => setRateEdits((prev) => ({ ...prev, [u.id]: e.target.value }))}
+                            onBlur={(e) => {
+                              const cur = String(u.comision_rate ?? 30);
+                              if (e.target.value !== cur) handleRateSave(u.id, e.target.value);
+                              else setRateEdits((prev) => { const n = { ...prev }; delete n[u.id]; return n; });
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') e.target.blur();
+                              if (e.key === 'Escape') {
+                                setRateEdits((prev) => { const n = { ...prev }; delete n[u.id]; return n; });
+                                e.target.blur();
+                              }
+                            }}
+                            className="w-14 bg-gray-700/60 border border-gray-600 rounded px-1.5 py-0.5 text-white text-xs text-center focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400/30 transition disabled:opacity-50"
+                          />
+                          <span className="text-gray-500 text-xs">%</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 text-xs">
+                          {u.roles?.includes('usuario') ? `${u.comision_rate ?? 30}%` : '—'}
+                        </span>
+                      )}
+                    </td>
                     <td className="p-3 text-center cursor-pointer" onClick={() => handleToggle(u.id)} title={u.is_active ? 'Desactivar' : 'Activar'}>
                       {u.is_active
                         ? <FiToggleRight className="text-green-400 mx-auto" size={20} />

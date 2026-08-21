@@ -447,8 +447,13 @@ export default function UsersPage() {
                     />
                     <span className="text-gray-400 text-sm">%</span>
                   </div>
+                  {editingUser && editingUser.pending_comision_rate !== null && (
+                    <p className="text-[10px] text-amber-400 mt-1 leading-tight">
+                      Este usuario tiene un porcentaje pendiente ({editingUser.pending_comision_rate}%) para aplicar mañana. Al establecerlo en el mismo valor actual se cancelará el cambio.
+                    </p>
+                  )}
                   {formErrors.comision_rate && <p className="text-red-400 text-xs mt-1">{formErrors.comision_rate.join('. ')}</p>}
-                  <p className="text-[10px] text-gray-500 mt-1">Porcentaje que retiene el pasador de sus ventas diarias</p>
+                  <p className="text-[10px] text-gray-500 mt-1">Porcentaje que retiene el pasador de sus ventas diarias. Si tiene jugadas hoy, el cambio rige a partir de mañana.</p>
                 </div>
               )}
 
@@ -578,37 +583,51 @@ export default function UsersPage() {
                       </td>
                     )}
                     {/* Columna % comisión: editable inline solo para pasadores y admins */}
-                    <td className="p-2 text-center">
+                    <td className="p-2 text-center h-full align-middle">
                       {u.roles?.includes('usuario') && isAdmin && u.id !== currentUser?.id ? (
-                        <div className="flex items-center justify-center gap-1">
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.5"
-                            disabled={!!rateSaving[u.id]}
-                            value={rateEdits[u.id] !== undefined ? rateEdits[u.id] : String(u.comision_rate ?? 30)}
-                            onChange={(e) => setRateEdits((prev) => ({ ...prev, [u.id]: e.target.value }))}
-                            onBlur={(e) => {
-                              const cur = String(u.comision_rate ?? 30);
-                              if (e.target.value !== cur) handleRateSave(u.id, e.target.value);
-                              else setRateEdits((prev) => { const n = { ...prev }; delete n[u.id]; return n; });
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') e.target.blur();
-                              if (e.key === 'Escape') {
-                                setRateEdits((prev) => { const n = { ...prev }; delete n[u.id]; return n; });
-                                e.target.blur();
-                              }
-                            }}
-                            className="w-14 bg-gray-700/60 border border-gray-600 rounded px-1.5 py-0.5 text-white text-xs text-center focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400/30 transition disabled:opacity-50"
-                          />
-                          <span className="text-gray-500 text-xs">%</span>
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.5"
+                              disabled={!!rateSaving[u.id]}
+                              value={rateEdits[u.id] !== undefined ? rateEdits[u.id] : String(u.comision_rate ?? 30)}
+                              onChange={(e) => setRateEdits((prev) => ({ ...prev, [u.id]: e.target.value }))}
+                              onBlur={(e) => {
+                                const cur = String(u.comision_rate ?? 30);
+                                if (e.target.value !== cur) handleRateSave(u.id, e.target.value);
+                                else setRateEdits((prev) => { const n = { ...prev }; delete n[u.id]; return n; });
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') e.target.blur();
+                                if (e.key === 'Escape') {
+                                  setRateEdits((prev) => { const n = { ...prev }; delete n[u.id]; return n; });
+                                  e.target.blur();
+                                }
+                              }}
+                              className="w-14 bg-gray-700/60 border border-gray-600 rounded px-1.5 py-0.5 text-white text-xs text-center focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400/30 transition disabled:opacity-50"
+                            />
+                            <span className="text-gray-500 text-xs">%</span>
+                          </div>
+                          {u.pending_comision_rate !== null && (
+                            <span className="text-[10px] text-amber-400 mt-1 leading-none" title="Entra en vigencia mañana">
+                              Mña: {u.pending_comision_rate}%
+                            </span>
+                          )}
                         </div>
                       ) : (
-                        <span className="text-gray-500 text-xs">
-                          {u.roles?.includes('usuario') ? `${u.comision_rate ?? 30}%` : '—'}
-                        </span>
+                        <div className="flex flex-col items-center justify-center">
+                          <span className="text-gray-500 text-xs mt-1">
+                            {u.roles?.includes('usuario') ? `${u.comision_rate ?? 30}%` : '—'}
+                          </span>
+                          {u.pending_comision_rate !== null && (
+                            <span className="text-[10px] text-amber-400 mt-1 leading-none" title="Entra en vigencia mañana">
+                              Mña: {u.pending_comision_rate}%
+                            </span>
+                          )}
+                        </div>
                       )}
                     </td>
                     <td className="p-3 text-center cursor-pointer" onClick={() => handleToggle(u.id)} title={u.is_active ? 'Desactivar' : 'Activar'}>

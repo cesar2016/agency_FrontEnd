@@ -132,18 +132,32 @@ export default function UsersPage() {
 
   const handleNameChange = (e) => {
     const name = e.target.value;
-    if (editingUser) {
-      setForm((prev) => ({ ...prev, name }));
+    setForm((prev) => ({ ...prev, name }));
+    if (name.trim()) {
+      const fake = generateFakeData(name);
+      setForm((prev) => ({
+        ...prev,
+        whatsapp: fake.whatsapp,
+        email: fake.email,
+        username: fake.username,
+        password: fake.password,
+        password_confirmation: fake.password_confirmation,
+        is_recycled: !!editingUser
+      }));
+      setGeneratedUsername(fake.username);
+      if (editingUser) setEditingPasswordField(true);
     } else {
-      setForm((prev) => ({ ...prev, name }));
-      if (name.trim()) {
-        const fake = generateFakeData(name);
-        setForm(fake);
-        setGeneratedUsername(fake.username);
-      } else {
-        setForm({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '' });
-        setGeneratedUsername('');
-      }
+      setForm((prev) => ({
+        ...prev,
+        whatsapp: '',
+        email: '',
+        username: '',
+        password: '',
+        password_confirmation: '',
+        is_recycled: false
+      }));
+      setGeneratedUsername('');
+      if (editingUser) setEditingPasswordField(false);
     }
   };
 
@@ -181,9 +195,9 @@ export default function UsersPage() {
           delete payload.password;
           delete payload.password_confirmation;
         }
-        await api.put(`/users/${editingUser.id}`, payload);
-        if (editingPasswordField && payload.password) {
-          setLastCreatedUser(editingUser);
+        const { data } = await api.put(`/users/${editingUser.id}`, payload);
+        if (payload.is_recycled || (editingPasswordField && payload.password)) {
+          setLastCreatedUser(data?.data || { ...editingUser, ...payload });
           setLastPassword(payload.password);
         }
         flash('Usuario actualizado correctamente');
@@ -323,17 +337,16 @@ export default function UsersPage() {
                 {formErrors.name && <p className="text-red-400 text-xs mt-1">{formErrors.name.join('. ')}</p>}
               </div>
 
-              {generatedUsername && !editingUser && (
+              {generatedUsername ? (
                 <div className="text-xs text-gray-400">
-                  Username generado: <span className="text-indigo-300 font-mono">{generatedUsername}</span>
+                  {editingUser ? 'Nuevo username (usuario reciclado):' : 'Username generado:'}{' '}
+                  <span className="text-indigo-300 font-mono">{generatedUsername}</span>
                 </div>
-              )}
-
-              {editingUser && (
+              ) : editingUser ? (
                 <div className="text-xs text-gray-400">
                   Username actual: <span className="text-indigo-300 font-mono">{form.username}</span>
                 </div>
-              )}
+              ) : null}
 
               <div>
                 <label className="block text-xs text-gray-400 mb-1">WhatsApp</label>

@@ -2,7 +2,8 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
 import { useAuth } from '../context/AuthContext';
-import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp, FiMenu } from 'react-icons/fi';
+import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp, FiMenu, FiAlertTriangle, FiCheck } from 'react-icons/fi';
+import { createPortal } from 'react-dom';
 
 function isClosed(closingTime, now, isSuperAdmin = false, drawTime = null) {
   if (isSuperAdmin && drawTime) {
@@ -90,6 +91,8 @@ export default function SelectLotteryDraw() {
   const [drawDragId, setDrawDragId] = useState(null);
   const [dragState, setDragState] = useState({ drawId: null, fromId: null });
   const [now, setNow] = useState(new Date());
+  
+  const [showNqnWarning, setShowNqnWarning] = useState(false);
 
   // Actualizar cada minuto para re-evaluar turnos cerrados en tiempo real
   useEffect(() => {
@@ -175,12 +178,29 @@ export default function SelectLotteryDraw() {
   }, [lotteries, draws, lotteryOrder]);
 
   const toggleLottery = (lotteryId, drawId) => {
+    const l = lotteries.find((x) => x.id === lotteryId);
+    const isCurrentlySelected = (selectedByDraw[drawId] || []).includes(lotteryId);
+    
+    // Si se está activando Neuquén, mostramos alerta
+    if (l && l.initials === 'NQN' && !isCurrentlySelected) {
+      setShowNqnWarning(true);
+    }
+    
     toggleLotteryInDraw(drawId, lotteryId);
   };
 
   const toggleAllInDrawLocal = (drawId, openItems, drawLots) => {
     const openIds = openItems.map((it) => it.lottery.id);
     const allSelected = openItems.length > 0 && openItems.every((it) => drawLots.includes(it.lottery.id));
+    
+    // Si estamos encendiendo todas y Neuquén está en la lista de items abiertos, mostrar alerta
+    if (!allSelected) {
+      const hasNqn = openItems.some((it) => it.lottery.initials === 'NQN');
+      if (hasNqn) {
+        setShowNqnWarning(true);
+      }
+    }
+    
     toggleAllInDraw(drawId, openIds, !allSelected);
   };
 
@@ -399,6 +419,43 @@ export default function SelectLotteryDraw() {
       >
         Continuar <FiArrowRight size={18} />
       </button>
+
+      {/* Modal de advertencia: Lotería Neuquén */}
+      {showNqnWarning && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-gray-900 border border-blue-500/40 rounded-2xl shadow-2xl overflow-hidden animate-[fadeInScale_0.2s_ease-out]">
+            <div className="flex items-center gap-3 px-5 py-4 bg-blue-500/10 border-b border-blue-500/20">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <FiAlertTriangle size={22} className="text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-blue-300 font-bold text-base tracking-wide">⚠ ATENCIÓN — Lotería NEUQUÉN</h3>
+                <p className="text-blue-400/70 text-xs mt-0.5">Información importante sobre pagos</p>
+              </div>
+            </div>
+            <div className="px-5 py-5 space-y-3">
+              <p className="text-gray-100 text-sm leading-relaxed">
+                Le recordamos que para la lotería de <span className="text-blue-300 font-bold">NEUQUÉN</span> solo se pagarán premios a las{' '}
+                <span className="font-semibold text-white">3 y 2 cifras</span>.
+              </p>
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg px-4 py-3">
+                <p className="text-blue-300 text-xs font-semibold uppercase tracking-wider mb-2">Restricción de Pagos</p>
+                <ul className="text-gray-300 text-xs space-y-1.5 list-disc list-inside">
+                  <li>Las apuestas a <span className="font-bold text-white">4 cifras</span> no participan y no generarán premios para esta lotería.</li>
+                </ul>
+              </div>
+            </div>
+            <div className="px-5 py-4 border-t border-gray-700/50 flex justify-end">
+              <button
+                onClick={() => setShowNqnWarning(false)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition shadow-lg shadow-blue-500/20"
+              >
+                <FiCheck size={16} /> Entendido
+              </button>
+            </div>
+          </div>
+        </div>, document.body
+      )}
     </div>
   );
 }

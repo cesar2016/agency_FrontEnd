@@ -101,6 +101,8 @@ export default function PlaceBetPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showParaguayAlert, setShowParaguayAlert] = useState(false);
   const paraguayAlertShownRef = useRef(false);
+  const [showNeuquenAlert, setShowNeuquenAlert] = useState(false);
+  const neuquenAlertShownRef = useRef(false);
 
   const allSelectedLotteryIds = Array.from(new Set(Object.values(selectedByDraw).flat()));
   const drawNames = draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.name).join(' / ');
@@ -119,6 +121,18 @@ export default function PlaceBetPage() {
       setShowParaguayAlert(true);
     }
   }, [hasParaguay]);
+
+  // Mostrar alerta de Neuquén una sola vez al montar la página si NQN está seleccionado
+  const hasNeuquen = lotteries
+    .filter((l) => allSelectedLotteryIds.includes(l.id))
+    .some((l) => l.initials === 'NQN');
+
+  useEffect(() => {
+    if (hasNeuquen && !neuquenAlertShownRef.current) {
+      neuquenAlertShownRef.current = true;
+      setShowNeuquenAlert(true);
+    }
+  }, [hasNeuquen]);
 
   const scheduleFor = (drawId, lotteryId) => {
     const l = lotteries.find((x) => x.id === lotteryId);
@@ -232,6 +246,10 @@ export default function PlaceBetPage() {
   const handleAddSimple = () => {
     if (!number || number.length < 1 || number.length > 4) {
       setError('El numero debe tener entre 1 y 4 digitos');
+      return;
+    }
+    if (number.length === 4 && hasNeuquen && allSelectedLotteryIds.length === 1) {
+      setError('NEUQUÉN: Solo se permiten apuestas (y pagos) a 3 y 2 cifras para esta lotería.');
       return;
     }
     const pos = parseInt(position);
@@ -666,6 +684,46 @@ export default function PlaceBetPage() {
               <button
                 onClick={() => setShowParaguayAlert(false)}
                 className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-6 py-2.5 rounded-lg text-sm transition shadow-lg shadow-amber-500/20"
+              >
+                <FiCheck size={16} /> Entendido
+              </button>
+            </div>
+          </div>
+        </div>, document.body
+      )}
+
+      {/* Modal de advertencia: Lotería Neuquén */}
+      {showNeuquenAlert && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-gray-900 border border-blue-500/40 rounded-2xl shadow-2xl overflow-hidden animate-[fadeInScale_0.2s_ease-out]">
+            {/* Header */}
+            <div className="flex items-center gap-3 px-5 py-4 bg-blue-500/10 border-b border-blue-500/20">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <FiAlertTriangle size={22} className="text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-blue-300 font-bold text-base tracking-wide">⚠ ATENCIÓN — Lotería NEUQUÉN</h3>
+                <p className="text-blue-400/70 text-xs mt-0.5">Información importante sobre pagos</p>
+              </div>
+            </div>
+            {/* Body */}
+            <div className="px-5 py-5 space-y-3">
+              <p className="text-gray-100 text-sm leading-relaxed">
+                Recuerde que para la lotería de <span className="text-blue-300 font-bold">NEUQUÉN</span> solo se pagarán premios a las{' '}
+                <span className="font-semibold text-white">3 y 2 cifras</span>.
+              </p>
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg px-4 py-3">
+                <p className="text-blue-300 text-xs font-semibold uppercase tracking-wider mb-2">Restricción de Pagos</p>
+                <ul className="text-gray-300 text-xs space-y-1.5 list-disc list-inside">
+                  <li>Las apuestas a <span className="font-bold text-white">4 cifras</span> no participan y no generarán pagos para esta lotería.</li>
+                </ul>
+              </div>
+            </div>
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-gray-700/50 flex justify-end">
+              <button
+                onClick={() => setShowNeuquenAlert(false)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition shadow-lg shadow-blue-500/20"
               >
                 <FiCheck size={16} /> Entendido
               </button>

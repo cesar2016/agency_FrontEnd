@@ -106,7 +106,13 @@ export default function PlaceBetPage() {
 
   const allSelectedLotteryIds = Array.from(new Set(Object.values(selectedByDraw).flat()));
   const drawNames = draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.name).join(' / ');
-  const lotteryLabels = lotteries.filter((l) => allSelectedLotteryIds.includes(l.id)).map((l) => l.initials).join(', ');
+  const hasVespertina = draws.filter((d) => selectedDraws.includes(d.id)).some(d => d.name === 'Vespertina');
+  const lotteryLabels = lotteries.filter((l) => allSelectedLotteryIds.includes(l.id)).map((l) => {
+    if (hasVespertina && ['CAT', 'SGO', 'TUC', 'LRT'].includes(l.initials)) {
+      return `${l.initials} Tardecita`;
+    }
+    return l.initials;
+  }).join(', ');
   const subtotal = cart.reduce((acc, i) => acc + Number(i.amount), 0);
   const total = subtotal * totalMultiplier;
 

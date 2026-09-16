@@ -401,7 +401,13 @@ export default function DashboardPage() {
                 let seqCounter = 0;
                 return viewBetEntries.map((entry) => {
                   const drawName = entry.draw?.name || '-';
-                  const lotInitials = (entry.draw_lotteries || []).map((dl) => dl.lottery_initials).filter(Boolean);
+                  const lotInitials = (entry.draw_lotteries || []).map((dl) => {
+                    const ini = dl.lottery_initials;
+                    if (drawName === 'Vespertina' && ['CAT', 'SGO', 'TUC', 'LRT'].includes(ini)) {
+                      return `${ini} Tardecita`;
+                    }
+                    return ini;
+                  }).filter(Boolean);
                   const items = entry.items || [];
                   const redoblonas = entry.redoblonas || [];
                   const n = (entry.draw_lotteries || []).length || 1;

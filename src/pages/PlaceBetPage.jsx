@@ -877,7 +877,15 @@ export default function PlaceBetPage() {
                 const lotIds = selectedByDraw[draw.id] || [];
                 if (lotIds.length === 0) return null;
                 const lotInitials = lotIds
-                  .map((id) => lotteries.find((l) => l.id === id)?.initials)
+                  .map((id) => {
+                    const l = lotteries.find((l) => l.id === id);
+                    if (l) {
+                      if (draw.name === 'Vespertina' && ['CAT', 'SGO', 'TUC', 'LRT'].includes(l.initials)) {
+                        return `${l.initials} Tardecita`;
+                      }
+                      return l.initials;
+                    }
+                  })
                   .filter(Boolean);
                 const n = lotIds.length;
                 const simpleItems = cart.filter(i => !i.isRedoblona);

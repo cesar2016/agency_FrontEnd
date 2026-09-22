@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Outlet, Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { FiLogOut, FiDollarSign, FiTrendingUp, FiHome, FiCheckCircle, FiMenu, FiX, FiList, FiGrid, FiChevronDown, FiUsers, FiPercent, FiAlertTriangle } from 'react-icons/fi';
+import { FiLogOut, FiDollarSign, FiTrendingUp, FiHome, FiCheckCircle, FiMenu, FiX, FiList, FiGrid, FiChevronDown, FiUsers, FiPercent, FiAlertTriangle, FiShield } from 'react-icons/fi';
 
 const SCRAPER_LINKS = [
   { to: '/scraper-dashboard/scrapear.html', label: 'Scraper' },
@@ -47,6 +47,7 @@ export default function Layout() {
       { to: '/cash-register', label: 'Arqueo', icon: FiDollarSign },
       { to: '/comisiones', label: 'Comisiones', icon: FiPercent },
       { to: '/users', label: 'Usuarios', icon: FiUsers },
+      { to: '/topes', label: 'Topes', icon: FiShield },
     ] : []),
     ...(isPasador ? [
       { to: '/comision', label: 'Comisión', icon: FiPercent },

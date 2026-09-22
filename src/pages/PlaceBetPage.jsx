@@ -278,9 +278,18 @@ export default function PlaceBetPage() {
       setError('Ingrese un importe valido');
       return;
     }
-    const maxSimple = number.length === 4 ? 1000 : 10000;
-    if (!isSuperAdmin && val > maxSimple) {
-      setError(`El importe maximo para ${number.length} cifra${number.length > 1 ? 's' : ''} es $${maxSimple.toLocaleString('es-AR')}`);
+    // Limits
+    let maxSimple = 10000;
+    if (number.length === 4) {
+      maxSimple = currentUser?.limit_4_cifras !== null && currentUser?.limit_4_cifras !== undefined ? Number(currentUser.limit_4_cifras) : 1000;
+    } else if (number.length === 3) {
+      maxSimple = currentUser?.limit_3_cifras !== null && currentUser?.limit_3_cifras !== undefined ? Number(currentUser.limit_3_cifras) : 10000;
+    } else if (number.length === 2) {
+      maxSimple = currentUser?.limit_2_cifras !== null && currentUser?.limit_2_cifras !== undefined ? Number(currentUser.limit_2_cifras) : 10000;
+    }
+    
+    if (val > maxSimple) {
+      setError(`Tu límite máximo para la jugada de ${number.length} cifra${number.length > 1 ? 's' : ''} es $${maxSimple.toLocaleString('es-AR')}`);
       return;
     }
     // 1 cifra: solo a cabeza (pos 1) o a los 10. Nunca a los 5.

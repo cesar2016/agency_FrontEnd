@@ -330,7 +330,7 @@ export default function PlaceBetPage() {
       maxLimit = currentUser?.limit_2_cifras !== null && currentUser?.limit_2_cifras !== undefined ? Number(currentUser.limit_2_cifras) : 10000;
     }
     
-    if (!isSuperAdmin && val > maxLimit) {
+    if (val > maxLimit) {
       setError(`Tu límite máximo para la jugada de ${reduced.length} cifra${reduced.length > 1 ? 's' : ''} es $${maxLimit.toLocaleString('es-AR')}`);
       return;
     }
@@ -413,7 +413,7 @@ export default function PlaceBetPage() {
           max = currentUser?.limit_2_cifras !== null && currentUser?.limit_2_cifras !== undefined ? Number(currentUser.limit_2_cifras) : 10000;
         }
         
-        if (!isSuperAdmin && item.amount > max) {
+        if (item.amount > max) {
           setError(`Tu límite máximo para jugadas de ${numLen} cifra${numLen > 1 ? 's' : ''} es $${max.toLocaleString('es-AR')}`);
           return;
         }

@@ -319,11 +319,22 @@ export default function PlaceBetPage() {
       setError('Importe invalido');
       return;
     }
-    const maxReduced = reduced.length === 4 ? 1000 : 10000;
-    if (!isSuperAdmin && val > maxReduced) {
-      setError(`El importe maximo para ${reduced.length} cifra${reduced.length > 1 ? 's' : ''} es $${maxReduced.toLocaleString('es-AR')}`);
+    
+    // Limits
+    let maxLimit = 10000;
+    if (reduced.length === 4) {
+      maxLimit = currentUser?.limit_4_cifras !== null && currentUser?.limit_4_cifras !== undefined ? Number(currentUser.limit_4_cifras) : 1000;
+    } else if (reduced.length === 3) {
+      maxLimit = currentUser?.limit_3_cifras !== null && currentUser?.limit_3_cifras !== undefined ? Number(currentUser.limit_3_cifras) : 10000;
+    } else if (reduced.length === 2) {
+      maxLimit = currentUser?.limit_2_cifras !== null && currentUser?.limit_2_cifras !== undefined ? Number(currentUser.limit_2_cifras) : 10000;
+    }
+    
+    if (!isSuperAdmin && val > maxLimit) {
+      setError(`Tu límite máximo para la jugada de ${reduced.length} cifra${reduced.length > 1 ? 's' : ''} es $${maxLimit.toLocaleString('es-AR')}`);
       return;
     }
+
     const type =
       reduced.length === 1
         ? pos === 1
@@ -393,9 +404,17 @@ export default function PlaceBetPage() {
         }
       } else {
         const numLen = String(item.number).length;
-        const max = numLen === 4 ? 1000 : 10000;
+        let max = 10000;
+        if (numLen === 4) {
+          max = currentUser?.limit_4_cifras !== null && currentUser?.limit_4_cifras !== undefined ? Number(currentUser.limit_4_cifras) : 1000;
+        } else if (numLen === 3) {
+          max = currentUser?.limit_3_cifras !== null && currentUser?.limit_3_cifras !== undefined ? Number(currentUser.limit_3_cifras) : 10000;
+        } else if (numLen === 2) {
+          max = currentUser?.limit_2_cifras !== null && currentUser?.limit_2_cifras !== undefined ? Number(currentUser.limit_2_cifras) : 10000;
+        }
+        
         if (!isSuperAdmin && item.amount > max) {
-          setError(`El importe maximo para ${numLen} cifra${numLen > 1 ? 's' : ''} es $${max.toLocaleString('es-AR')}`);
+          setError(`Tu límite máximo para jugadas de ${numLen} cifra${numLen > 1 ? 's' : ''} es $${max.toLocaleString('es-AR')}`);
           return;
         }
       }

@@ -281,11 +281,11 @@ export default function PlaceBetPage() {
     // Limits
     let maxSimple = 10000;
     if (number.length === 4) {
-      maxSimple = currentUser?.limit_4_cifras !== null && currentUser?.limit_4_cifras !== undefined ? Number(currentUser.limit_4_cifras) : 1000;
+      maxSimple = user?.limit_4_cifras !== null && user?.limit_4_cifras !== undefined ? Number(user.limit_4_cifras) : 1000;
     } else if (number.length === 3) {
-      maxSimple = currentUser?.limit_3_cifras !== null && currentUser?.limit_3_cifras !== undefined ? Number(currentUser.limit_3_cifras) : 10000;
+      maxSimple = user?.limit_3_cifras !== null && user?.limit_3_cifras !== undefined ? Number(user.limit_3_cifras) : 10000;
     } else if (number.length === 2) {
-      maxSimple = currentUser?.limit_2_cifras !== null && currentUser?.limit_2_cifras !== undefined ? Number(currentUser.limit_2_cifras) : 10000;
+      maxSimple = user?.limit_2_cifras !== null && user?.limit_2_cifras !== undefined ? Number(user.limit_2_cifras) : 10000;
     }
     
     if (val > maxSimple) {
@@ -332,11 +332,11 @@ export default function PlaceBetPage() {
     // Limits
     let maxLimit = 10000;
     if (reduced.length === 4) {
-      maxLimit = currentUser?.limit_4_cifras !== null && currentUser?.limit_4_cifras !== undefined ? Number(currentUser.limit_4_cifras) : 1000;
+      maxLimit = user?.limit_4_cifras !== null && user?.limit_4_cifras !== undefined ? Number(user.limit_4_cifras) : 1000;
     } else if (reduced.length === 3) {
-      maxLimit = currentUser?.limit_3_cifras !== null && currentUser?.limit_3_cifras !== undefined ? Number(currentUser.limit_3_cifras) : 10000;
+      maxLimit = user?.limit_3_cifras !== null && user?.limit_3_cifras !== undefined ? Number(user.limit_3_cifras) : 10000;
     } else if (reduced.length === 2) {
-      maxLimit = currentUser?.limit_2_cifras !== null && currentUser?.limit_2_cifras !== undefined ? Number(currentUser.limit_2_cifras) : 10000;
+      maxLimit = user?.limit_2_cifras !== null && user?.limit_2_cifras !== undefined ? Number(user.limit_2_cifras) : 10000;
     }
     
     if (val > maxLimit) {
@@ -415,11 +415,11 @@ export default function PlaceBetPage() {
         const numLen = String(item.number).length;
         let max = 10000;
         if (numLen === 4) {
-          max = currentUser?.limit_4_cifras !== null && currentUser?.limit_4_cifras !== undefined ? Number(currentUser.limit_4_cifras) : 1000;
+          max = user?.limit_4_cifras !== null && user?.limit_4_cifras !== undefined ? Number(user.limit_4_cifras) : 1000;
         } else if (numLen === 3) {
-          max = currentUser?.limit_3_cifras !== null && currentUser?.limit_3_cifras !== undefined ? Number(currentUser.limit_3_cifras) : 10000;
+          max = user?.limit_3_cifras !== null && user?.limit_3_cifras !== undefined ? Number(user.limit_3_cifras) : 10000;
         } else if (numLen === 2) {
-          max = currentUser?.limit_2_cifras !== null && currentUser?.limit_2_cifras !== undefined ? Number(currentUser.limit_2_cifras) : 10000;
+          max = user?.limit_2_cifras !== null && user?.limit_2_cifras !== undefined ? Number(user.limit_2_cifras) : 10000;
         }
         
         if (item.amount > max) {

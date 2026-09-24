@@ -387,7 +387,7 @@ export default function ScrapeExtractsPage() {
                 value={bulkText}
                 onChange={(e) => setBulkText(e.target.value)}
                 rows={8}
-                placeholder={'📊 RESULTADOS QUINIELA 📊\n🕒 SORTEO: NOCTURNA\n📅 FECHA: 2026-07-16\n\n🎰 PROVINCIA\n01°: 8459    11°: 1964\n...'}
+                placeholder={'Catamarca - VESPERTINA - 2026-09-24\n01°: 2412    11°: 9373\n02°: 8378    12°: 8900\n...'}
                 className="w-full bg-gray-900/50 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-indigo-500"
               />
                <div className="flex items-center gap-3">

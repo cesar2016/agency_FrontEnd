@@ -292,8 +292,10 @@ export default function UsersPage() {
     }
   };
 
-  const whatsappShare = (user) => {
-    const text = `Usuario: ${user.username}\nClave: ${lastPassword}`;
+  const whatsappShare = (user, customPassword) => {
+    const pwd = customPassword || lastPassword || user?.password || '';
+    const loginUrl = `${window.location.origin}/login?usuario=${encodeURIComponent(user.username)}`;
+    const text = `Link de acceso: ${loginUrl}\nClave: ${pwd}`;
     const encoded = encodeURIComponent(text);
     window.open(`https://wa.me/?text=${encoded}`, '_blank');
   };
@@ -643,6 +645,11 @@ export default function UsersPage() {
                           </button>
                           {u.id !== currentUser?.id && (
                             <>
+                              {u.password && (
+                                <button onClick={() => whatsappShare(u, u.password)} className="text-green-400 hover:text-green-300 transition p-1" title="Compartir acceso por WhatsApp">
+                                  <FiShare2 size={14} />
+                                </button>
+                              )}
                               <button onClick={() => openEdit(u)} className="text-indigo-400 hover:text-indigo-300 transition p-1" title="Editar">
                                 <FiEdit size={14} />
                               </button>

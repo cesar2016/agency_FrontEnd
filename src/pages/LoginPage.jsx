@@ -1,19 +1,36 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [searchParams] = useSearchParams();
+  const presetUser = (
+    searchParams.get('usuario') ||
+    searchParams.get('username') ||
+    searchParams.get('user') ||
+    searchParams.get('u') ||
+    ''
+  ).trim();
+  const isPresetUser = Boolean(presetUser);
+
+  const [email, setEmail] = useState(presetUser);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (presetUser) {
+      setEmail(presetUser);
+    }
+  }, [presetUser]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    const loginIdentifier = isPresetUser ? presetUser : email;
     try {
-      await login(email, password);
+      await login(loginIdentifier, password);
       navigate('/');
     } catch {
       setError('Credenciales incorrectas');
@@ -36,12 +53,22 @@ export default function LoginPage() {
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm text-gray-300 block mb-1">Email o Username</label>
+            <label className="text-sm text-gray-300 block mb-1">
+              {isPresetUser ? 'Usuario' : 'Email o Username'}
+            </label>
             <input
               type="text"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+              value={isPresetUser ? presetUser : email}
+              onChange={(e) => {
+                if (!isPresetUser) setEmail(e.target.value);
+              }}
+              readOnly={isPresetUser}
+              disabled={isPresetUser}
+              className={`w-full border rounded-lg px-4 py-2.5 text-sm transition ${
+                isPresetUser
+                  ? 'bg-gray-900/70 border-indigo-500/30 text-indigo-300 font-mono cursor-not-allowed select-none opacity-80'
+                  : 'bg-gray-700/50 border-gray-600 text-white focus:outline-none focus:border-indigo-500'
+              }`}
               placeholder="email o username"
               required
             />
@@ -52,6 +79,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoFocus={isPresetUser}
               className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
               placeholder="••••••"
               required

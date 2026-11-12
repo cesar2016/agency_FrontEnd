@@ -10,7 +10,7 @@ const SCOPES = [
 
 export default function ScheduleVisibilityTab({ onChanged }) {
   const [scope, setScope] = useState('daily');
-  const [scopesData, setScopesData] = useState(null);
+  const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState(null);
   const [error, setError] = useState('');
@@ -21,7 +21,7 @@ export default function ScheduleVisibilityTab({ onChanged }) {
     try {
       const params = fresh ? { fresh: 1, _t: Date.now() } : {};
       const { data } = await api.get('/schedules/status', { params });
-      setScopesData(data?.scopes || null);
+      setSections(Array.isArray(data?.sections) ? data.sections : []);
     } catch (e) {
       setError(e?.response?.data?.message || 'Error al cargar los turnos y loterías.');
     } finally {
@@ -34,7 +34,7 @@ export default function ScheduleVisibilityTab({ onChanged }) {
   }, [load]);
 
   const turns = useMemo(() => {
-    const lotteries = scopesData?.[scope]?.lotteries || [];
+    const lotteries = sections.find((sec) => sec.scope === scope)?.lotteries || [];
     const byDraw = new Map();
 
     for (const lot of lotteries) {
@@ -58,7 +58,7 @@ export default function ScheduleVisibilityTab({ onChanged }) {
     }
 
     return Array.from(byDraw.values()).sort((a, b) => a.draw_id - b.draw_id);
-  }, [scopesData, scope]);
+  }, [sections, scope]);
 
   const toggleTurn = async (drawId, nextActive) => {
     const key = `turn-${scope}-${drawId}`;
@@ -134,7 +134,7 @@ export default function ScheduleVisibilityTab({ onChanged }) {
         </div>
       )}
 
-      {loading && !scopesData ? (
+      {loading && sections.length === 0 ? (
         <div className="flex justify-center py-12">
           <FiRefreshCw className="animate-spin text-indigo-400" size={28} />
         </div>

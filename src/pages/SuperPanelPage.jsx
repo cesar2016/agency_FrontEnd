@@ -34,6 +34,7 @@ const ROLE_LABELS = {
 export default function SuperPanelPage({ embedded = false }) {
   const [date, setDate] = useState(todayAR);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -59,6 +60,9 @@ export default function SuperPanelPage({ embedded = false }) {
   }, [date, loadPanel]);
 
   const users = (data?.users || []).filter((u) => {
+    if (roleFilter !== 'all' && !(u.roles || []).includes(roleFilter)) {
+      return false;
+    }
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (
@@ -68,12 +72,15 @@ export default function SuperPanelPage({ embedded = false }) {
     );
   });
 
-  const totales = data?.totales || {
-    total_ventas: 0,
-    comision: 0,
-    total_premios: 0,
-    saldo_actual: 0,
-  };
+  const totales = users.reduce(
+    (acc, u) => ({
+      total_ventas: acc.total_ventas + Number(u.total_ventas || 0),
+      comision: acc.comision + Number(u.comision || 0),
+      total_premios: acc.total_premios + Number(u.total_premios || 0),
+      saldo_actual: acc.saldo_actual + Number(u.saldo_actual || 0),
+    }),
+    { total_ventas: 0, comision: 0, total_premios: 0, saldo_actual: 0 }
+  );
 
   return (
     <div className={embedded ? 'space-y-5' : 'max-w-6xl mx-auto space-y-5'}>
@@ -88,6 +95,26 @@ export default function SuperPanelPage({ embedded = false }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <div className="flex bg-gray-800/80 border border-gray-700 rounded-lg p-0.5 gap-0.5">
+            {[
+              { id: 'all', label: 'Todos' },
+              { id: 'admin', label: 'Admins' },
+              { id: 'usuario', label: 'Pasadores' },
+            ].map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setRoleFilter(opt.id)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
+                  roleFilter === opt.id
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <div className="relative">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
             <input

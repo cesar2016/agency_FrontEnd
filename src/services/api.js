@@ -32,7 +32,7 @@ function writeCache(map) {
 
 // Endpoints que NUNCA se cachean:
 // - `/me` son la identidad y los ROLES del usuario. Es autorizacion, no datos.
-const SIN_CACHE_EXACTO = ['/me'];
+const SIN_CACHE_EXACTO = ['/me', '/user/schedule-preferences'];
 
 // Estos endpoints representan datos dinámicos altamente cambiantes. 
 // En lugar de no cachearlos, usamos un TTL corto (15 seg) para que la

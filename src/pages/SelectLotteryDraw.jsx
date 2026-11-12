@@ -152,7 +152,13 @@ export default function SelectLotteryDraw() {
 
   const hasSelection = Object.values(selectedByDraw).some((arr) => arr.length > 0);
 
-  // Agrupar loterías por sorteo (draw) usando los schedules
+  const hiddenScheduleIds = useMemo(() => {
+    return Array.isArray(user?.schedule_preferences?.hidden_schedule_ids)
+      ? user.schedule_preferences.hidden_schedule_ids
+      : [];
+  }, [user?.schedule_preferences]);
+
+  // Agrupar loterías por sorteo (draw) usando los schedules y respetando preferencias individuales
   const drawsGrouped = useMemo(() => {
     return draws
       .slice()
@@ -161,7 +167,11 @@ export default function SelectLotteryDraw() {
         const items = lotteries
           .map((l) => {
             const sched = effectiveSchedule(l.schedules, draw.id);
-            return sched ? { lottery: l, closingTime: sched.closing_time, drawTime: sched.draw_time } : null;
+            if (!sched) return null;
+            if (isAdmin && hiddenScheduleIds.includes(sched.id)) {
+              return null;
+            }
+            return { lottery: l, closingTime: sched.closing_time, drawTime: sched.draw_time };
           })
           .filter(Boolean);
         const customOrder = lotteryOrder[draw.id];
@@ -177,8 +187,9 @@ export default function SelectLotteryDraw() {
           items.sort((a, b) => lotteryRank(a.lottery.initials) - lotteryRank(b.lottery.initials));
         }
         return { draw, items };
-      });
-  }, [lotteries, draws, lotteryOrder]);
+      })
+      .filter(({ items }) => items.length > 0);
+  }, [lotteries, draws, lotteryOrder, isAdmin, hiddenScheduleIds]);
 
   const toggleLottery = (lotteryId, drawId) => {
     const l = lotteries.find((x) => x.id === lotteryId);

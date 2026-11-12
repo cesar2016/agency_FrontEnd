@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
-import { FiRefreshCw, FiLock, FiUnlock, FiCheck, FiEyeOff, FiLayers } from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext';
+import { FiRefreshCw, FiLock, FiUnlock, FiCheck, FiEyeOff, FiLayers, FiRotateCcw, FiInfo } from 'react-icons/fi';
 
 const SCOPES = [
   { id: 'daily', label: 'Semana (Lun-Vie)' },
@@ -9,12 +10,20 @@ const SCOPES = [
 ];
 
 export default function ScheduleVisibilityTab({ onChanged }) {
+  const { user, updateUser } = useAuth();
   const [scope, setScope] = useState('daily');
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState(null);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Preferencias individuales (IDs de schedules ocultados por este usuario)
+  const [hiddenScheduleIds, setHiddenScheduleIds] = useState(() => {
+    return Array.isArray(user?.schedule_preferences?.hidden_schedule_ids)
+      ? user.schedule_preferences.hidden_schedule_ids
+      : [];
+  });
 
   // Herramienta masiva por loterías y turnos
   const [batchOpen, setBatchOpen] = useState(false);
@@ -23,19 +32,26 @@ export default function ScheduleVisibilityTab({ onChanged }) {
   const [allTurns, setAllTurns] = useState(true);
   const [selectedDrawIds, setSelectedDrawIds] = useState([]);
 
+  // Carga inicial de grilla de turnos y sincronización de preferencias del usuario
   const load = useCallback(async (fresh = false) => {
     setLoading(true);
     setError('');
     try {
       const params = fresh ? { fresh: 1, _t: Date.now() } : {};
-      const { data } = await api.get('/schedules/status', { params });
-      setSections(Array.isArray(data?.sections) ? data.sections : []);
+      const [{ data: schedData }, { data: prefData }] = await Promise.all([
+        api.get('/schedules/status', { params }),
+        api.get('/user/schedule-preferences').catch(() => ({ data: { data: { hidden_schedule_ids: [] } } })),
+      ]);
+      setSections(Array.isArray(schedData?.sections) ? schedData.sections : []);
+      const savedHidden = prefData?.data?.hidden_schedule_ids || [];
+      setHiddenScheduleIds(savedHidden);
+      updateUser?.({ schedule_preferences: { hidden_schedule_ids: savedHidden } });
     } catch (e) {
       setError(e?.response?.data?.message || 'Error al cargar los turnos y loterías.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [updateUser]);
 
   useEffect(() => {
     load(true);
@@ -63,13 +79,70 @@ export default function ScheduleVisibilityTab({ onChanged }) {
           initials: lot.initials,
           name: lot.name,
           draw_time: s.draw_time,
-          is_active: Boolean(s.is_active),
+          is_active: !hiddenScheduleIds.includes(s.id),
         });
       }
     }
 
     return Array.from(byDraw.values()).sort((a, b) => a.draw_id - b.draw_id);
-  }, [currentLotteries]);
+  }, [currentLotteries, hiddenScheduleIds]);
+
+  // Persistir preferencias individuales
+  const savePreferences = async (nextHidden) => {
+    const unique = Array.from(new Set(nextHidden.map(Number)));
+    setHiddenScheduleIds(unique);
+    updateUser?.({ schedule_preferences: { hidden_schedule_ids: unique } });
+
+    await api.post('/user/schedule-preferences', {
+      hidden_schedule_ids: unique,
+    });
+    onChanged?.();
+  };
+
+  const toggleLotterySchedule = async (scheduleId) => {
+    const key = `sched-${scheduleId}`;
+    setBusyKey(key);
+    setError('');
+    setSuccessMsg('');
+    try {
+      const nextHidden = hiddenScheduleIds.includes(scheduleId)
+        ? hiddenScheduleIds.filter((id) => id !== scheduleId)
+        : [...hiddenScheduleIds, scheduleId];
+      await savePreferences(nextHidden);
+    } catch (e) {
+      setError(e?.response?.data?.message || 'No se pudo guardar tu preferencia.');
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const toggleTurn = async (drawId) => {
+    const key = `turn-${scope}-${drawId}`;
+    setBusyKey(key);
+    setError('');
+    setSuccessMsg('');
+    try {
+      const turn = turns.find((t) => t.draw_id === drawId);
+      if (!turn) return;
+      const turnScheduleIds = turn.items.map((i) => i.schedule_id);
+      const anyActive = turn.items.some((i) => i.is_active);
+
+      let nextHidden;
+      if (anyActive) {
+        // Bloquear turno: ocultar todos sus schedules
+        nextHidden = Array.from(new Set([...hiddenScheduleIds, ...turnScheduleIds]));
+      } else {
+        // Habilitar turno: mostrar todos sus schedules
+        nextHidden = hiddenScheduleIds.filter((id) => !turnScheduleIds.includes(id));
+      }
+
+      await savePreferences(nextHidden);
+    } catch (e) {
+      setError(e?.response?.data?.message || 'No se pudo actualizar el turno.');
+    } finally {
+      setBusyKey(null);
+    }
+  };
 
   const toggleLotteryChoice = (lotteryId) => {
     setSelectedLotteryIds((prev) =>
@@ -98,15 +171,47 @@ export default function ScheduleVisibilityTab({ onChanged }) {
     setError('');
     setSuccessMsg('');
     try {
-      const { data } = await api.post('/schedules/toggle-bulk', {
-        mode: batchMode,
-        lottery_ids: selectedLotteryIds,
-        draw_ids: allTurns ? [] : selectedDrawIds,
-        day_scope: scope,
-      });
-      setSuccessMsg(data?.message || 'Cambios aplicados correctamente.');
-      await load(true);
-      onChanged?.();
+      // Filtrar los turnos objetivo en el alcance actual
+      const targetTurns = allTurns
+        ? turns
+        : turns.filter((t) => selectedDrawIds.includes(t.draw_id));
+
+      const targetSchedules = targetTurns.flatMap((t) => t.items);
+      const targetScheduleIds = targetSchedules.map((i) => i.schedule_id);
+
+      let nextHidden = [...hiddenScheduleIds];
+
+      if (batchMode === 'only_selected') {
+        // Solo ver elegidas: mostrar elegidas en estos turnos, ocultar las demás en estos turnos
+        for (const item of targetSchedules) {
+          if (selectedLotteryIds.includes(item.lottery_id)) {
+            nextHidden = nextHidden.filter((id) => id !== item.schedule_id);
+          } else {
+            if (!nextHidden.includes(item.schedule_id)) {
+              nextHidden.push(item.schedule_id);
+            }
+          }
+        }
+      } else if (batchMode === 'hide_selected') {
+        // Dejar de ver elegidas: ocultar solo las seleccionadas
+        for (const item of targetSchedules) {
+          if (selectedLotteryIds.includes(item.lottery_id)) {
+            if (!nextHidden.includes(item.schedule_id)) {
+              nextHidden.push(item.schedule_id);
+            }
+          }
+        }
+      } else if (batchMode === 'show_selected') {
+        // Habilitar elegidas: mostrar las seleccionadas
+        for (const item of targetSchedules) {
+          if (selectedLotteryIds.includes(item.lottery_id)) {
+            nextHidden = nextHidden.filter((id) => id !== item.schedule_id);
+          }
+        }
+      }
+
+      await savePreferences(nextHidden);
+      setSuccessMsg('Preferencia guardada: aplicada a tus turnos.');
     } catch (e) {
       setError(e?.response?.data?.message || 'No se pudo aplicar el cambio masivo.');
     } finally {
@@ -114,40 +219,15 @@ export default function ScheduleVisibilityTab({ onChanged }) {
     }
   };
 
-  const toggleTurn = async (drawId, nextActive) => {
-    const key = `turn-${scope}-${drawId}`;
-    setBusyKey(key);
+  const resetAllPreferences = async () => {
+    setBusyKey('reset');
     setError('');
     setSuccessMsg('');
     try {
-      await api.post('/schedules/toggle-bulk', {
-        draw_id: drawId,
-        day_scope: scope,
-        is_active: nextActive,
-      });
-      await load(true);
-      onChanged?.();
+      await savePreferences([]);
+      setSuccessMsg('Preferencias restablecidas. Ahora ves todas las loterías.');
     } catch (e) {
-      setError(e?.response?.data?.message || 'No se pudo actualizar el turno.');
-    } finally {
-      setBusyKey(null);
-    }
-  };
-
-  const toggleLotterySchedule = async (scheduleId, nextActive) => {
-    const key = `sched-${scheduleId}`;
-    setBusyKey(key);
-    setError('');
-    setSuccessMsg('');
-    try {
-      await api.post('/schedules/toggle-bulk', {
-        schedule_ids: [scheduleId],
-        is_active: nextActive,
-      });
-      await load(true);
-      onChanged?.();
-    } catch (e) {
-      setError(e?.response?.data?.message || 'No se pudo actualizar la lotería.');
+      setError(e?.response?.data?.message || 'No se pudieron restablecer las preferencias.');
     } finally {
       setBusyKey(null);
     }
@@ -155,6 +235,27 @@ export default function ScheduleVisibilityTab({ onChanged }) {
 
   return (
     <div className="space-y-4">
+      {/* Aviso informativo de alcance personal */}
+      <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 text-xs text-indigo-300">
+        <div className="flex items-center gap-2">
+          <FiInfo size={16} className="text-indigo-400 shrink-0" />
+          <span>
+            <strong>Configuración individual ({user?.name}):</strong> solo afecta las loterías y turnos que vos ves y jugás. Ningún otro usuario se ve afectado.
+          </span>
+        </div>
+        {hiddenScheduleIds.length > 0 && (
+          <button
+            type="button"
+            disabled={busyKey === 'reset'}
+            onClick={resetAllPreferences}
+            className="flex items-center gap-1 text-[11px] bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 px-2.5 py-1 rounded-lg transition shrink-0 cursor-pointer"
+          >
+            <FiRotateCcw size={12} />
+            Ver todas ({hiddenScheduleIds.length} ocultas)
+          </button>
+        )}
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex bg-gray-800/80 border border-indigo-500/20 rounded-xl p-1 gap-1">
           {SCOPES.map((sc) => (
@@ -313,7 +414,7 @@ export default function ScheduleVisibilityTab({ onChanged }) {
               className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer"
             >
               <FiCheck size={14} />
-              {busyKey === 'batch' ? 'Aplicando...' : 'Aplicar cambio'}
+              {busyKey === 'batch' ? 'Aplicando...' : 'Aplicar cambio a mi vista'}
             </button>
           </div>
         </div>
@@ -360,19 +461,19 @@ export default function ScheduleVisibilityTab({ onChanged }) {
                       {turn.draw_name}
                       {!anyActive && (
                         <span className="text-[11px] bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full">
-                          Turno bloqueado
+                          Turno bloqueado para vos
                         </span>
                       )}
                     </h3>
                     <p className="text-xs text-gray-400">
-                      {activeCount} de {totalCount} loterías habilitadas
+                      {activeCount} de {totalCount} loterías visibles para vos
                     </p>
                   </div>
 
                   <button
                     type="button"
                     disabled={turnBusy}
-                    onClick={() => toggleTurn(turn.draw_id, !anyActive)}
+                    onClick={() => toggleTurn(turn.draw_id)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer disabled:opacity-50 ${
                       anyActive
                         ? 'bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30'
@@ -399,7 +500,7 @@ export default function ScheduleVisibilityTab({ onChanged }) {
                         key={item.schedule_id}
                         type="button"
                         disabled={itemBusy || turnBusy}
-                        onClick={() => toggleLotterySchedule(item.schedule_id, !item.is_active)}
+                        onClick={() => toggleLotterySchedule(item.schedule_id)}
                         className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-left transition cursor-pointer disabled:opacity-50 ${
                           item.is_active
                             ? 'bg-indigo-500/15 border-indigo-500/30 text-white hover:bg-indigo-500/25'

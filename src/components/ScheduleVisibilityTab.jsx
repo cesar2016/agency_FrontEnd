@@ -57,6 +57,10 @@ export default function ScheduleVisibilityTab({ onChanged }) {
     load(true);
   }, [load]);
 
+  const hiddenSet = useMemo(() => {
+    return new Set(hiddenScheduleIds.map(Number));
+  }, [hiddenScheduleIds]);
+
   const currentLotteries = useMemo(() => {
     return sections.find((sec) => sec.scope === scope)?.lotteries || [];
   }, [sections, scope]);
@@ -79,13 +83,13 @@ export default function ScheduleVisibilityTab({ onChanged }) {
           initials: lot.initials,
           name: lot.name,
           draw_time: s.draw_time,
-          is_active: !hiddenScheduleIds.includes(s.id),
+          is_active: !hiddenSet.has(Number(s.id)),
         });
       }
     }
 
     return Array.from(byDraw.values()).sort((a, b) => a.draw_id - b.draw_id);
-  }, [currentLotteries, hiddenScheduleIds]);
+  }, [currentLotteries, hiddenSet]);
 
   // Persistir preferencias individuales
   const savePreferences = async (nextHidden) => {
@@ -100,14 +104,15 @@ export default function ScheduleVisibilityTab({ onChanged }) {
   };
 
   const toggleLotterySchedule = async (scheduleId) => {
-    const key = `sched-${scheduleId}`;
+    const sId = Number(scheduleId);
+    const key = `sched-${sId}`;
     setBusyKey(key);
     setError('');
     setSuccessMsg('');
     try {
-      const nextHidden = hiddenScheduleIds.includes(scheduleId)
-        ? hiddenScheduleIds.filter((id) => id !== scheduleId)
-        : [...hiddenScheduleIds, scheduleId];
+      const nextHidden = hiddenSet.has(sId)
+        ? hiddenScheduleIds.map(Number).filter((id) => id !== sId)
+        : [...hiddenScheduleIds.map(Number), sId];
       await savePreferences(nextHidden);
     } catch (e) {
       setError(e?.response?.data?.message || 'No se pudo guardar tu preferencia.');
@@ -124,16 +129,16 @@ export default function ScheduleVisibilityTab({ onChanged }) {
     try {
       const turn = turns.find((t) => t.draw_id === drawId);
       if (!turn) return;
-      const turnScheduleIds = turn.items.map((i) => i.schedule_id);
+      const turnScheduleIds = turn.items.map((i) => Number(i.schedule_id));
       const anyActive = turn.items.some((i) => i.is_active);
 
       let nextHidden;
       if (anyActive) {
         // Bloquear turno: ocultar todos sus schedules
-        nextHidden = Array.from(new Set([...hiddenScheduleIds, ...turnScheduleIds]));
+        nextHidden = Array.from(new Set([...hiddenScheduleIds.map(Number), ...turnScheduleIds]));
       } else {
         // Habilitar turno: mostrar todos sus schedules
-        nextHidden = hiddenScheduleIds.filter((id) => !turnScheduleIds.includes(id));
+        nextHidden = hiddenScheduleIds.map(Number).filter((id) => !turnScheduleIds.includes(id));
       }
 
       await savePreferences(nextHidden);
@@ -177,35 +182,37 @@ export default function ScheduleVisibilityTab({ onChanged }) {
         : turns.filter((t) => selectedDrawIds.includes(t.draw_id));
 
       const targetSchedules = targetTurns.flatMap((t) => t.items);
-      const targetScheduleIds = targetSchedules.map((i) => i.schedule_id);
 
-      let nextHidden = [...hiddenScheduleIds];
+      let nextHidden = [...hiddenScheduleIds.map(Number)];
 
       if (batchMode === 'only_selected') {
         // Solo ver elegidas: mostrar elegidas en estos turnos, ocultar las demás en estos turnos
         for (const item of targetSchedules) {
+          const sId = Number(item.schedule_id);
           if (selectedLotteryIds.includes(item.lottery_id)) {
-            nextHidden = nextHidden.filter((id) => id !== item.schedule_id);
+            nextHidden = nextHidden.filter((id) => id !== sId);
           } else {
-            if (!nextHidden.includes(item.schedule_id)) {
-              nextHidden.push(item.schedule_id);
+            if (!nextHidden.includes(sId)) {
+              nextHidden.push(sId);
             }
           }
         }
       } else if (batchMode === 'hide_selected') {
         // Dejar de ver elegidas: ocultar solo las seleccionadas
         for (const item of targetSchedules) {
+          const sId = Number(item.schedule_id);
           if (selectedLotteryIds.includes(item.lottery_id)) {
-            if (!nextHidden.includes(item.schedule_id)) {
-              nextHidden.push(item.schedule_id);
+            if (!nextHidden.includes(sId)) {
+              nextHidden.push(sId);
             }
           }
         }
       } else if (batchMode === 'show_selected') {
         // Habilitar elegidas: mostrar las seleccionadas
         for (const item of targetSchedules) {
+          const sId = Number(item.schedule_id);
           if (selectedLotteryIds.includes(item.lottery_id)) {
-            nextHidden = nextHidden.filter((id) => id !== item.schedule_id);
+            nextHidden = nextHidden.filter((id) => id !== sId);
           }
         }
       }

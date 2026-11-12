@@ -152,10 +152,11 @@ export default function SelectLotteryDraw() {
 
   const hasSelection = Object.values(selectedByDraw).some((arr) => arr.length > 0);
 
-  const hiddenScheduleIds = useMemo(() => {
-    return Array.isArray(user?.schedule_preferences?.hidden_schedule_ids)
+  const hiddenScheduleSet = useMemo(() => {
+    const list = Array.isArray(user?.schedule_preferences?.hidden_schedule_ids)
       ? user.schedule_preferences.hidden_schedule_ids
       : [];
+    return new Set(list.map(Number));
   }, [user?.schedule_preferences]);
 
   // Agrupar loterías por sorteo (draw) usando los schedules y respetando preferencias individuales
@@ -168,7 +169,7 @@ export default function SelectLotteryDraw() {
           .map((l) => {
             const sched = effectiveSchedule(l.schedules, draw.id);
             if (!sched) return null;
-            if (isAdmin && hiddenScheduleIds.includes(sched.id)) {
+            if (isAdmin && hiddenScheduleSet.has(Number(sched.id))) {
               return null;
             }
             return { lottery: l, closingTime: sched.closing_time, drawTime: sched.draw_time };
@@ -189,7 +190,7 @@ export default function SelectLotteryDraw() {
         return { draw, items };
       })
       .filter(({ items }) => items.length > 0);
-  }, [lotteries, draws, lotteryOrder, isAdmin, hiddenScheduleIds]);
+  }, [lotteries, draws, lotteryOrder, isAdmin, hiddenScheduleSet]);
 
   const toggleLottery = (lotteryId, drawId) => {
     const l = lotteries.find((x) => x.id === lotteryId);

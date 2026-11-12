@@ -2,8 +2,9 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
 import { useAuth } from '../context/AuthContext';
-import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp, FiMenu, FiAlertTriangle, FiCheck } from 'react-icons/fi';
+import { FiArrowRight, FiRefreshCw, FiLock, FiChevronDown, FiChevronUp, FiMenu, FiAlertTriangle, FiCheck, FiSliders } from 'react-icons/fi';
 import { createPortal } from 'react-dom';
+import ScheduleVisibilityTab from '../components/ScheduleVisibilityTab';
 
 function isClosed(closingTime, now, isSuperAdmin = false, drawTime = null) {
   if (isSuperAdmin && drawTime) {
@@ -79,6 +80,8 @@ export default function SelectLotteryDraw() {
   const { user } = useAuth();
   const roles = Array.isArray(user?.roles) ? user.roles : [];
   const isSuperAdmin = roles.includes('super_admin');
+  const isAdmin = roles.some((r) => ['admin', 'super_admin'].includes(r));
+  const [activeTab, setActiveTab] = useState('play');
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
@@ -214,18 +217,56 @@ export default function SelectLotteryDraw() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 pb-24 relative">
-      <div className="text-center">
+      <div className="text-center space-y-2">
         <h2 className="text-lg font-semibold text-white">Sorteos y Loterías</h2>
         <p className="text-xs text-gray-400">{todayLabel()}</p>
-        {drawOrder.length > 0 && (
-          <button
-            onClick={() => persistDrawOrder([])}
-            className="mt-1 text-xs text-indigo-400 hover:text-indigo-300 underline transition"
-          >
-            Restablecer orden de turnos
-          </button>
+        {isAdmin && (
+          <div className="inline-flex bg-gray-800/80 border border-indigo-500/20 rounded-xl p-1 gap-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('play')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                activeTab === 'play'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Jugar
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('config')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                activeTab === 'config'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <FiSliders size={13} /> Turnos y Loterías
+            </button>
+          </div>
+        )}
+        {activeTab === 'play' && drawOrder.length > 0 && (
+          <div>
+            <button
+              onClick={() => persistDrawOrder([])}
+              className="mt-1 text-xs text-indigo-400 hover:text-indigo-300 underline transition"
+            >
+              Restablecer orden de turnos
+            </button>
+          </div>
         )}
       </div>
+
+      {isAdmin && activeTab === 'config' ? (
+        <ScheduleVisibilityTab
+          onChanged={() => {
+            fetchLotteries();
+            fetchDraws();
+          }}
+        />
+      ) : (
+        <>
 
       {drawsGrouped
         .slice()
@@ -455,6 +496,8 @@ export default function SelectLotteryDraw() {
             </div>
           </div>
         </div>, document.body
+      )}
+        </>
       )}
     </div>
   );

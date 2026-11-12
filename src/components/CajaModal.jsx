@@ -10,8 +10,8 @@ const money = (n) =>
 /**
  * Modal Caja del pasador (ventas, comisión, premios, detalle ganadoras).
  */
-export default function CajaModal({ user, open, onClose, onError }) {
-  const [cajaDate, setCajaDate] = useState(todayAR());
+export default function CajaModal({ user, open, onClose, onError, initialDate }) {
+  const [cajaDate, setCajaDate] = useState(initialDate || todayAR());
   const [cajaData, setCajaData] = useState(null);
   const [cajaLoading, setCajaLoading] = useState(false);
   const [ganadorasOpen, setGanadorasOpen] = useState(false);
@@ -36,12 +36,12 @@ export default function CajaModal({ user, open, onClose, onError }) {
 
   useEffect(() => {
     if (!open || !user?.id) return;
-    const date = todayAR();
+    const date = initialDate || todayAR();
     setCajaDate(date);
     setCajaData(null);
     setGanadorasOpen(false);
     loadCaja(user.id, date);
-  }, [open, user?.id, loadCaja]);
+  }, [open, user?.id, initialDate, loadCaja]);
 
   if (!open || !user) return null;
 

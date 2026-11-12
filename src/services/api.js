@@ -37,7 +37,7 @@ const SIN_CACHE_EXACTO = ['/me'];
 // Estos endpoints representan datos dinámicos altamente cambiantes. 
 // En lugar de no cachearlos, usamos un TTL corto (15 seg) para que la
 // navegación tipo "ida y vuelta" en la UI se sienta instantánea sin sacrificar frescura.
-const DYNAMIC_PREFIXES = ['/extracts/', '/externos/dashboard/', '/bets', '/aciertos'];
+const DYNAMIC_PREFIXES = ['/extracts/', '/externos/dashboard/', '/bets', '/aciertos', '/users/super-panel'];
 
 function getUrlTTL(url) {
   if (DYNAMIC_PREFIXES.some((prefijo) => url.startsWith(prefijo))) {

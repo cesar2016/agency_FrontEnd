@@ -15,6 +15,7 @@ import UsersPage from './pages/UsersPage';
 import ComisionesPage from './pages/ComisionesPage';
 import MiComisionPage from './pages/MiComisionPage';
 import LimitsPage from './pages/LimitsPage';
+import SuperPanelPage from './pages/SuperPanelPage';
 import Layout from './components/layout/Layout';
 import TermsModal from './components/TermsModal';
 
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="/topes" element={<ProtectedRoute roles={['admin', 'super_admin']}><LimitsPage /></ProtectedRoute>} />
           <Route path="/comisiones" element={<ProtectedRoute roles={['admin', 'super_admin']}><ComisionesPage /></ProtectedRoute>} />
           <Route path="/comision" element={<ProtectedRoute roles={['usuario']}><MiComisionPage /></ProtectedRoute>} />
+          <Route path="/super-panel" element={<ProtectedRoute roles={['super_admin']}><SuperPanelPage /></ProtectedRoute>} />
           <Route path="/scraper-dashboard/:path?" element={<ProtectedRoute roles={['super_admin']}><ScraperDashboardPage /></ProtectedRoute>} />
         </Route>
       </Routes>

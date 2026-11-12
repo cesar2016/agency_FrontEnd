@@ -3,7 +3,8 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CajaModal from '../components/CajaModal';
 import RentalModal from '../components/RentalModal';
-import { FiRefreshCw, FiUserPlus, FiX, FiShare2, FiEdit, FiTrash2, FiToggleRight, FiToggleLeft, FiDollarSign, FiEye, FiEyeOff, FiSearch, FiChevronLeft, FiChevronRight, FiClock, FiList, FiPercent } from 'react-icons/fi';
+import SuperPanelPage from './SuperPanelPage';
+import { FiRefreshCw, FiUserPlus, FiX, FiShare2, FiEdit, FiTrash2, FiToggleRight, FiToggleLeft, FiDollarSign, FiEye, FiEyeOff, FiSearch, FiChevronLeft, FiChevronRight, FiClock, FiList, FiPercent, FiActivity, FiUsers } from 'react-icons/fi';
 
 function generateFakeData(name) {
   const firstWord = name.trim().split(/\s+/)[0] || '';
@@ -29,6 +30,7 @@ export default function UsersPage() {
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('users');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [form, setForm] = useState({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '' });
@@ -302,9 +304,37 @@ export default function UsersPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-white text-xl font-bold">Usuarios</h2>
-        {isAdmin && (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h2 className="text-white text-xl font-bold">Usuarios</h2>
+          {isSuperAdmin && (
+            <div className="flex bg-gray-800/80 border border-indigo-500/20 rounded-xl p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => setActiveTab('users')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  activeTab === 'users'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <FiUsers size={13} /> Listado
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('super_panel')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  activeTab === 'super_panel'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <FiActivity size={13} /> Última sesión y Caja
+              </button>
+            </div>
+          )}
+        </div>
+        {isAdmin && activeTab === 'users' && (
           <button
             onClick={openCreate}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-4 rounded-lg transition text-sm"
@@ -313,6 +343,11 @@ export default function UsersPage() {
           </button>
         )}
       </div>
+
+      {isSuperAdmin && activeTab === 'super_panel' ? (
+        <SuperPanelPage embedded />
+      ) : (
+        <>
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => { setShowModal(false); setEditingUser(null); setForm({ name: '', whatsapp: '', email: '', username: '', role: 'usuario', password: '', password_confirmation: '' }); setFormErrors({}); }}>
@@ -706,6 +741,8 @@ export default function UsersPage() {
             </div>
           )}
         </div>
+      )}
+        </>
       )}
 
       {toast && (

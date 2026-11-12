@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
-import { FiRefreshCw, FiLock, FiUnlock, FiCheck, FiEyeOff } from 'react-icons/fi';
+import { FiRefreshCw, FiLock, FiUnlock, FiCheck, FiEyeOff, FiLayers } from 'react-icons/fi';
 
 const SCOPES = [
   { id: 'daily', label: 'Semana (Lun-Vie)' },
@@ -14,6 +14,14 @@ export default function ScheduleVisibilityTab({ onChanged }) {
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState(null);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // Herramienta masiva por loterías y turnos
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [batchMode, setBatchMode] = useState('only_selected');
+  const [selectedLotteryIds, setSelectedLotteryIds] = useState([]);
+  const [allTurns, setAllTurns] = useState(true);
+  const [selectedDrawIds, setSelectedDrawIds] = useState([]);
 
   const load = useCallback(async (fresh = false) => {
     setLoading(true);
@@ -33,11 +41,14 @@ export default function ScheduleVisibilityTab({ onChanged }) {
     load(true);
   }, [load]);
 
+  const currentLotteries = useMemo(() => {
+    return sections.find((sec) => sec.scope === scope)?.lotteries || [];
+  }, [sections, scope]);
+
   const turns = useMemo(() => {
-    const lotteries = sections.find((sec) => sec.scope === scope)?.lotteries || [];
     const byDraw = new Map();
 
-    for (const lot of lotteries) {
+    for (const lot of currentLotteries) {
       for (const s of lot.schedules || []) {
         if (!byDraw.has(s.draw_id)) {
           byDraw.set(s.draw_id, {
@@ -58,12 +69,56 @@ export default function ScheduleVisibilityTab({ onChanged }) {
     }
 
     return Array.from(byDraw.values()).sort((a, b) => a.draw_id - b.draw_id);
-  }, [sections, scope]);
+  }, [currentLotteries]);
+
+  const toggleLotteryChoice = (lotteryId) => {
+    setSelectedLotteryIds((prev) =>
+      prev.includes(lotteryId) ? prev.filter((id) => id !== lotteryId) : [...prev, lotteryId]
+    );
+  };
+
+  const toggleDrawChoice = (drawId) => {
+    setAllTurns(false);
+    setSelectedDrawIds((prev) =>
+      prev.includes(drawId) ? prev.filter((id) => id !== drawId) : [...prev, drawId]
+    );
+  };
+
+  const applyBatch = async () => {
+    if (selectedLotteryIds.length === 0) {
+      setError('Seleccioná al menos una lotería para aplicar el cambio.');
+      return;
+    }
+    if (!allTurns && selectedDrawIds.length === 0) {
+      setError('Seleccioná al menos un turno o marcá "Todos los turnos".');
+      return;
+    }
+
+    setBusyKey('batch');
+    setError('');
+    setSuccessMsg('');
+    try {
+      const { data } = await api.post('/schedules/toggle-bulk', {
+        mode: batchMode,
+        lottery_ids: selectedLotteryIds,
+        draw_ids: allTurns ? [] : selectedDrawIds,
+        day_scope: scope,
+      });
+      setSuccessMsg(data?.message || 'Cambios aplicados correctamente.');
+      await load(true);
+      onChanged?.();
+    } catch (e) {
+      setError(e?.response?.data?.message || 'No se pudo aplicar el cambio masivo.');
+    } finally {
+      setBusyKey(null);
+    }
+  };
 
   const toggleTurn = async (drawId, nextActive) => {
     const key = `turn-${scope}-${drawId}`;
     setBusyKey(key);
     setError('');
+    setSuccessMsg('');
     try {
       await api.post('/schedules/toggle-bulk', {
         draw_id: drawId,
@@ -83,6 +138,7 @@ export default function ScheduleVisibilityTab({ onChanged }) {
     const key = `sched-${scheduleId}`;
     setBusyKey(key);
     setError('');
+    setSuccessMsg('');
     try {
       await api.post('/schedules/toggle-bulk', {
         schedule_ids: [scheduleId],
@@ -105,7 +161,10 @@ export default function ScheduleVisibilityTab({ onChanged }) {
             <button
               key={sc.id}
               type="button"
-              onClick={() => setScope(sc.id)}
+              onClick={() => {
+                setScope(sc.id);
+                setSuccessMsg('');
+              }}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 scope === sc.id
                   ? 'bg-indigo-600 text-white'
@@ -117,16 +176,154 @@ export default function ScheduleVisibilityTab({ onChanged }) {
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={() => load(true)}
-          disabled={loading}
-          className="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-3 py-1.5 rounded-lg text-xs transition cursor-pointer"
-        >
-          <FiRefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-          Actualizar
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setBatchOpen((v) => !v)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+              batchOpen
+                ? 'bg-indigo-600 border-indigo-500 text-white'
+                : 'bg-gray-800 hover:bg-gray-700 border-gray-700 text-indigo-300'
+            }`}
+          >
+            <FiLayers size={13} />
+            Regla por loterías
+          </button>
+
+          <button
+            type="button"
+            onClick={() => load(true)}
+            disabled={loading}
+            className="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-3 py-1.5 rounded-lg text-xs transition cursor-pointer"
+          >
+            <FiRefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            Actualizar
+          </button>
+        </div>
       </div>
+
+      {batchOpen && (
+        <div className="bg-gray-800/60 border border-indigo-500/30 rounded-2xl p-4 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-white">
+              Aplicar loterías a uno o varios turnos
+            </h3>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { id: 'only_selected', label: 'Solo ver elegidas' },
+                { id: 'hide_selected', label: 'Dejar de ver elegidas' },
+                { id: 'show_selected', label: 'Habilitar elegidas' },
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setBatchMode(m.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                    batchMode === m.id
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-900/60 text-gray-400 hover:text-white border border-gray-700/60'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400">
+                1. Elegí las loterías ({selectedLotteryIds.length} seleccionadas)
+              </span>
+              {selectedLotteryIds.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedLotteryIds([])}
+                  className="text-[11px] text-indigo-400 hover:text-indigo-300 cursor-pointer"
+                >
+                  Limpiar selección
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {currentLotteries.map((lot) => {
+                const selected = selectedLotteryIds.includes(lot.lottery_id);
+                return (
+                  <button
+                    key={lot.lottery_id}
+                    type="button"
+                    onClick={() => toggleLotteryChoice(lot.lottery_id)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition cursor-pointer ${
+                      selected
+                        ? 'bg-indigo-500/25 border-indigo-400 text-white'
+                        : 'bg-gray-900/50 border-gray-700/60 text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {lot.initials}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <span className="text-xs text-gray-400 block">
+              2. Elegí en qué turno(s) aplicar
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setAllTurns(true);
+                  setSelectedDrawIds([]);
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition cursor-pointer ${
+                  allTurns
+                    ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300'
+                    : 'bg-gray-900/50 border-gray-700/60 text-gray-400 hover:text-white'
+                }`}
+              >
+                Todos los turnos
+              </button>
+              {turns.map((t) => {
+                const active = !allTurns && selectedDrawIds.includes(t.draw_id);
+                return (
+                  <button
+                    key={t.draw_id}
+                    type="button"
+                    onClick={() => toggleDrawChoice(t.draw_id)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition cursor-pointer ${
+                      active
+                        ? 'bg-indigo-500/25 border-indigo-400 text-white'
+                        : 'bg-gray-900/50 border-gray-700/60 text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {t.draw_name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              disabled={busyKey === 'batch'}
+              onClick={applyBatch}
+              className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer"
+            >
+              <FiCheck size={14} />
+              {busyKey === 'batch' ? 'Aplicando...' : 'Aplicar cambio'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs px-4 py-2.5 rounded-xl">
+          {successMsg}
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-xs px-4 py-2.5 rounded-xl">

@@ -12,7 +12,7 @@ const api = axios.create({
 // que no cambian al navegar entre secciones (loterias, horarios, draws).
 // Reduce el delay perceptivo en produccion (la BD remota tarda ~0.8s por query).
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
-const GET_CACHE_KEY = 'api_get_cache_v8';
+const GET_CACHE_KEY = 'api_get_cache_v9';
 
 function readCache() {
   try {
@@ -39,7 +39,7 @@ const SIN_CACHE_EXACTO = ['/me', '/user/schedule-preferences', '/schedules/statu
 // Estos endpoints representan datos dinámicos altamente cambiantes. 
 // En lugar de no cachearlos, usamos un TTL corto (15 seg) para que la
 // navegación tipo "ida y vuelta" en la UI se sienta instantánea sin sacrificar frescura.
-const DYNAMIC_PREFIXES = ['/extracts/', '/externos/dashboard/', '/bets', '/aciertos', '/users/super-panel'];
+const DYNAMIC_PREFIXES = ['/extracts/', '/externos/dashboard/', '/bets', '/aciertos', '/users/super-panel', '/users'];
 
 function getUrlTTL(url) {
   if (DYNAMIC_PREFIXES.some((prefijo) => url.startsWith(prefijo))) {

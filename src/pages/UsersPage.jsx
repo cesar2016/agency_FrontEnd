@@ -20,6 +20,22 @@ function generateFakeData(name) {
   return { name, whatsapp, email, username, role: 'usuario', password, password_confirmation: password };
 }
 
+const formatLastLogin = (iso) => {
+  if (!iso) return 'Sin registro';
+  try {
+    return new Date(iso).toLocaleString('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return iso;
+  }
+};
+
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const currentRoles = Array.isArray(currentUser?.roles) ? currentUser.roles : [];
@@ -595,6 +611,7 @@ export default function UsersPage() {
                   <th className="text-left p-3">Email</th>
                   <th className="text-left p-3">Rol</th>
                   {isSuperAdmin && <th className="text-left p-3">Creado por</th>}
+                  <th className="text-left p-3 whitespace-nowrap">Última sesión</th>
                   <th className="text-center p-3" title="% de comisión del pasador">% Com.</th>
                   <th className="text-center p-3">Activo</th>
                   <th className="text-center p-3">Acciones</th>
@@ -602,7 +619,7 @@ export default function UsersPage() {
               </thead>
               <tbody>
                 {paginatedUsers.length === 0 ? (
-                  <tr><td colSpan={isSuperAdmin ? 9 : 8} className="text-center py-8 text-gray-400">No hay usuarios</td></tr>
+                  <tr><td colSpan={isSuperAdmin ? 10 : 9} className="text-center py-8 text-gray-400">No hay usuarios</td></tr>
                 ) : paginatedUsers.map((u) => (
                   <tr key={u.id} className={`border-b border-gray-700/30 hover:bg-gray-700/20 ${u.is_active ? '' : 'opacity-40'}`}>
                     <td className="p-3 text-white">{u.name}</td>
@@ -619,6 +636,12 @@ export default function UsersPage() {
                         {u.parent_name || '—'}
                       </td>
                     )}
+                    <td className="p-3 whitespace-nowrap">
+                      <span className={`inline-flex items-center gap-1.5 text-xs ${u.last_login_at ? 'text-gray-200' : 'text-gray-500'}`}>
+                        <FiClock size={13} className={u.last_login_at ? 'text-indigo-400' : 'text-gray-600'} />
+                        {formatLastLogin(u.last_login_at)}
+                      </span>
+                    </td>
                     {/* Columna % comisión: editable inline solo para pasadores y admins */}
                     <td className="p-2 text-center h-full align-middle">
                       {u.roles?.includes('usuario') && isAdmin && u.id !== currentUser?.id ? (

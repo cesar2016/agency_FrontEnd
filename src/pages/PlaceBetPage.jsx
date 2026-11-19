@@ -99,6 +99,7 @@ export default function PlaceBetPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [ticketBlob, setTicketBlob] = useState(null);
   const [showParaguayAlert, setShowParaguayAlert] = useState(false);
   const paraguayAlertShownRef = useRef(false);
   const [showNeuquenAlert, setShowNeuquenAlert] = useState(false);
@@ -446,15 +447,36 @@ export default function PlaceBetPage() {
     return data;
   };
 
-  const downloadTicket = async (id) => {
+  // Precargar el PDF apenas se crea la boleta para que al tocar "Compartir por WhatsApp"
+  // no haya espera de red y el User Gesture Token (activación del usuario) en Android
+  // (Chrome/Samsung Internet) siga activo de forma síncrona.
+  useEffect(() => {
+    let active = true;
+    if (result && result[0]?.id) {
+      getTicketBlob(result[0].id)
+        .then((blob) => {
+          if (active) setTicketBlob(blob);
+        })
+        .catch((err) => {
+          console.warn('Error precargando boleta:', err);
+        });
+    } else {
+      setTicketBlob(null);
+    }
+    return () => {
+      active = false;
+    };
+  }, [result]);
+
+  const downloadTicket = async (id, sequence) => {
     if (actionLoading) return;
     setActionLoading(true);
     try {
-      const blob = await getTicketBlob(id);
+      const blob = ticketBlob || (await getTicketBlob(id));
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `boleta-${id}.pdf`;
+      a.download = `boleta-${sequence || id}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -471,37 +493,47 @@ export default function PlaceBetPage() {
     if (actionLoading) return;
     setActionLoading(true);
     try {
-      const blob = await getTicketBlob(id);
-      const file = new File([blob], `boleta-${sequence}.pdf`, { type: 'application/pdf' });
-      
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Boleta Agencia' });
-        return;
+      const blob = ticketBlob || (await getTicketBlob(id));
+      const fileName = `boleta-${sequence || id}.pdf`;
+      const file = new File([blob], fileName, { type: 'application/pdf', lastModified: Date.now() });
+
+      // 1. Intentar compartir con Web Share API (archivos nativos)
+      if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'Boleta Agencia',
+            text: `Boleta Secuencia: ${sequence || id}`,
+          });
+          return;
+        } catch (shareErr) {
+          // Si el usuario cancela la hoja de compartir nativa, salir limpiamente
+          if (shareErr.name === 'AbortError') {
+            return;
+          }
+          console.warn('navigator.share con archivo falló, ejecutando fallback:', shareErr);
+        }
       }
-      
-      // Fallback: Si no puede compartir el archivo (ej. PC), forzar descarga
+
+      // 2. Fallback: Descargar el archivo PDF en el dispositivo
       const url = window.URL.createObjectURL(blob);
       const a2 = document.createElement('a');
       a2.href = url;
-      a2.download = `boleta-${sequence}.pdf`;
+      a2.download = fileName;
       document.body.appendChild(a2);
       a2.click();
       a2.remove();
-      
-      // Intentar abrir WhatsApp web para que pegue el manual
-      const a = document.createElement('a');
-      a.href = `https://wa.me/?text=${encodeURIComponent('Adjunte el PDF descargado para enviarlo.')}`;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+      // 3. Abrir WhatsApp para informar la jugada
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
+        `Boleta de Agencia Secuencia: ${sequence || id}. Adjunto PDF de la jugada.`
+      )}`;
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
     } catch (e) {
       if (e.name !== 'AbortError') {
-        console.error(e);
-        alert('Error compartiendo boleta');
+        console.error('Error compartiendo boleta:', e);
+        alert('No se pudo compartir directamente el PDF. Por favor utiliza el botón "Descargar PDF".');
       }
     } finally {
       setActionLoading(false);
@@ -1063,7 +1095,7 @@ export default function PlaceBetPage() {
                 )}
               </button>
               <button
-                onClick={() => downloadTicket(result[0]?.id)}
+                onClick={() => downloadTicket(result[0]?.id, result[0]?.sequence)}
                 disabled={actionLoading}
                 className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-600 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition"
               >

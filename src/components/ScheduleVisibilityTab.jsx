@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { FiRefreshCw, FiLock, FiUnlock, FiCheck, FiEyeOff, FiLayers, FiRotateCcw, FiInfo } from 'react-icons/fi';
+import { FiRefreshCw, FiLock, FiUnlock, FiCheck, FiEyeOff, FiLayers, FiRotateCcw, FiInfo, FiX } from 'react-icons/fi';
 
 const SCOPES = [
   { id: 'daily', label: 'Semana (Lun-Vie)' },
@@ -31,6 +32,12 @@ export default function ScheduleVisibilityTab({ onChanged }) {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  // Tucumán scheme state & modal
+  const [tucScheme, setTucScheme] = useState('alternativo');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [pendingScheme, setPendingScheme] = useState('original');
+  const [schemeLoading, setSchemeLoading] = useState(false);
+
   // Preferencias individuales (IDs de schedules ocultados por este usuario)
   const [hiddenScheduleIds, setHiddenScheduleIds] = useState(() => {
     return Array.isArray(user?.schedule_preferences?.hidden_schedule_ids)
@@ -45,6 +52,17 @@ export default function ScheduleVisibilityTab({ onChanged }) {
   const [allTurns, setAllTurns] = useState(true);
   const [selectedDrawIds, setSelectedDrawIds] = useState([]);
 
+  const loadTucScheme = useCallback(async () => {
+    try {
+      const res = await api.get('/schedules/tucuman-scheme');
+      if (res.data?.scheme) {
+        setTucScheme(res.data.scheme);
+      }
+    } catch {
+      // fallback
+    }
+  }, []);
+
   // Carga inicial de grilla de turnos y sincronización de preferencias del usuario
   const load = useCallback(async (fresh = false) => {
     setLoading(true);
@@ -54,6 +72,7 @@ export default function ScheduleVisibilityTab({ onChanged }) {
       const [{ data: schedData }, { data: prefData }] = await Promise.all([
         api.get('/schedules/status', { params }),
         api.get('/user/schedule-preferences').catch(() => ({ data: { data: { hidden_schedule_ids: [] } } })),
+        loadTucScheme(),
       ]);
       setSections(Array.isArray(schedData?.sections) ? schedData.sections : []);
       const savedHidden = prefData?.data?.hidden_schedule_ids || [];
@@ -64,7 +83,32 @@ export default function ScheduleVisibilityTab({ onChanged }) {
     } finally {
       setLoading(false);
     }
-  }, [updateUser]);
+  }, [updateUser, loadTucScheme]);
+
+  const handleSelectScheme = (scheme) => {
+    setPendingScheme(scheme);
+    setModalOpen(true);
+  };
+
+  const confirmSchemeChange = async () => {
+    if (!pendingScheme) return;
+    setSchemeLoading(true);
+    setError('');
+    setSuccessMsg('');
+    try {
+      const res = await api.post('/schedules/tucuman-scheme', { scheme: pendingScheme });
+      setTucScheme(pendingScheme);
+      setSuccessMsg(res.data?.message || 'Esquema de Tucumán actualizado con éxito.');
+      setModalOpen(false);
+      await load(true);
+      onChanged?.();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Error al cambiar esquema de Tucumán.');
+      setModalOpen(false);
+    } finally {
+      setSchemeLoading(false);
+    }
+  };
 
   useEffect(() => {
     load(true);
@@ -279,6 +323,99 @@ export default function ScheduleVisibilityTab({ onChanged }) {
             Ver todas ({hiddenScheduleIds.length} ocultas)
           </button>
         )}
+      </div>
+
+      {/* Selector de Esquema para Tucumán (TUC) */}
+      <div className="bg-gray-800/80 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 space-y-3 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-bold text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                TUC
+              </span>
+              <h3 className="text-sm font-bold text-white">
+                Esquema de Turnos: Tucumán
+              </h3>
+              <span className="text-[11px] text-gray-400">
+                (Lunes a Sábados)
+              </span>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Elegí con qué esquema de turnos jugar Tucumán. Hacé clic en la opción deseada para ver el detalle y confirmar.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full">
+              Activo: {tucScheme === 'original' ? 'Opción A (Original)' : 'Opción B (Alternativo)'}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          {/* Checkbox Opción A */}
+          <div
+            onClick={() => handleSelectScheme('original')}
+            className={`flex items-start gap-3 p-3.5 rounded-xl border transition cursor-pointer ${
+              tucScheme === 'original'
+                ? 'bg-indigo-950/70 border-indigo-400 ring-1 ring-indigo-400/40 text-white shadow'
+                : 'bg-gray-900/60 border-gray-700/80 hover:border-gray-600 text-gray-300 hover:text-white'
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={tucScheme === 'original'}
+              onChange={() => handleSelectScheme('original')}
+              className="w-4 h-4 mt-0.5 rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer pointer-events-none"
+            />
+            <div className="flex-1 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white">
+                  Opción A: Horario Original (CPA)
+                </span>
+                {tucScheme === 'original' && (
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded font-semibold">
+                    ACTIVO
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-gray-400 leading-snug">
+                11:30 Matutina · 14:30 Vespertina · 17:30 La Siesta · 19:30 De la Tarde · 22:00 Nocturna
+              </p>
+            </div>
+          </div>
+
+          {/* Checkbox Opción B */}
+          <div
+            onClick={() => handleSelectScheme('alternativo')}
+            className={`flex items-start gap-3 p-3.5 rounded-xl border transition cursor-pointer ${
+              tucScheme === 'alternativo'
+                ? 'bg-indigo-950/70 border-indigo-400 ring-1 ring-indigo-400/40 text-white shadow'
+                : 'bg-gray-900/60 border-gray-700/80 hover:border-gray-600 text-gray-300 hover:text-white'
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={tucScheme === 'alternativo'}
+              onChange={() => handleSelectScheme('alternativo')}
+              className="w-4 h-4 mt-0.5 rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer pointer-events-none"
+            />
+            <div className="flex-1 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white">
+                  Opción B: Alternativo (Nacional)
+                </span>
+                {tucScheme === 'alternativo' && (
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded font-semibold">
+                    ACTIVO
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-gray-400 leading-snug">
+                11:30 La Previa · 14:30 Primera · 17:30 Matutina · 19:30 Vespertina · 22:00 Nocturna
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -554,6 +691,108 @@ export default function ScheduleVisibilityTab({ onChanged }) {
             );
           })}
         </div>
+      )}
+
+      {/* Modal de confirmación de esquema */}
+      {modalOpen && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-gray-900 border border-indigo-500/30 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl animate-fade-in">
+            <div className="flex items-center justify-between border-b border-gray-700/50 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-bold text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  TUC
+                </span>
+                <h3 className="text-sm font-bold text-white">
+                  Confirmar Esquema de Turnos: Tucumán
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className="text-gray-400 hover:text-white transition p-1 cursor-pointer"
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <p className="text-gray-300">
+                Seleccionaste jugar Tucumán con:
+              </p>
+              <div className="p-3.5 rounded-xl bg-indigo-950/60 border border-indigo-500/40">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold text-sm text-indigo-200">
+                    {pendingScheme === 'original'
+                      ? 'Opción A: Horario Original (CPA)'
+                      : 'Opción B: Alternativo (Nacional)'}
+                  </span>
+                  <span className="text-[10px] text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded-full font-semibold">
+                    Lun a Sáb
+                  </span>
+                </div>
+                
+                <div className="divide-y divide-gray-700/40 border-t border-gray-700/40 pt-2 space-y-1.5">
+                  {(pendingScheme === 'original' ? [
+                    { time: '11:30', name: 'Matutina', close: '11:28' },
+                    { time: '14:30', name: 'Vespertina', close: '14:28' },
+                    { time: '17:30', name: 'La Siesta', close: '17:28' },
+                    { time: '19:30', name: 'De la Tarde', close: '19:28' },
+                    { time: '22:00', name: 'Nocturna', close: '21:58' },
+                  ] : [
+                    { time: '11:30', name: 'La Previa', close: '11:28' },
+                    { time: '14:30', name: 'Primera', close: '14:28' },
+                    { time: '17:30', name: 'Matutina', close: '17:28' },
+                    { time: '19:30', name: 'Vespertina', close: '19:28' },
+                    { time: '22:00', name: 'Nocturna', close: '21:58' },
+                  ]).map((row) => (
+                    <div key={row.name} className="flex items-center justify-between pt-1">
+                      <span className="font-semibold text-gray-200">{row.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400">Sorteo <strong className="text-gray-200 font-mono">{row.time}</strong></span>
+                        <span className="text-gray-400">·</span>
+                        <span className="text-yellow-400/90">Cierre <strong className="text-yellow-300 font-mono">{row.close}</strong></span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-gray-800/60 border border-gray-700/60 rounded-xl p-2.5 text-gray-400 text-[11px] leading-relaxed">
+                ℹ️ Esta configuración actualiza los turnos de juego para la lotería de <strong>Tucumán (TUC)</strong> de Lunes a Sábados sin duplicar la lotería.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-700/50">
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                disabled={schemeLoading}
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-medium transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmSchemeChange}
+                disabled={schemeLoading}
+                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg transition cursor-pointer disabled:opacity-50"
+              >
+                {schemeLoading ? (
+                  <>
+                    <FiRefreshCw className="animate-spin" size={13} />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <FiCheck size={14} />
+                    Confirmar elección
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

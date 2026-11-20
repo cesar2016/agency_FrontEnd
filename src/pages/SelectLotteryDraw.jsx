@@ -189,7 +189,7 @@ export default function SelectLotteryDraw() {
           .map((l) => {
             const sched = effectiveSchedule(l.schedules, draw.id);
             if (!sched) return null;
-            if (isAdmin && hiddenScheduleSet.has(Number(sched.id))) {
+            if (hiddenScheduleSet.has(Number(sched.id))) {
               return null;
             }
             return { lottery: l, closingTime: sched.closing_time, drawTime: sched.draw_time };
@@ -252,8 +252,7 @@ export default function SelectLotteryDraw() {
       <div className="text-center space-y-2">
         <h2 className="text-lg font-semibold text-white">Sorteos y Loterías</h2>
         <p className="text-xs text-gray-400">{todayLabel()}</p>
-        {isAdmin && (
-          <div className="inline-flex bg-gray-800/80 border border-indigo-500/20 rounded-xl p-1 gap-1">
+        <div className="inline-flex bg-gray-800/80 border border-indigo-500/20 rounded-xl p-1 gap-1">
             <button
               type="button"
               onClick={() => setActiveTab('play')}
@@ -277,7 +276,6 @@ export default function SelectLotteryDraw() {
               <FiSliders size={13} /> Turnos y Loterías
             </button>
           </div>
-        )}
         {activeTab === 'play' && drawOrder.length > 0 && (
           <div>
             <button
@@ -290,7 +288,7 @@ export default function SelectLotteryDraw() {
         )}
       </div>
 
-      {isAdmin && activeTab === 'config' ? (
+      {activeTab === 'config' ? (
         <ScheduleVisibilityTab
           onChanged={() => {
             fetchLotteries();

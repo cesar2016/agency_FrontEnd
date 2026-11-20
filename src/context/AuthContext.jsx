@@ -28,6 +28,7 @@ export function AuthProvider({ children }) {
   }, [fetchUser]);
 
   const login = async (email, password) => {
+    sessionStorage.clear();
     const { data } = await api.post('/login', { email, password });
     localStorage.setItem('token', data.token);
     setUser(data.user);
@@ -39,6 +40,7 @@ export function AuthProvider({ children }) {
       await api.post('/logout');
     } finally {
       localStorage.removeItem('token');
+      sessionStorage.clear();
       setUser(null);
     }
   };

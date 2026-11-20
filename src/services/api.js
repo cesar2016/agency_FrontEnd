@@ -12,7 +12,7 @@ const api = axios.create({
 // que no cambian al navegar entre secciones (loterias, horarios, draws).
 // Reduce el delay perceptivo en produccion (la BD remota tarda ~0.8s por query).
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
-const GET_CACHE_KEY = 'api_get_cache_v9';
+const GET_CACHE_KEY = 'api_get_cache_v10';
 
 function readCache() {
   try {
@@ -34,7 +34,17 @@ function writeCache(map) {
 // - `/me` son la identidad y los ROLES del usuario. Es autorizacion, no datos.
 // - `/user/schedule-preferences` preferencias individuales de turnos/loterias.
 // - `/schedules/status` grilla administrativa de horarios siempre fresca.
-const SIN_CACHE_EXACTO = ['/me', '/user/schedule-preferences', '/schedules/status'];
+// - `/schedules/tucuman-scheme` esquema de sorteos de Tucumán individual por usuario.
+// - `/extracts/scrape/status` grilla viva de extractos con distribución según esquema de cada usuario.
+// - `/extracts/mongo-cabezas` cabezas vivas de MongoDB según esquema de cada usuario.
+const SIN_CACHE_EXACTO = [
+  '/me',
+  '/user/schedule-preferences',
+  '/schedules/status',
+  '/schedules/tucuman-scheme',
+  '/extracts/scrape/status',
+  '/extracts/mongo-cabezas',
+];
 
 // Estos endpoints representan datos dinámicos altamente cambiantes. 
 // En lugar de no cachearlos, usamos un TTL corto (15 seg) para que la

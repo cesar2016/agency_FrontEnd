@@ -33,7 +33,9 @@ export default function ScheduleVisibilityTab({ onChanged }) {
   const [successMsg, setSuccessMsg] = useState('');
 
   // Tucumán scheme state & modal
-  const [tucScheme, setTucScheme] = useState('alternativo');
+  const [tucScheme, setTucScheme] = useState(() => {
+    return user?.schedule_preferences?.tucuman_scheme || 'alternativo';
+  });
   const [modalOpen, setModalOpen] = useState(false);
   const [pendingScheme, setPendingScheme] = useState('original');
   const [schemeLoading, setSchemeLoading] = useState(false);
@@ -76,8 +78,17 @@ export default function ScheduleVisibilityTab({ onChanged }) {
       ]);
       setSections(Array.isArray(schedData?.sections) ? schedData.sections : []);
       const savedHidden = prefData?.data?.hidden_schedule_ids || [];
+      const savedScheme = prefData?.data?.tucuman_scheme || 'alternativo';
       setHiddenScheduleIds(savedHidden);
-      updateUser?.({ schedule_preferences: { hidden_schedule_ids: savedHidden } });
+      if (savedScheme) {
+        setTucScheme(savedScheme);
+      }
+      updateUser?.({
+        schedule_preferences: {
+          hidden_schedule_ids: savedHidden,
+          tucuman_scheme: savedScheme,
+        },
+      });
     } catch (e) {
       setError(e?.response?.data?.message || 'Error al cargar los turnos y loterías.');
     } finally {
@@ -98,6 +109,12 @@ export default function ScheduleVisibilityTab({ onChanged }) {
     try {
       const res = await api.post('/schedules/tucuman-scheme', { scheme: pendingScheme });
       setTucScheme(pendingScheme);
+      updateUser?.({
+        schedule_preferences: {
+          ...user?.schedule_preferences,
+          tucuman_scheme: pendingScheme,
+        },
+      });
       setSuccessMsg(res.data?.message || 'Esquema de Tucumán actualizado con éxito.');
       setModalOpen(false);
       await load(true);
@@ -157,10 +174,17 @@ export default function ScheduleVisibilityTab({ onChanged }) {
   const savePreferences = async (nextHidden) => {
     const unique = Array.from(new Set(nextHidden.map(Number)));
     setHiddenScheduleIds(unique);
-    updateUser?.({ schedule_preferences: { hidden_schedule_ids: unique } });
+    updateUser?.({
+      schedule_preferences: {
+        ...(user?.schedule_preferences || {}),
+        hidden_schedule_ids: unique,
+        tucuman_scheme: tucScheme,
+      },
+    });
 
     await api.post('/user/schedule-preferences', {
       hidden_schedule_ids: unique,
+      tucuman_scheme: tucScheme,
     });
     onChanged?.();
   };

@@ -92,7 +92,7 @@ const DRAW_PRINCIPAL_GROUPS = {
 
 export default function SelectLotteryDraw() {
   const { lotteries, draws, selectedByDraw, selectedGroupsByDraw, toggleLotteryInDraw, toggleGroupInDraw, toggleAllInDraw, fetchLotteries, fetchDraws } = useBet();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const roles = Array.isArray(user?.roles) ? user.roles : [];
   const isSuperAdmin = roles.includes('super_admin');
   const isAdmin = roles.some((r) => ['admin', 'super_admin'].includes(r));
@@ -101,16 +101,63 @@ export default function SelectLotteryDraw() {
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
   const [lotteryOrder, setLotteryOrder] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('lotteryOrder') || '{}'); } catch { return {}; }
+    try {
+      const server = user?.schedule_preferences?.lottery_order;
+      if (server && typeof server === 'object' && Object.keys(server).length > 0) return server;
+      const key = user?.id ? `lotteryOrder_${user.id}` : 'lotteryOrder';
+      return JSON.parse(localStorage.getItem(key) || '{}');
+    } catch { return {}; }
   });
   const [drawOrder, setDrawOrder] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('drawOrder') || '[]'); } catch { return []; }
+    try {
+      const server = user?.schedule_preferences?.draw_order;
+      if (Array.isArray(server) && server.length > 0) return server;
+      const key = user?.id ? `drawOrder_${user.id}` : 'drawOrder';
+      return JSON.parse(localStorage.getItem(key) || '[]');
+    } catch { return []; }
   });
   const [drawDragId, setDrawDragId] = useState(null);
   const [dragState, setDragState] = useState({ drawId: null, fromId: null });
   const [now, setNow] = useState(new Date());
   
   const [showNqnWarning, setShowNqnWarning] = useState(false);
+
+  // Sincronizar órdenes drag-and-drop cuando cambia el usuario o sus preferencias
+  useEffect(() => {
+    if (user?.id) {
+      const serverDraw = user?.schedule_preferences?.draw_order;
+      let localDraw = null;
+      try {
+        const d = localStorage.getItem(`drawOrder_${user.id}`);
+        localDraw = d ? JSON.parse(d) : null;
+      } catch { localDraw = null; }
+
+      if (Array.isArray(serverDraw) && serverDraw.length > 0) {
+        setDrawOrder(serverDraw);
+        try { localStorage.setItem(`drawOrder_${user.id}`, JSON.stringify(serverDraw)); } catch {}
+      } else if (Array.isArray(localDraw)) {
+        setDrawOrder(localDraw);
+      } else {
+        setDrawOrder([]);
+      }
+
+      const serverLot = user?.schedule_preferences?.lottery_order;
+      let localLot = null;
+      try {
+        const l = localStorage.getItem(`lotteryOrder_${user.id}`);
+        localLot = l ? JSON.parse(l) : null;
+      } catch { localLot = null; }
+
+      if (serverLot && typeof serverLot === 'object' && Object.keys(serverLot).length > 0) {
+        setLotteryOrder(serverLot);
+        try { localStorage.setItem(`lotteryOrder_${user.id}`, JSON.stringify(serverLot)); } catch {}
+      } else if (localLot && typeof localLot === 'object') {
+        setLotteryOrder(localLot);
+      } else {
+        setLotteryOrder({});
+      }
+    }
+  }, [user?.id, user?.schedule_preferences?.draw_order, user?.schedule_preferences?.lottery_order]);
 
   // Actualizar cada minuto para re-evaluar turnos cerrados en tiempo real
   useEffect(() => {
@@ -120,8 +167,18 @@ export default function SelectLotteryDraw() {
 
   const persistOrder = useCallback((next) => {
     setLotteryOrder(next);
-    localStorage.setItem('lotteryOrder', JSON.stringify(next));
-  }, []);
+    const key = user?.id ? `lotteryOrder_${user.id}` : 'lotteryOrder';
+    localStorage.setItem(key, JSON.stringify(next));
+    if (user?.id) {
+      api.post('/user/schedule-preferences', { lottery_order: next }).catch(() => {});
+      updateUser?.({
+        schedule_preferences: {
+          ...user?.schedule_preferences,
+          lottery_order: next,
+        },
+      });
+    }
+  }, [user?.id, user?.schedule_preferences, updateUser]);
 
   const reorderLottery = useCallback((drawId, fromId, toId, allIds) => {
     if (fromId === toId) return;
@@ -137,8 +194,18 @@ export default function SelectLotteryDraw() {
   // Orden kanban de las cards padres (turnos)
   const persistDrawOrder = useCallback((next) => {
     setDrawOrder(next);
-    localStorage.setItem('drawOrder', JSON.stringify(next));
-  }, []);
+    const key = user?.id ? `drawOrder_${user.id}` : 'drawOrder';
+    localStorage.setItem(key, JSON.stringify(next));
+    if (user?.id) {
+      api.post('/user/schedule-preferences', { draw_order: next }).catch(() => {});
+      updateUser?.({
+        schedule_preferences: {
+          ...user?.schedule_preferences,
+          draw_order: next,
+        },
+      });
+    }
+  }, [user?.id, user?.schedule_preferences, updateUser]);
 
   const reorderDraw = useCallback((fromId, toId, allIds) => {
     if (fromId === toId) return;

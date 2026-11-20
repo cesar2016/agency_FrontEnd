@@ -1,6 +1,6 @@
 /**
  * Genera un Blob de imagen JPEG con el ticket térmico de la apuesta dibujado en un Canvas HTML5.
- * Es completamente síncrono en el cliente, ultra rápido y sin llamadas de red.
+ * Diseñado con tipografía aumentada, alto contraste y estilos en negrita para máxima legibilidad.
  *
  * @param {Object} bet - Datos de la apuesta (BetResource o similar)
  * @returns {Promise<Blob>}
@@ -8,8 +8,8 @@
 export function generateTicketImageBlob(bet) {
   return new Promise((resolve, reject) => {
     try {
-      const scale = 2; // Factor de escala para resolución retina nítida
-      const baseWidth = 360;
+      const scale = 2; // Factor de escala para resolución retina ultra nítida
+      const baseWidth = 390;
       const width = baseWidth * scale;
 
       const sequence = bet?.sequence || '000000';
@@ -50,82 +50,83 @@ export function generateTicketImageBlob(bet) {
       const subtotal = Number(bet?.subtotal || 0);
       const total = Number(bet?.total || 0);
 
-      const lineHeight = 18 * scale;
-      const margin = 16 * scale;
+      const lineHeight = 23 * scale;
+      const margin = 18 * scale;
 
-      // Estimar altura total
-      let estimatedLines = 14;
+      // Estimar altura total generosa para evitar cualquier recorte previo
+      let estimatedLines = 16;
       for (const _draw of draws) {
-        estimatedLines += 3;
-        if (items.length > 0) estimatedLines += 3 + items.length;
-        if (redoblonas.length > 0) estimatedLines += 4 + redoblonas.length;
+        estimatedLines += 4;
+        if (items.length > 0) estimatedLines += 4 + items.length;
+        if (redoblonas.length > 0) estimatedLines += 5 + redoblonas.length;
       }
-      const initialHeight = margin * 2 + estimatedLines * lineHeight + 40 * scale;
+      const initialHeight = margin * 2 + estimatedLines * lineHeight + 80 * scale;
 
       const canvas = document.createElement('canvas');
       canvas.width = width;
-      canvas.height = Math.max(initialHeight, 400 * scale);
+      canvas.height = Math.max(initialHeight, 500 * scale);
       const ctx = canvas.getContext('2d');
 
-      // Fondo blanco tipo papel térmico
+      // Fondo blanco papel térmico
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, width, canvas.height);
 
-      ctx.fillStyle = '#111827';
+      // Negro absoluto para contraste perfecto
+      ctx.fillStyle = '#000000';
       ctx.textBaseline = 'top';
 
       let y = margin;
 
-      const drawText = (text, x, align = 'left', isBold = false, size = 12) => {
-        ctx.font = `${isBold ? 'bold' : 'normal'} ${size * scale}px 'Courier New', Courier, monospace`;
+      const drawText = (text, x, align = 'left', isBold = false, size = 13) => {
+        ctx.font = `${isBold ? 'bold' : '600'} ${size * scale}px 'Courier New', Courier, monospace`;
         ctx.textAlign = align;
         ctx.fillText(text, x, y);
       };
 
       const drawDashedLine = (isDouble = false) => {
         ctx.save();
-        ctx.strokeStyle = '#374151';
-        ctx.lineWidth = 1 * scale;
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1.5 * scale;
         if (isDouble) {
           ctx.beginPath();
-          ctx.moveTo(margin, y + 2 * scale);
-          ctx.lineTo(width - margin, y + 2 * scale);
+          ctx.moveTo(margin, y + 3 * scale);
+          ctx.lineTo(width - margin, y + 3 * scale);
           ctx.stroke();
           ctx.beginPath();
-          ctx.moveTo(margin, y + 6 * scale);
-          ctx.lineTo(width - margin, y + 6 * scale);
+          ctx.moveTo(margin, y + 8 * scale);
+          ctx.lineTo(width - margin, y + 8 * scale);
           ctx.stroke();
-          y += 12 * scale;
+          y += 15 * scale;
         } else {
-          ctx.setLineDash([5 * scale, 3 * scale]);
+          ctx.setLineDash([6 * scale, 4 * scale]);
           ctx.beginPath();
-          ctx.moveTo(margin, y + 4 * scale);
-          ctx.lineTo(width - margin, y + 4 * scale);
+          ctx.moveTo(margin, y + 5 * scale);
+          ctx.lineTo(width - margin, y + 5 * scale);
           ctx.stroke();
-          y += 10 * scale;
+          y += 13 * scale;
         }
         ctx.restore();
       };
 
-      // Encabezado
-      drawText('TICKET', width / 2, 'center', true, 16);
-      y += lineHeight * 1.3;
-      drawText(`FECHA/HORA: ${dateStr}`, width / 2, 'center', false, 11);
-      y += lineHeight;
-      drawText(`PASADOR: ${pasador}`, width / 2, 'center', false, 11);
-      y += lineHeight;
+      // 1. Encabezado principal
+      drawText('T I C K E T', width / 2, 'center', true, 19);
+      y += lineHeight * 1.35;
+      drawText(`FECHA/HORA: ${dateStr}`, width / 2, 'center', true, 13);
+      y += lineHeight * 1.05;
+      drawText(`PASADOR: ${pasador}`, width / 2, 'center', true, 13);
+      y += lineHeight * 1.1;
 
       drawDashedLine(false);
 
-      // Secuencia
-      drawText(`SECUENCIA: ${sequence}`, width / 2, 'center', true, 14);
-      y += lineHeight * 1.1;
+      // 2. Secuencia en tamaño grande y negrita
+      drawText(`SECUENCIA: ${sequence}`, width / 2, 'center', true, 17);
+      y += lineHeight * 1.2;
 
       drawDashedLine(false);
 
       let subSeq = 0;
 
-      // Turnos
+      // 3. Turnos y jugadas
       for (let i = 0; i < draws.length; i++) {
         const draw = draws[i];
         let drawLots = drawLotteries.filter((dl) => dl.draw_id === draw.id);
@@ -147,24 +148,26 @@ export function generateTicketImageBlob(bet) {
           .filter(Boolean)
           .join(' · ');
 
-        drawText(draw.name.toUpperCase(), width / 2, 'center', true, 13);
-        y += lineHeight;
+        // Turno
+        drawText(draw.name.toUpperCase(), width / 2, 'center', true, 16);
+        y += lineHeight * 1.1;
 
         if (lotInitials) {
-          drawText(`${lotInitials} (${lotCount} Lot)`, width / 2, 'center', true, 10);
-          y += lineHeight * 1.1;
+          drawText(`${lotInitials} (${lotCount} Lot)`, width / 2, 'center', true, 12);
+          y += lineHeight * 1.2;
         }
 
         // Jugadas Simples
         if (items.length > 0) {
           subSeq++;
-          drawText(`Jugada Simple Secuencia: ${sequence}-${subSeq}`, width / 2, 'center', false, 9);
-          y += lineHeight;
+          drawText(`Jugada Simple Secuencia: ${sequence}-${subSeq}`, width / 2, 'center', false, 11);
+          y += lineHeight * 1.05;
 
-          drawText('NUMERO', margin, 'left', true, 10);
-          drawText('TIPO', width * 0.44, 'left', true, 10);
-          drawText('IMPORTE', width - margin, 'right', true, 10);
-          y += lineHeight;
+          // Cabecera de la tabla
+          drawText('NUMERO', margin, 'left', true, 12.5);
+          drawText('TIPO', width * 0.44, 'left', true, 12.5);
+          drawText('IMPORTE', width - margin, 'right', true, 12.5);
+          y += lineHeight * 1.1;
 
           for (const item of items) {
             const typeStr = item.type === 'primera' ? '#1' : '#' + String(item.type).replace('a_los_', '');
@@ -172,27 +175,27 @@ export function generateTicketImageBlob(bet) {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             });
-            drawText(String(item.number), margin, 'left', false, 11);
-            drawText(typeStr, width * 0.44, 'left', false, 11);
-            drawText(`$${itemAmount}`, width - margin, 'right', false, 11);
+            drawText(String(item.number), margin, 'left', true, 14);
+            drawText(typeStr, width * 0.44, 'left', true, 13);
+            drawText(`$${itemAmount}`, width - margin, 'right', true, 13.5);
             y += lineHeight;
           }
         }
 
         // Redoblonas
         if (redoblonas.length > 0) {
-          y += 4 * scale;
+          y += 6 * scale;
           drawDashedLine(false);
-          drawText('REDOBLONA', width / 2, 'center', true, 12);
-          y += lineHeight;
+          drawText('REDOBLONA', width / 2, 'center', true, 14);
+          y += lineHeight * 1.05;
           subSeq++;
-          drawText(`Redoblona Secuencia: ${sequence}-${subSeq}`, width / 2, 'center', false, 9);
-          y += lineHeight;
+          drawText(`Redoblona Secuencia: ${sequence}-${subSeq}`, width / 2, 'center', false, 11);
+          y += lineHeight * 1.05;
 
-          drawText('NUMERO', margin, 'left', true, 10);
-          drawText('TIPO', width * 0.44, 'left', true, 10);
-          drawText('IMPORTE', width - margin, 'right', true, 10);
-          y += lineHeight;
+          drawText('NUMERO', margin, 'left', true, 12.5);
+          drawText('TIPO', width * 0.44, 'left', true, 12.5);
+          drawText('IMPORTE', width - margin, 'right', true, 12.5);
+          y += lineHeight * 1.1;
 
           for (const red of redoblonas) {
             const numStr = `${String(red.first_number).padStart(2, '0')}-${String(red.second_number).padStart(2, '0')}`;
@@ -201,9 +204,9 @@ export function generateTicketImageBlob(bet) {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             });
-            drawText(numStr, margin, 'left', false, 11);
-            drawText(typeStr, width * 0.44, 'left', false, 10);
-            drawText(`$${redAmount}`, width - margin, 'right', false, 11);
+            drawText(numStr, margin, 'left', true, 14);
+            drawText(typeStr, width * 0.44, 'left', true, 12);
+            drawText(`$${redAmount}`, width - margin, 'right', true, 13.5);
             y += lineHeight;
           }
         }
@@ -212,8 +215,9 @@ export function generateTicketImageBlob(bet) {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         });
-        drawText(`Subtotal ${draw.name}: $${drawSubtotal}`, width - margin, 'right', false, 10);
-        y += lineHeight;
+        y += 2 * scale;
+        drawText(`Subtotal ${draw.name}: $${drawSubtotal}`, width - margin, 'right', true, 12.5);
+        y += lineHeight * 1.1;
 
         if (i < draws.length - 1) {
           drawDashedLine(false);
@@ -222,17 +226,17 @@ export function generateTicketImageBlob(bet) {
 
       drawDashedLine(true);
 
-      drawText('GRACIAS POR SU JUGADA', width / 2, 'center', false, 10);
-      y += lineHeight * 1.1;
+      drawText('GRACIAS POR SU JUGADA', width / 2, 'center', true, 12.5);
+      y += lineHeight * 1.2;
 
       const totalFormatted = total.toLocaleString('es-AR', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
-      drawText(`TOTAL: $${totalFormatted}`, width - margin, 'right', true, 14);
-      y += lineHeight * 1.5;
+      drawText(`TOTAL: $${totalFormatted}`, width - margin, 'right', true, 17);
+      y += lineHeight * 1.6;
 
-      // Recortar exactamente a la altura dibujada
+      // Recortar exactamente a la altura requerida
       const trimmedCanvas = document.createElement('canvas');
       trimmedCanvas.width = width;
       trimmedCanvas.height = Math.ceil(y);

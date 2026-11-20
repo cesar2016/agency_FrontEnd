@@ -1144,7 +1144,7 @@ export default function PlaceBetPage() {
                 className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-500 disabled:bg-gray-600 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition"
               >
                 <FiImage size={16} />
-                Descargar Imagen (JPG)
+                descargar Ticket ( JPG )
               </button>
               <button
                 onClick={() => downloadTicket(result[0]?.id, result[0]?.sequence)}

@@ -66,12 +66,27 @@ const PRINCIPAL_GROUP_LABEL = {
   9: '9 Principales',
 };
 
+const CANONICAL_DRAW_ORDER = [
+  'La Previa',
+  'Primera',
+  'Matutina',
+  'Matutina Plus',
+  'La Siesta',
+  'Vespertina',
+  'De la Tarde',
+  'Nocturna',
+  'Noctura',
+  'Nocturna Plus',
+];
+
 // Qué grupos de principales ofrece cada turno
 const DRAW_PRINCIPAL_GROUPS = {
-  'La Previa':  [5, 8],
-  'Primera':    [5, 8],
-  'Matutina':   [5, 9],
-  'Vespertina': [5, 8],
+  'La Previa':   [5, 8],
+  'Primera':     [5, 8],
+  'Matutina':    [5, 9],
+  'La Siesta':   [],
+  'Vespertina':  [5, 8],
+  'De la Tarde': [],
   'Nocturna':    [5, 9],
 };
 
@@ -163,7 +178,12 @@ export default function SelectLotteryDraw() {
   const drawsGrouped = useMemo(() => {
     return draws
       .slice()
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .sort((a, b) => {
+        const ai = CANONICAL_DRAW_ORDER.indexOf(a.name);
+        const bi = CANONICAL_DRAW_ORDER.indexOf(b.name);
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        return (a.order ?? 0) - (b.order ?? 0);
+      })
       .map((draw) => {
         const items = lotteries
           .map((l) => {

@@ -9,6 +9,19 @@ const SCOPES = [
   { id: 'sunday', label: 'Domingos' },
 ];
 
+const CANONICAL_DRAW_ORDER = [
+  'La Previa',
+  'Primera',
+  'Matutina',
+  'Matutina Plus',
+  'La Siesta',
+  'Vespertina',
+  'De la Tarde',
+  'Nocturna',
+  'Noctura',
+  'Nocturna Plus',
+];
+
 export default function ScheduleVisibilityTab({ onChanged }) {
   const { user, updateUser } = useAuth();
   const [scope, setScope] = useState('daily');
@@ -88,7 +101,12 @@ export default function ScheduleVisibilityTab({ onChanged }) {
       }
     }
 
-    return Array.from(byDraw.values()).sort((a, b) => a.draw_id - b.draw_id);
+    return Array.from(byDraw.values()).sort((a, b) => {
+      const ai = CANONICAL_DRAW_ORDER.indexOf(a.draw_name);
+      const bi = CANONICAL_DRAW_ORDER.indexOf(b.draw_name);
+      if (ai !== -1 && bi !== -1) return ai - bi;
+      return a.draw_id - b.draw_id;
+    });
   }, [currentLotteries, hiddenSet]);
 
   // Persistir preferencias individuales

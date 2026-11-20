@@ -3,8 +3,6 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
   FiClock,
-  FiChevronDown,
-  FiChevronUp,
   FiRefreshCw,
   FiAlertTriangle,
   FiEdit2,
@@ -12,10 +10,8 @@ import {
   FiPlus,
   FiCheck,
   FiX,
-  FiSliders,
   FiToggleLeft,
   FiToggleRight,
-  FiPower,
 } from 'react-icons/fi';
 
 const LOTTERY_ORDER = [
@@ -29,7 +25,18 @@ function lotteryRank(initials) {
   return i === -1 ? 999 : i;
 }
 
-const DRAW_ORDER = ['La Previa', 'Primera', 'Matutina', 'Vespertina', 'Nocturna'];
+const DRAW_ORDER = [
+  'La Previa',
+  'Primera',
+  'Matutina',
+  'Matutina Plus',
+  'La Siesta',
+  'Vespertina',
+  'De la Tarde',
+  'Nocturna',
+  'Noctura',
+  'Nocturna Plus',
+];
 
 function computeClosingTime(drawTime) {
   if (!drawTime || !/^\d{2}:\d{2}$/.exec(drawTime)) return '';
@@ -63,10 +70,25 @@ export default function HorariosPage() {
   const [addingTurnKey, setAddingTurnKey] = useState(null);
   const [addForm, setAddForm] = useState({ draw_id: '', draw_time: '', closing_time: '' });
 
+  // State for Tucumán Scheme ('original' | 'alternativo')
+  const [tucScheme, setTucScheme] = useState('alternativo');
+  const [tucLoading, setTucLoading] = useState(false);
+
   const flash = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
   };
+
+  const loadTucScheme = useCallback(async () => {
+    try {
+      const res = await api.get('/schedules/tucuman-scheme');
+      if (res.data?.scheme) {
+        setTucScheme(res.data.scheme);
+      }
+    } catch {
+      // Fallback
+    }
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,6 +96,7 @@ export default function HorariosPage() {
       const [statusRes, drawsRes] = await Promise.all([
         api.get('/schedules/status'),
         api.get('/draws').catch(() => ({ data: [] })),
+        loadTucScheme(),
       ]);
       setSections(statusRes.data.sections || []);
       setAllDraws(drawsRes.data || []);
@@ -82,7 +105,26 @@ export default function HorariosPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadTucScheme]);
+
+  const handleSwitchTucScheme = async (newScheme) => {
+    if (tucScheme === newScheme || tucLoading || busy) return;
+    const label = newScheme === 'original' ? 'A) Horario Original (CPA)' : 'B) Alternativo (Nacional)';
+    if (!window.confirm(`¿Deseas cambiar el esquema de turnos de Tucumán a ${label}?\n\nEsto actualizará automáticamente los turnos de Lunes a Sábados para TUC.`)) {
+      return;
+    }
+    setTucLoading(true);
+    try {
+      const res = await api.post('/schedules/tucuman-scheme', { scheme: newScheme });
+      flash(res.data?.message || `Esquema de Tucumán actualizado a ${label}`);
+      setTucScheme(newScheme);
+      await load();
+    } catch (err) {
+      flash(err.response?.data?.message || 'Error al cambiar esquema de Tucumán');
+    } finally {
+      setTucLoading(false);
+    }
+  };
 
   useEffect(() => {
     load();
@@ -256,6 +298,136 @@ export default function HorariosPage() {
         </div>
       </div>
 
+      {/* Selector de Esquema de Turnos para Tucumán (TUC) */}
+      <div className="bg-gradient-to-r from-gray-800/90 via-indigo-950/40 to-gray-800/90 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 shadow-xl space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-black text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                TUC
+              </span>
+              <h3 className="text-base font-bold text-white">
+                Esquema de Turnos para Tucumán
+              </h3>
+            </div>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Elige con qué esquema de turnos opera la lotería de Tucumán (Lun a Sáb). Aplica de forma unificada bajo el código TUC.
+            </p>
+          </div>
+          {tucLoading && (
+            <span className="text-xs text-indigo-300 flex items-center gap-1.5 animate-pulse">
+              <FiRefreshCw className="animate-spin" size={13} /> Aplicando cambio...
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+          {/* Opción A: Original */}
+          <div
+            onClick={() => isAdmin && handleSwitchTucScheme('original')}
+            className={`relative rounded-xl p-3.5 border transition cursor-pointer ${
+              tucScheme === 'original'
+                ? 'bg-indigo-950/80 border-indigo-400 shadow-md ring-1 ring-indigo-400/50'
+                : 'bg-gray-800/40 border-gray-700/60 hover:border-gray-600 opacity-80 hover:opacity-100'
+            } ${!isAdmin ? 'cursor-default' : ''}`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                  tucScheme === 'original'
+                    ? 'border-indigo-400 bg-indigo-500 text-white'
+                    : 'border-gray-500'
+                }`}>
+                  {tucScheme === 'original' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                </span>
+                <span className="text-sm font-bold text-white">
+                  A) Horario Original (CPA)
+                </span>
+              </div>
+              {tucScheme === 'original' && (
+                <span className="text-[11px] font-semibold text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded-full">
+                  ACTIVO
+                </span>
+              )}
+            </div>
+            <div className="text-xs text-gray-300 space-y-1 pl-6">
+              <div className="flex items-center justify-between text-gray-300">
+                <span>11:30 Matutina</span>
+                <span className="text-yellow-400/90 text-[11px]">Cierre 11:28</span>
+              </div>
+              <div className="flex items-center justify-between text-gray-300">
+                <span>14:30 Vespertina</span>
+                <span className="text-yellow-400/90 text-[11px]">Cierre 14:28</span>
+              </div>
+              <div className="flex items-center justify-between text-gray-300 font-medium text-indigo-200">
+                <span>17:30 La Siesta</span>
+                <span className="text-yellow-400/90 text-[11px]">Cierre 17:28</span>
+              </div>
+              <div className="flex items-center justify-between text-gray-300 font-medium text-indigo-200">
+                <span>19:30 De la Tarde</span>
+                <span className="text-yellow-400/90 text-[11px]">Cierre 19:28</span>
+              </div>
+              <div className="flex items-center justify-between text-gray-300">
+                <span>22:00 Nocturna</span>
+                <span className="text-yellow-400/90 text-[11px]">Cierre 21:58</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Opción B: Alternativo */}
+          <div
+            onClick={() => isAdmin && handleSwitchTucScheme('alternativo')}
+            className={`relative rounded-xl p-3.5 border transition cursor-pointer ${
+              tucScheme === 'alternativo'
+                ? 'bg-indigo-950/80 border-indigo-400 shadow-md ring-1 ring-indigo-400/50'
+                : 'bg-gray-800/40 border-gray-700/60 hover:border-gray-600 opacity-80 hover:opacity-100'
+            } ${!isAdmin ? 'cursor-default' : ''}`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                  tucScheme === 'alternativo'
+                    ? 'border-indigo-400 bg-indigo-500 text-white'
+                    : 'border-gray-500'
+                }`}>
+                  {tucScheme === 'alternativo' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                </span>
+                <span className="text-sm font-bold text-white">
+                  B) Alternativo (Nacional)
+                </span>
+              </div>
+              {tucScheme === 'alternativo' && (
+                <span className="text-[11px] font-semibold text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded-full">
+                  ACTIVO
+                </span>
+              )}
+            </div>
+            <div className="text-xs text-gray-300 space-y-1 pl-6">
+              <div className="flex items-center justify-between text-gray-300">
+                <span>11:30 La Previa</span>
+                <span className="text-yellow-400/90 text-[11px]">Cierre 11:28</span>
+              </div>
+              <div className="flex items-center justify-between text-gray-300">
+                <span>14:30 Primera</span>
+                <span className="text-yellow-400/90 text-[11px]">Cierre 14:28</span>
+              </div>
+              <div className="flex items-center justify-between text-gray-300">
+                <span>17:30 Matutina</span>
+                <span className="text-yellow-400/90 text-[11px]">Cierre 17:28</span>
+              </div>
+              <div className="flex items-center justify-between text-gray-300">
+                <span>19:30 Vespertina</span>
+                <span className="text-yellow-400/90 text-[11px]">Cierre 19:28</span>
+              </div>
+              <div className="flex items-center justify-between text-gray-300">
+                <span>22:00 Nocturna</span>
+                <span className="text-yellow-400/90 text-[11px]">Cierre 21:58</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           {[
@@ -385,16 +557,51 @@ export default function HorariosPage() {
                                 </button>
                               </div>
                             )}
+                            {lot.initials === 'TUC' && (
+                              <div className="mt-1 pt-1 border-t border-gray-700/40 flex flex-col gap-1">
+                                <span className="text-[10px] text-gray-400 font-medium">Esquema:</span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => isAdmin && handleSwitchTucScheme('original')}
+                                    disabled={busy || tucLoading || !isAdmin}
+                                    title="Cambiar a A) Horario Original (CPA)"
+                                    className={`px-1.5 py-0.5 text-[10px] rounded font-bold border transition ${
+                                      tucScheme === 'original'
+                                        ? 'bg-indigo-600 border-indigo-400 text-white shadow'
+                                        : 'bg-gray-800/80 border-gray-700 text-gray-400 hover:text-white'
+                                    }`}
+                                  >
+                                    A
+                                  </button>
+                                  <button
+                                    onClick={() => isAdmin && handleSwitchTucScheme('alternativo')}
+                                    disabled={busy || tucLoading || !isAdmin}
+                                    title="Cambiar a B) Alternativo (Nacional)"
+                                    className={`px-1.5 py-0.5 text-[10px] rounded font-bold border transition ${
+                                      tucScheme === 'alternativo'
+                                        ? 'bg-indigo-600 border-indigo-400 text-white shadow'
+                                        : 'bg-gray-800/80 border-gray-700 text-gray-400 hover:text-white'
+                                    }`}
+                                  >
+                                    B
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex-1 space-y-2">
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                               {lot.schedules
                                 .slice()
-                                .sort(
-                                  (a, b) =>
+                                .sort((a, b) => {
+                                  if (a.draw_time && b.draw_time && a.draw_time !== b.draw_time) {
+                                    return a.draw_time.localeCompare(b.draw_time);
+                                  }
+                                  return (
                                     DRAW_ORDER.indexOf(a.draw) - DRAW_ORDER.indexOf(b.draw)
-                                )
+                                  );
+                                })
                                 .map((s) => {
                                   const isEditing = editingScheduleId === s.id;
                                   const isDefect = !!s.defect || !s.draw_time;

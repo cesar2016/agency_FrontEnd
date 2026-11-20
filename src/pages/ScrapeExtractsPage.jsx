@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
   FiChevronDown, FiChevronUp, FiDownload, FiRefreshCw,
   FiCheckCircle, FiClock, FiGrid, FiAlertTriangle, FiTrash2, FiMenu,
-  FiInfo, FiCheck, FiX, FiRotateCcw,
+  FiRotateCcw,
 } from 'react-icons/fi';
 
 const CANONICAL_DRAW_ORDER = [
@@ -41,20 +40,6 @@ export default function ScrapeExtractsPage() {
   const [draws, setDraws] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDraws, setOpenDraws] = useState(() => new Set());
-
-  // Esquema de Tucumán individual por usuario
-  const [tucScheme, setTucScheme] = useState(() => {
-    return user?.schedule_preferences?.tucuman_scheme || 'alternativo';
-  });
-  const [modalOpen, setModalOpen] = useState(false);
-  const [pendingScheme, setPendingScheme] = useState('original');
-  const [schemeLoading, setSchemeLoading] = useState(false);
-
-  useEffect(() => {
-    if (user?.schedule_preferences?.tucuman_scheme) {
-      setTucScheme(user.schedule_preferences.tucuman_scheme);
-    }
-  }, [user?.schedule_preferences?.tucuman_scheme]);
 
   // Orden kanban y de loterías aislado por usuario en localStorage
   const [drawOrder, setDrawOrder] = useState(() => {
@@ -175,35 +160,7 @@ export default function ScrapeExtractsPage() {
     persistLotteryOrder({ ...lotteryOrder, [drawId]: ids });
   }, [lotteryOrder, persistLotteryOrder]);
 
-  const handleSelectScheme = (scheme) => {
-    setPendingScheme(scheme);
-    setModalOpen(true);
-  };
 
-  const confirmSchemeChange = async () => {
-    if (!pendingScheme) return;
-    setSchemeLoading(true);
-    try {
-      const res = await api.post('/schedules/tucuman-scheme', { scheme: pendingScheme });
-      setTucScheme(pendingScheme);
-      updateUser?.({
-        schedule_preferences: {
-          ...user?.schedule_preferences,
-          tucuman_scheme: pendingScheme,
-        },
-      });
-      flash(res.data?.message || 'Esquema de Tucumán actualizado con éxito.');
-      setModalOpen(false);
-      savedScrollY.current = window.scrollY;
-      await load();
-      requestAnimationFrame(() => window.scrollTo(0, savedScrollY.current));
-    } catch (err) {
-      flash(err?.response?.data?.message || 'Error al cambiar esquema de Tucumán.');
-      setModalOpen(false);
-    } finally {
-      setSchemeLoading(false);
-    }
-  };
 
   const [busy, setBusy] = useState({}); // claves: turno o "turno-loteria"
   const [modalExtract, setModalExtract] = useState(null); // { drawId, lotteryId, extractId, label }
@@ -380,24 +337,16 @@ export default function ScrapeExtractsPage() {
     const d = date || selectedDate;
     setLoading(true);
     try {
-      const [{ data }, prefRes, tucRes] = await Promise.all([
+      const [{ data }, prefRes] = await Promise.all([
         api.get(`/extracts/scrape/status?fresh=1&date=${d}`),
         api.get('/user/schedule-preferences').catch(() => null),
-        api.get('/schedules/tucuman-scheme').catch(() => null),
       ]);
       const raw = Array.isArray(data?.draws) ? data.draws : [];
       setDraws(raw.map((d) => ({ ...d, lotteries: Array.isArray(d?.lotteries) ? d.lotteries : [] })));
 
-      const savedScheme = tucRes?.data?.scheme || prefRes?.data?.data?.tucuman_scheme;
-      if (savedScheme) {
-        setTucScheme(savedScheme);
-      }
       if (prefRes?.data?.data) {
         updateUser?.({
-          schedule_preferences: {
-            ...prefRes.data.data,
-            ...(savedScheme ? { tucuman_scheme: savedScheme } : {}),
-          },
+          schedule_preferences: prefRes.data.data,
         });
       }
     } catch (e) {
@@ -526,98 +475,7 @@ export default function ScrapeExtractsPage() {
         </div>
       </div>
 
-      {/* Selector de Esquema para Tucumán (TUC) */}
-      <div className="bg-gray-800/80 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 space-y-3 shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                TUC
-              </span>
-              <h3 className="text-sm font-bold text-white">
-                Esquema de Turnos: Tucumán
-              </h3>
-              <span className="text-[11px] text-gray-400">
-                (Lunes a Sábados)
-              </span>
-            </div>
-            <p className="text-xs text-gray-400 mt-1">
-              Elegí con qué esquema de turnos visualizar los extractos de Tucumán. Cada cambio es individual de tu usuario ({user?.name || user?.username || 'personal'}).
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full">
-              Activo: {tucScheme === 'original' ? 'Opción A (Original)' : 'Opción B (Alternativo)'}
-            </span>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          {/* Checkbox Opción A */}
-          <div
-            onClick={() => handleSelectScheme('original')}
-            className={`flex items-start gap-3 p-3.5 rounded-xl border transition cursor-pointer ${
-              tucScheme === 'original'
-                ? 'bg-indigo-950/70 border-indigo-400 ring-1 ring-indigo-400/40 text-white shadow'
-                : 'bg-gray-900/60 border-gray-700/80 hover:border-gray-600 text-gray-300 hover:text-white'
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={tucScheme === 'original'}
-              onChange={() => handleSelectScheme('original')}
-              className="w-4 h-4 mt-0.5 rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer pointer-events-none"
-            />
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white">
-                  Opción A: Horario Original (CPA)
-                </span>
-                {tucScheme === 'original' && (
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded font-semibold">
-                    ACTIVO
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-gray-400 leading-snug">
-                11:30 Matutina · 14:30 Vespertina · 17:30 La Siesta · 19:30 De la Tarde · 22:00 Nocturna
-              </p>
-            </div>
-          </div>
-
-          {/* Checkbox Opción B */}
-          <div
-            onClick={() => handleSelectScheme('alternativo')}
-            className={`flex items-start gap-3 p-3.5 rounded-xl border transition cursor-pointer ${
-              tucScheme === 'alternativo'
-                ? 'bg-indigo-950/70 border-indigo-400 ring-1 ring-indigo-400/40 text-white shadow'
-                : 'bg-gray-900/60 border-gray-700/80 hover:border-gray-600 text-gray-300 hover:text-white'
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={tucScheme === 'alternativo'}
-              onChange={() => handleSelectScheme('alternativo')}
-              className="w-4 h-4 mt-0.5 rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer pointer-events-none"
-            />
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white">
-                  Opción B: Alternativo (Nacional)
-                </span>
-                {tucScheme === 'alternativo' && (
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded font-semibold">
-                    ACTIVO
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-gray-400 leading-snug">
-                11:30 La Previa · 14:30 Primera · 17:30 Matutina · 19:30 Vespertina · 22:00 Nocturna
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {isSuperAdmin && (
         <div className="flex justify-end">
@@ -1068,104 +926,6 @@ export default function ScrapeExtractsPage() {
         />
       )}
 
-      {/* Modal de confirmación de esquema de Tucumán */}
-      {modalOpen && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-gray-900 border border-indigo-500/30 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl animate-fade-in">
-            <div className="flex items-center justify-between border-b border-gray-700/50 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="font-mono font-bold text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  TUC
-                </span>
-                <h3 className="text-sm font-bold text-white">
-                  Confirmar Esquema de Turnos: Tucumán
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                className="text-gray-400 hover:text-white transition p-1 cursor-pointer"
-              >
-                <FiX size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <p className="text-gray-300">
-                Seleccionaste visualizar y cargar los extractos de Tucumán con:
-              </p>
-              <div className="p-3.5 rounded-xl bg-indigo-950/60 border border-indigo-500/40">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-sm text-indigo-200">
-                    {pendingScheme === 'original'
-                      ? 'Opción A: Horario Original (CPA)'
-                      : 'Opción B: Alternativo (Nacional)'}
-                  </span>
-                  <span className="text-[10px] text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded-full font-semibold">
-                    Lun a Sáb
-                  </span>
-                </div>
-                
-                <div className="divide-y divide-gray-700/40 border-t border-gray-700/40 pt-2 space-y-1.5">
-                  {(pendingScheme === 'original' ? [
-                    { time: '11:30', name: 'Matutina' },
-                    { time: '14:30', name: 'Vespertina' },
-                    { time: '17:30', name: 'La Siesta' },
-                    { time: '19:30', name: 'De la Tarde' },
-                    { time: '22:00', name: 'Nocturna' },
-                  ] : [
-                    { time: '11:30', name: 'La Previa' },
-                    { time: '14:30', name: 'Primera' },
-                    { time: '17:30', name: 'Matutina' },
-                    { time: '19:30', name: 'Vespertina' },
-                    { time: '22:00', name: 'Nocturna' },
-                  ]).map((row) => (
-                    <div key={row.name} className="flex items-center justify-between pt-1">
-                      <span className="font-semibold text-gray-200">{row.name}</span>
-                      <span className="text-gray-400">Sorteo <strong className="text-gray-200 font-mono">{row.time}</strong></span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-gray-800/60 border border-gray-700/60 rounded-xl p-2.5 text-gray-400 text-[11px] leading-relaxed flex items-start gap-2">
-                <FiInfo size={15} className="text-indigo-400 shrink-0 mt-0.5" />
-                <span>Esta configuración actualiza la visualización de los extractos y cabezas de <strong>Tucumán (TUC)</strong> individualmente para tu usuario ({user?.name || user?.username || 'personal'}), sin modificar la vista de otros usuarios.</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-700/50">
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                disabled={schemeLoading}
-                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-medium transition cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmSchemeChange}
-                disabled={schemeLoading}
-                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg transition cursor-pointer disabled:opacity-50"
-              >
-                {schemeLoading ? (
-                  <>
-                    <FiRefreshCw className="animate-spin" size={13} />
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <FiCheck size={14} />
-                    Confirmar elección
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
     </div>
   );
 }

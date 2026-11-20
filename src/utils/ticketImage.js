@@ -1,6 +1,6 @@
 /**
  * Genera un Blob de imagen JPEG con el ticket térmico de la apuesta dibujado en un Canvas HTML5.
- * Diseñado con tipografía aumentada, alto contraste y estilos en negrita para máxima legibilidad.
+ * Diseñado con tipografía aumentada (+3px), alto contraste y estilos en negrita para máxima legibilidad.
  *
  * @param {Object} bet - Datos de la apuesta (BetResource o similar)
  * @returns {Promise<Blob>}
@@ -9,7 +9,7 @@ export function generateTicketImageBlob(bet) {
   return new Promise((resolve, reject) => {
     try {
       const scale = 2; // Factor de escala para resolución retina ultra nítida
-      const baseWidth = 390;
+      const baseWidth = 440;
       const width = baseWidth * scale;
 
       const sequence = bet?.sequence || '000000';
@@ -50,21 +50,21 @@ export function generateTicketImageBlob(bet) {
       const subtotal = Number(bet?.subtotal || 0);
       const total = Number(bet?.total || 0);
 
-      const lineHeight = 23 * scale;
-      const margin = 18 * scale;
+      const lineHeight = 27 * scale;
+      const margin = 20 * scale;
 
       // Estimar altura total generosa para evitar cualquier recorte previo
-      let estimatedLines = 16;
+      let estimatedLines = 18;
       for (const _draw of draws) {
         estimatedLines += 4;
         if (items.length > 0) estimatedLines += 4 + items.length;
         if (redoblonas.length > 0) estimatedLines += 5 + redoblonas.length;
       }
-      const initialHeight = margin * 2 + estimatedLines * lineHeight + 80 * scale;
+      const initialHeight = margin * 2 + estimatedLines * lineHeight + 120 * scale;
 
       const canvas = document.createElement('canvas');
       canvas.width = width;
-      canvas.height = Math.max(initialHeight, 500 * scale);
+      canvas.height = Math.max(initialHeight, 600 * scale);
       const ctx = canvas.getContext('2d');
 
       // Fondo blanco papel térmico
@@ -77,7 +77,7 @@ export function generateTicketImageBlob(bet) {
 
       let y = margin;
 
-      const drawText = (text, x, align = 'left', isBold = false, size = 13) => {
+      const drawText = (text, x, align = 'left', isBold = false, size = 16) => {
         ctx.font = `${isBold ? 'bold' : '600'} ${size * scale}px 'Courier New', Courier, monospace`;
         ctx.textAlign = align;
         ctx.fillText(text, x, y);
@@ -86,40 +86,40 @@ export function generateTicketImageBlob(bet) {
       const drawDashedLine = (isDouble = false) => {
         ctx.save();
         ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 1.5 * scale;
+        ctx.lineWidth = 1.8 * scale;
         if (isDouble) {
           ctx.beginPath();
-          ctx.moveTo(margin, y + 3 * scale);
-          ctx.lineTo(width - margin, y + 3 * scale);
+          ctx.moveTo(margin, y + 4 * scale);
+          ctx.lineTo(width - margin, y + 4 * scale);
           ctx.stroke();
           ctx.beginPath();
-          ctx.moveTo(margin, y + 8 * scale);
-          ctx.lineTo(width - margin, y + 8 * scale);
+          ctx.moveTo(margin, y + 10 * scale);
+          ctx.lineTo(width - margin, y + 10 * scale);
           ctx.stroke();
-          y += 15 * scale;
+          y += 18 * scale;
         } else {
-          ctx.setLineDash([6 * scale, 4 * scale]);
+          ctx.setLineDash([7 * scale, 5 * scale]);
           ctx.beginPath();
-          ctx.moveTo(margin, y + 5 * scale);
-          ctx.lineTo(width - margin, y + 5 * scale);
+          ctx.moveTo(margin, y + 6 * scale);
+          ctx.lineTo(width - margin, y + 6 * scale);
           ctx.stroke();
-          y += 13 * scale;
+          y += 16 * scale;
         }
         ctx.restore();
       };
 
-      // 1. Encabezado principal
-      drawText('T I C K E T', width / 2, 'center', true, 19);
+      // 1. Encabezado principal (+3px: 22)
+      drawText('T I C K E T', width / 2, 'center', true, 22);
       y += lineHeight * 1.35;
-      drawText(`FECHA/HORA: ${dateStr}`, width / 2, 'center', true, 13);
+      drawText(`FECHA/HORA: ${dateStr}`, width / 2, 'center', true, 16);
       y += lineHeight * 1.05;
-      drawText(`PASADOR: ${pasador}`, width / 2, 'center', true, 13);
+      drawText(`PASADOR: ${pasador}`, width / 2, 'center', true, 16);
       y += lineHeight * 1.1;
 
       drawDashedLine(false);
 
-      // 2. Secuencia en tamaño grande y negrita
-      drawText(`SECUENCIA: ${sequence}`, width / 2, 'center', true, 17);
+      // 2. Secuencia en tamaño grande y negrita (+3px: 20)
+      drawText(`SECUENCIA: ${sequence}`, width / 2, 'center', true, 20);
       y += lineHeight * 1.2;
 
       drawDashedLine(false);
@@ -148,25 +148,27 @@ export function generateTicketImageBlob(bet) {
           .filter(Boolean)
           .join(' · ');
 
-        // Turno
-        drawText(draw.name.toUpperCase(), width / 2, 'center', true, 16);
+        // Turno (+3px: 19)
+        drawText(draw.name.toUpperCase(), width / 2, 'center', true, 19);
         y += lineHeight * 1.1;
 
         if (lotInitials) {
-          drawText(`${lotInitials} (${lotCount} Lot)`, width / 2, 'center', true, 12);
+          // Loterías (+3px: 15)
+          drawText(`${lotInitials} (${lotCount} Lot)`, width / 2, 'center', true, 15);
           y += lineHeight * 1.2;
         }
 
         // Jugadas Simples
         if (items.length > 0) {
           subSeq++;
-          drawText(`Jugada Simple Secuencia: ${sequence}-${subSeq}`, width / 2, 'center', false, 11);
+          // (+3px: 14)
+          drawText(`Jugada Simple Secuencia: ${sequence}-${subSeq}`, width / 2, 'center', false, 14);
           y += lineHeight * 1.05;
 
-          // Cabecera de la tabla
-          drawText('NUMERO', margin, 'left', true, 12.5);
-          drawText('TIPO', width * 0.44, 'left', true, 12.5);
-          drawText('IMPORTE', width - margin, 'right', true, 12.5);
+          // Cabecera de la tabla (+3px: 15.5)
+          drawText('NUMERO', margin, 'left', true, 15.5);
+          drawText('TIPO', width * 0.42, 'left', true, 15.5);
+          drawText('IMPORTE', width - margin, 'right', true, 15.5);
           y += lineHeight * 1.1;
 
           for (const item of items) {
@@ -175,9 +177,10 @@ export function generateTicketImageBlob(bet) {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             });
-            drawText(String(item.number), margin, 'left', true, 14);
-            drawText(typeStr, width * 0.44, 'left', true, 13);
-            drawText(`$${itemAmount}`, width - margin, 'right', true, 13.5);
+            // Número (+3px: 17), Tipo (+3px: 16), Importe (+3px: 16.5)
+            drawText(String(item.number), margin, 'left', true, 17);
+            drawText(typeStr, width * 0.42, 'left', true, 16);
+            drawText(`$${itemAmount}`, width - margin, 'right', true, 16.5);
             y += lineHeight;
           }
         }
@@ -186,15 +189,17 @@ export function generateTicketImageBlob(bet) {
         if (redoblonas.length > 0) {
           y += 6 * scale;
           drawDashedLine(false);
-          drawText('REDOBLONA', width / 2, 'center', true, 14);
+          // (+3px: 17)
+          drawText('REDOBLONA', width / 2, 'center', true, 17);
           y += lineHeight * 1.05;
           subSeq++;
-          drawText(`Redoblona Secuencia: ${sequence}-${subSeq}`, width / 2, 'center', false, 11);
+          // (+3px: 14)
+          drawText(`Redoblona Secuencia: ${sequence}-${subSeq}`, width / 2, 'center', false, 14);
           y += lineHeight * 1.05;
 
-          drawText('NUMERO', margin, 'left', true, 12.5);
-          drawText('TIPO', width * 0.44, 'left', true, 12.5);
-          drawText('IMPORTE', width - margin, 'right', true, 12.5);
+          drawText('NUMERO', margin, 'left', true, 15.5);
+          drawText('TIPO', width * 0.42, 'left', true, 15.5);
+          drawText('IMPORTE', width - margin, 'right', true, 15.5);
           y += lineHeight * 1.1;
 
           for (const red of redoblonas) {
@@ -204,9 +209,9 @@ export function generateTicketImageBlob(bet) {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             });
-            drawText(numStr, margin, 'left', true, 14);
-            drawText(typeStr, width * 0.44, 'left', true, 12);
-            drawText(`$${redAmount}`, width - margin, 'right', true, 13.5);
+            drawText(numStr, margin, 'left', true, 17);
+            drawText(typeStr, width * 0.42, 'left', true, 15);
+            drawText(`$${redAmount}`, width - margin, 'right', true, 16.5);
             y += lineHeight;
           }
         }
@@ -216,7 +221,8 @@ export function generateTicketImageBlob(bet) {
           maximumFractionDigits: 2,
         });
         y += 2 * scale;
-        drawText(`Subtotal ${draw.name}: $${drawSubtotal}`, width - margin, 'right', true, 12.5);
+        // Subtotal (+3px: 15.5)
+        drawText(`Subtotal ${draw.name}: $${drawSubtotal}`, width - margin, 'right', true, 15.5);
         y += lineHeight * 1.1;
 
         if (i < draws.length - 1) {
@@ -226,14 +232,16 @@ export function generateTicketImageBlob(bet) {
 
       drawDashedLine(true);
 
-      drawText('GRACIAS POR SU JUGADA', width / 2, 'center', true, 12.5);
+      // Gracias (+3px: 15.5)
+      drawText('GRACIAS POR SU JUGADA', width / 2, 'center', true, 15.5);
       y += lineHeight * 1.2;
 
       const totalFormatted = total.toLocaleString('es-AR', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
-      drawText(`TOTAL: $${totalFormatted}`, width - margin, 'right', true, 17);
+      // TOTAL (+3px: 20)
+      drawText(`TOTAL: $${totalFormatted}`, width - margin, 'right', true, 20);
       y += lineHeight * 1.6;
 
       // Recortar exactamente a la altura requerida

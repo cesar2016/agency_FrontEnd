@@ -509,15 +509,16 @@ export default function PlaceBetPage() {
     }
   };
 
-  const downloadTicketImage = async (bet) => {
+  const downloadTicketImage = async (betsOrBet) => {
     if (actionLoading) return;
     setActionLoading(true);
     try {
-      const blob = await generateTicketImageBlob(bet);
+      const firstBet = Array.isArray(betsOrBet) ? betsOrBet[0] : betsOrBet;
+      const blob = await generateTicketImageBlob(betsOrBet);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `boleta-${bet?.sequence || bet?.id || 'ticket'}.jpg`;
+      a.download = `boleta-${firstBet?.sequence || firstBet?.id || 'ticket'}.jpg`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -530,16 +531,17 @@ export default function PlaceBetPage() {
     }
   };
 
-  const shareTicket = async (bet) => {
+  const shareTicket = async (betsOrBet) => {
     if (actionLoading) return;
     setActionLoading(true);
     try {
-      const sequence = bet?.sequence || bet?.id || '';
+      const firstBet = Array.isArray(betsOrBet) ? betsOrBet[0] : betsOrBet;
+      const sequence = firstBet?.sequence || firstBet?.id || '';
 
       // Generar imagen JPG para compartir (las imágenes JPG tienen soporte universal nativo en Android/Samsung)
       let imageBlob = null;
       try {
-        imageBlob = await generateTicketImageBlob(bet);
+        imageBlob = await generateTicketImageBlob(betsOrBet);
       } catch (err) {
         console.warn('No se pudo generar imagen para share:', err);
       }
@@ -1138,7 +1140,7 @@ export default function PlaceBetPage() {
             <p className="text-indigo-300 font-mono text-sm mb-4">Secuencia: {result[0]?.sequence}</p>
             <div className="flex flex-col gap-2">
               <button
-                onClick={() => shareTicket(result[0])}
+                onClick={() => shareTicket(result)}
                 disabled={actionLoading}
                 className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg shadow-green-600/20"
               >
@@ -1158,7 +1160,7 @@ export default function PlaceBetPage() {
                 )}
               </button>
               <button
-                onClick={() => downloadTicketImage(result[0])}
+                onClick={() => downloadTicketImage(result)}
                 disabled={actionLoading}
                 className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-500 disabled:bg-gray-600 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition"
               >

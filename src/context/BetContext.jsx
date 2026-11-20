@@ -222,8 +222,12 @@ export function BetProvider({ children }) {
   );
 
   const submitBet = async () => {
+    const orderedDrawIds = [
+      ...draws.filter((d) => selectedDraws.includes(d.id)).map((d) => d.id),
+      ...selectedDraws.filter((id) => !draws.some((d) => d.id === id)),
+    ];
     const payload = {
-      selections: selectedDraws.map((drawId) => ({
+      selections: orderedDrawIds.map((drawId) => ({
         draw_id: drawId,
         lottery_ids: selectedByDraw[drawId],
       })),

@@ -144,7 +144,26 @@ export default function PlaceBetPage() {
 
   const scheduleFor = (drawId, lotteryId) => {
     const l = lotteries.find((x) => x.id === lotteryId);
-    const matching = (l?.schedules || []).filter((s) => s.draw_id === drawId);
+    let matching = (l?.schedules || []).filter((s) => s.draw_id === drawId);
+    if (matching.length === 0 && l?.initials === 'TUC') {
+      const drawObj = draws.find((d) => d.id === drawId);
+      const drawName = drawObj?.name;
+      if (drawName === 'La Siesta') {
+        matching = (l?.schedules || []).filter((s) => s.draw_name === 'La Siesta' || s.closing_time === '17:28' || s.draw_time === '17:30');
+        if (matching.length === 0) {
+          return { draw_id: drawId, draw_name: 'La Siesta', draw_time: '17:30', closing_time: '17:28' };
+        }
+      } else if (drawName === 'De la Tarde') {
+        matching = (l?.schedules || []).filter((s) => s.draw_name === 'De la Tarde' || s.closing_time === '19:28' || s.draw_time === '19:30');
+        if (matching.length === 0) {
+          return { draw_id: drawId, draw_name: 'De la Tarde', draw_time: '19:30', closing_time: '19:28' };
+        }
+      } else if (drawName === 'Matutina') {
+        matching = (l?.schedules || []).filter((s) => s.draw_name === 'Matutina');
+      } else if (drawName === 'Vespertina') {
+        matching = (l?.schedules || []).filter((s) => s.draw_name === 'Vespertina');
+      }
+    }
     if (matching.length === 0) return null;
     return matching.reduce((a, s) => (!a || s.draw_time > a.draw_time ? s : a));
   };

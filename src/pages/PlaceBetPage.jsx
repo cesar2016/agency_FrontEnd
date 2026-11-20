@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useBet } from '../context/BetContext';
-import { FiPlus, FiCheck, FiX, FiArrowLeft, FiTrash2, FiChevronDown, FiChevronUp, FiEye, FiArrowDown, FiAlertTriangle } from 'react-icons/fi';
+import { FiPlus, FiCheck, FiX, FiArrowLeft, FiTrash2, FiChevronDown, FiChevronUp, FiEye, FiArrowDown, FiAlertTriangle, FiShare2, FiImage, FiDownload } from 'react-icons/fi';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { generateTicketImageBlob } from '../utils/ticketImage';
 
 function Accordion({ title, count, open, onToggle, children }) {
   return (
@@ -482,32 +483,62 @@ export default function PlaceBetPage() {
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
-      console.error(e);
-      alert('Error descargando boleta');
+      console.error('Error descargando PDF:', e);
+      alert('Error descargando boleta PDF');
     } finally {
       setActionLoading(false);
     }
   };
 
-  const shareTicket = async (id, sequence) => {
+  const downloadTicketImage = async (bet) => {
     if (actionLoading) return;
     setActionLoading(true);
     try {
-      const blob = ticketBlob || (await getTicketBlob(id));
-      const fileName = `boleta-${sequence || id}.pdf`;
-      const file = new File([blob], fileName, { type: 'application/pdf', lastModified: Date.now() });
+      const blob = await generateTicketImageBlob(bet);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `boleta-${bet?.sequence || bet?.id || 'ticket'}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      console.error('Error descargando imagen JPG:', e);
+      alert('Error generando imagen de la boleta');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
-      // 1. Intentar compartir con Web Share API (archivos nativos)
-      if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+  const shareTicket = async (bet) => {
+    if (actionLoading) return;
+    setActionLoading(true);
+    try {
+      const sequence = bet?.sequence || bet?.id || '';
+
+      // Generar imagen JPG para compartir (las imágenes JPG tienen soporte universal nativo en Android/Samsung)
+      let imageBlob = null;
+      try {
+        imageBlob = await generateTicketImageBlob(bet);
+      } catch (err) {
+        console.warn('No se pudo generar imagen para share:', err);
+      }
+
+      const file = imageBlob
+        ? new File([imageBlob], `boleta-${sequence}.jpg`, { type: 'image/jpeg', lastModified: Date.now() })
+        : (ticketBlob ? new File([ticketBlob], `boleta-${sequence}.pdf`, { type: 'application/pdf', lastModified: Date.now() }) : null);
+
+      // 1. Intentar Web Share API con archivo nativo
+      if (file && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
             files: [file],
             title: 'Boleta Agencia',
-            text: `Boleta Secuencia: ${sequence || id}`,
+            text: `Boleta Secuencia: ${sequence}`,
           });
           return;
         } catch (shareErr) {
-          // Si el usuario cancela la hoja de compartir nativa, salir limpiamente
           if (shareErr.name === 'AbortError') {
             return;
           }
@@ -515,25 +546,35 @@ export default function PlaceBetPage() {
         }
       }
 
-      // 2. Fallback: Descargar el archivo PDF en el dispositivo
-      const url = window.URL.createObjectURL(blob);
-      const a2 = document.createElement('a');
-      a2.href = url;
-      a2.download = fileName;
-      document.body.appendChild(a2);
-      a2.click();
-      a2.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      // 2. Fallback sin error: Descargar automáticamente la imagen (o PDF) al dispositivo
+      if (imageBlob) {
+        const url = window.URL.createObjectURL(imageBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `boleta-${sequence}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      } else if (ticketBlob) {
+        const url = window.URL.createObjectURL(ticketBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `boleta-${sequence}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }
 
-      // 3. Abrir WhatsApp para informar la jugada
+      // 3. Abrir WhatsApp para enviar el mensaje con la secuencia
       const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
-        `Boleta de Agencia Secuencia: ${sequence || id}. Adjunto PDF de la jugada.`
+        `Boleta de Agencia Secuencia: ${sequence}. Se generó el comprobante.`
       )}`;
       window.open(waUrl, '_blank', 'noopener,noreferrer');
     } catch (e) {
       if (e.name !== 'AbortError') {
-        console.error('Error compartiendo boleta:', e);
-        alert('No se pudo compartir directamente el PDF. Por favor utiliza el botón "Descargar PDF".');
+        console.error('Error en shareTicket:', e);
       }
     } finally {
       setActionLoading(false);
@@ -1078,27 +1119,39 @@ export default function PlaceBetPage() {
             <p className="text-indigo-300 font-mono text-sm mb-4">Secuencia: {result[0]?.sequence}</p>
             <div className="flex flex-col gap-2">
               <button
-                onClick={() => shareTicket(result[0]?.id, result[0]?.sequence)}
+                onClick={() => shareTicket(result[0])}
                 disabled={actionLoading}
-                className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition"
+                className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg shadow-green-600/20"
               >
                 {actionLoading ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Generando PDF...
+                    Preparando...
                   </>
                 ) : (
-                  'Compartir por WhatsApp'
+                  <>
+                    <FiShare2 size={16} />
+                    Compartir por WhatsApp
+                  </>
                 )}
+              </button>
+              <button
+                onClick={() => downloadTicketImage(result[0])}
+                disabled={actionLoading}
+                className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-500 disabled:bg-gray-600 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition"
+              >
+                <FiImage size={16} />
+                Descargar Imagen (JPG)
               </button>
               <button
                 onClick={() => downloadTicket(result[0]?.id, result[0]?.sequence)}
                 disabled={actionLoading}
                 className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-600 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition"
               >
+                <FiDownload size={16} />
                 Descargar PDF
               </button>
               <button
